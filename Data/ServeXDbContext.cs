@@ -1,0 +1,105 @@
+using System;
+using System.IO;
+using Microsoft.EntityFrameworkCore;
+using ServeX.Models;
+
+namespace ServeX.Data
+{
+    public class ServeXDbContext : DbContext
+    {
+        public ServeXDbContext()
+        {
+        }
+
+        public ServeXDbContext(DbContextOptions<ServeXDbContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<MenuItem> MenuItems { get; set; }
+
+        public DbSet<Table> Tables { get; set; }
+
+        public DbSet<Room> Rooms { get; set; }
+
+        public DbSet<Order> Orders { get; set; }
+
+        public DbSet<OrderItem> OrderItems { get; set; }
+
+        public DbSet<Bill> Bills { get; set; }
+
+        public static string GetDatabaseFilePath()
+        {
+            var dataDirectory = Path.Combine(AppContext.BaseDirectory, "Data");
+            Directory.CreateDirectory(dataDirectory);
+            return Path.Combine(dataDirectory, "servex.db");
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlite("Data Source=" + GetDatabaseFilePath());
+            }
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<MenuItem>(entity =>
+            {
+                entity.Property(item => item.Name).IsRequired().HasMaxLength(100);
+                entity.Property(item => item.Category).IsRequired().HasMaxLength(50);
+                entity.Property(item => item.Price).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<Table>(entity =>
+            {
+                entity.Property(table => table.TableNumber).IsRequired().HasMaxLength(20);
+                entity.Property(table => table.Status).HasConversion<string>().HasMaxLength(30);
+                entity.HasIndex(table => table.TableNumber).IsUnique();
+            });
+
+            modelBuilder.Entity<Room>(entity =>
+            {
+                entity.Property(room => room.RoomNumber).IsRequired().HasMaxLength(20);
+                entity.Property(room => room.Status).HasConversion<string>().HasMaxLength(30);
+                entity.HasIndex(room => room.RoomNumber).IsUnique();
+            });
+
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.Property(order => order.Type).HasConversion<string>().HasMaxLength(20);
+                entity.Property(order => order.Status).HasConversion<string>().HasMaxLength(30);
+                entity.Property(order => order.CreatedAt).IsRequired();
+            });
+
+            modelBuilder.Entity<OrderItem>(entity =>
+            {
+                entity.Property(orderItem => orderItem.Price).HasPrecision(18, 2);
+
+                entity.HasOne(orderItem => orderItem.Order)
+                    .WithMany(order => order.Items)
+                    .HasForeignKey(orderItem => orderItem.OrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(orderItem => orderItem.MenuItem)
+                    .WithMany(menuItem => menuItem.OrderItems)
+                    .HasForeignKey(orderItem => orderItem.MenuItemId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Bill>(entity =>
+            {
+                entity.Property(bill => bill.Subtotal).HasPrecision(18, 2);
+                entity.Property(bill => bill.Tax).HasPrecision(18, 2);
+                entity.Property(bill => bill.Discount).HasPrecision(18, 2);
+                entity.Property(bill => bill.Total).HasPrecision(18, 2);
+
+                entity.HasOne(bill => bill.Order)
+                    .WithOne(order => order.Bill)
+                    .HasForeignKey<Bill>(bill => bill.OrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+        }
+    }
+}
