@@ -1,0 +1,115 @@
+<Window x:Class="ServeX.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:ServeX.Views"
+        Title="{Binding Title}"
+        Width="1280"
+        Height="820"
+        Background="#EEF4F8"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Padding="28"
+                Background="White"
+                CornerRadius="28"
+                BorderBrush="#D8E3EC"
+                BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="{Binding Title}"
+                               FontSize="32"
+                               FontWeight="Bold"
+                               Foreground="#0F172A" />
+                    <TextBlock Margin="0,8,0,0"
+                               Text="{Binding WelcomeMessage}"
+                               FontSize="15"
+                               Foreground="#64748B" />
+                </StackPanel>
+
+                <WrapPanel Grid.Column="1"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           ItemWidth="120">
+                    <Border Margin="0,0,12,0"
+                            Padding="16,12"
+                            Background="#F8FAFC"
+                            CornerRadius="18">
+                        <StackPanel>
+                            <TextBlock Text="Menu"
+                                       FontSize="12"
+                                       Foreground="#64748B" />
+                            <TextBlock Margin="0,4,0,0"
+                                       Text="{Binding MenuItemsCount}"
+                                       FontSize="24"
+                                       FontWeight="SemiBold"
+                                       Foreground="#1D4ED8" />
+                        </StackPanel>
+                    </Border>
+                    <Border Margin="0,0,12,0"
+                            Padding="16,12"
+                            Background="#F8FAFC"
+                            CornerRadius="18">
+                        <StackPanel>
+                            <TextBlock Text="Tables"
+                                       FontSize="12"
+                                       Foreground="#64748B" />
+                            <TextBlock Margin="0,4,0,0"
+                                       Text="{Binding TableCount}"
+                                       FontSize="24"
+                                       FontWeight="SemiBold"
+                                       Foreground="#0F766E" />
+                        </StackPanel>
+                    </Border>
+                    <Border Margin="0,0,12,0"
+                            Padding="16,12"
+                            Background="#F8FAFC"
+                            CornerRadius="18">
+                        <StackPanel>
+                            <TextBlock Text="Rooms"
+                                       FontSize="12"
+                                       Foreground="#64748B" />
+                            <TextBlock Margin="0,4,0,0"
+                                       Text="{Binding RoomCount}"
+                                       FontSize="24"
+                                       FontWeight="SemiBold"
+                                       Foreground="#7C3AED" />
+                        </StackPanel>
+                    </Border>
+                    <Border Padding="16,12"
+                            Background="#F8FAFC"
+                            CornerRadius="18">
+                        <StackPanel>
+                            <TextBlock Text="Orders"
+                                       FontSize="12"
+                                       Foreground="#64748B" />
+                            <TextBlock Margin="0,4,0,0"
+                                       Text="{Binding OrderCount}"
+                                       FontSize="24"
+                                       FontWeight="SemiBold"
+                                       Foreground="#C2410C" />
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1"
+                Margin="0,24,0,0"
+                Background="White"
+                CornerRadius="28"
+                BorderBrush="#D8E3EC"
+                BorderThickness="1">
+            <views:MenuView DataContext="{Binding Menu}" />
+        </Border>
+    </Grid>
+</Window>
