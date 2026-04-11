@@ -21,3 +21,23 @@
 [2026-04-11 18.38] INFO: Payment confirmed for order #2 via Cash
 [2026-04-11 18.38] INFO: Receipt printed for order #2
 [2026-04-11 18.40] INFO: Table added: G1
+[2026-04-11 19.41] INFO: Startup flow resolved to login
+[2026-04-11 19.41] ERROR: ServeX startup failed - 'Set property 'System.Windows.Setter.Property' threw an exception.' Line number '40' and line position '10'.
+[2026-04-11 19:41] INFO: Startup flow resolved to login
+[2026-04-11 19:41] ERROR: ServeX startup failed - 'Set property 'System.Windows.Setter.Property' threw an exception.' Line number '40' and line position '10'.
+[2026-04-11 19.45] INFO: Startup flow resolved to login
+[2026-04-11 19.45] ERROR: ServeX startup failed - 'Set property 'System.Windows.Setter.Property' threw an exception.' Line number '40' and line position '10'.
+[2026-04-11 19.53] INFO: Startup flow resolved to login
+[2026-04-11 19.53] INFO: Login succeeded for user admin
+[2026-04-11 19.54] INFO: Startup flow resolved to login
+[2026-04-11 19.54] INFO: Login succeeded for user admin
+[2026-04-11 19.54] INFO: Startup flow resolved to login
+[2026-04-11 19.55] INFO: Login succeeded for user admin
+[2026-04-11 20:03] INFO: Startup flow resolved to login
+[2026-04-11 20:05] INFO: Startup flow resolved to login
+[2026-04-11 20:13] INFO: Startup flow resolved to login
+[2026-04-11 20.36] INFO: Startup flow resolved to login
+[2026-04-11 20.36] INFO: Startup flow resolved to login
+[2026-04-11 20.36] INFO: Login succeeded for user admin
+[2026-04-11 20.37] INFO: Startup flow resolved to login
+[2026-04-11 20.37] INFO: Login succeeded for user admin
