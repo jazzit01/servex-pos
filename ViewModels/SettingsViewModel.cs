@@ -1,26 +1,46 @@
 using System;
+using System.ComponentModel;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using ServeX.Data;
+using ServeX.Models;
 using ServeX.Services;
 
 namespace ServeX.ViewModels
 {
     [SupportedOSPlatform("windows")]
-    public class SettingsViewModel : ViewModelBase
+    public class SettingsViewModel : ViewModelBase, IDataErrorInfo
     {
+        private readonly ApplicationSettingsService _applicationSettingsService;
         private readonly DatabaseBackupService _databaseBackupService;
         private readonly SaveFileDialogService _saveFileDialogService;
+        private readonly Action<string> _onRestaurantNameSaved;
+        private readonly RelayCommand _saveSettingsCommand;
         private readonly RelayCommand _backupDatabaseCommand;
+        private readonly LogService _logService = new LogService();
         private bool _isBusy;
+        private bool _isLoaded;
+        private string _restaurantName = string.Empty;
+        private string _phone = string.Empty;
+        private string _taxPercentageInput = "5";
+        private string _licenseKey = string.Empty;
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
-        public SettingsViewModel(DatabaseBackupService databaseBackupService, SaveFileDialogService saveFileDialogService)
+        public SettingsViewModel(
+            ApplicationSettingsService applicationSettingsService,
+            DatabaseBackupService databaseBackupService,
+            SaveFileDialogService saveFileDialogService,
+            Action<string> onRestaurantNameSaved = null)
         {
+            _applicationSettingsService = applicationSettingsService ?? throw new ArgumentNullException(nameof(applicationSettingsService));
             _databaseBackupService = databaseBackupService ?? throw new ArgumentNullException(nameof(databaseBackupService));
             _saveFileDialogService = saveFileDialogService ?? throw new ArgumentNullException(nameof(saveFileDialogService));
+            _onRestaurantNameSaved = onRestaurantNameSaved;
+            _saveSettingsCommand = new RelayCommand(async _ => await SaveSettingsAsync(), _ => !IsBusy);
             _backupDatabaseCommand = new RelayCommand(async _ => await BackupDatabaseAsync(), _ => !IsBusy);
         }
 
@@ -28,7 +48,51 @@ namespace ServeX.ViewModels
 
         public string DatabaseFileName => Path.GetFileName(DatabasePath);
 
+        public RelayCommand SaveSettingsCommand => _saveSettingsCommand;
+
         public RelayCommand BackupDatabaseCommand => _backupDatabaseCommand;
+
+        public string RestaurantName
+        {
+            get => _restaurantName;
+            set
+            {
+                if (SetProperty(ref _restaurantName, value))
+                {
+                    NotifyValidationState();
+                }
+            }
+        }
+
+        public string Phone
+        {
+            get => _phone;
+            set
+            {
+                if (SetProperty(ref _phone, value))
+                {
+                    NotifyValidationState();
+                }
+            }
+        }
+
+        public string TaxPercentageInput
+        {
+            get => _taxPercentageInput;
+            set
+            {
+                if (SetProperty(ref _taxPercentageInput, value))
+                {
+                    NotifyValidationState();
+                }
+            }
+        }
+
+        public string LicenseKey
+        {
+            get => _licenseKey;
+            private set => SetProperty(ref _licenseKey, value);
+        }
 
         public bool IsBusy
         {
@@ -37,9 +101,16 @@ namespace ServeX.ViewModels
             {
                 if (SetProperty(ref _isBusy, value))
                 {
+                    _saveSettingsCommand.RaiseCanExecuteChanged();
                     _backupDatabaseCommand.RaiseCanExecuteChanged();
                 }
             }
+        }
+
+        public bool IsLoaded
+        {
+            get => _isLoaded;
+            private set => SetProperty(ref _isLoaded, value);
         }
 
         public string StatusMessage
@@ -61,6 +132,114 @@ namespace ServeX.ViewModels
         }
 
         public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
+
+        public string Error => string.Empty;
+
+        public string this[string columnName]
+        {
+            get
+            {
+                switch (columnName)
+                {
+                    case nameof(RestaurantName):
+                        if (string.IsNullOrWhiteSpace(RestaurantName))
+                        {
+                            return "Restaurant name is required.";
+                        }
+
+                        if (RestaurantName.Trim().Length > 120)
+                        {
+                            return "Restaurant name must be 120 characters or fewer.";
+                        }
+
+                        return string.Empty;
+
+                    case nameof(Phone):
+                        if (string.IsNullOrWhiteSpace(Phone))
+                        {
+                            return "Phone number is required.";
+                        }
+
+                        if (Phone.Trim().Length > 30)
+                        {
+                            return "Phone number must be 30 characters or fewer.";
+                        }
+
+                        return string.Empty;
+
+                    case nameof(TaxPercentageInput):
+                        if (string.IsNullOrWhiteSpace(TaxPercentageInput))
+                        {
+                            return "Tax percentage is required.";
+                        }
+
+                        if (!TryParseTaxPercentage(TaxPercentageInput, out var taxPercentage))
+                        {
+                            return "Enter a valid tax percentage.";
+                        }
+
+                        if (taxPercentage < 0m || taxPercentage > 100m)
+                        {
+                            return "Tax percentage must be between 0 and 100.";
+                        }
+
+                        return string.Empty;
+
+                    default:
+                        return string.Empty;
+                }
+            }
+        }
+
+        public async Task LoadAsync()
+        {
+            await ExecuteBusyActionAsync(async () =>
+            {
+                var settings = await _applicationSettingsService.GetSettingsAsync();
+                if (settings == null)
+                {
+                    RestaurantName = string.Empty;
+                    Phone = string.Empty;
+                    TaxPercentageInput = "5";
+                    LicenseKey = string.Empty;
+                    SetStatus("Restaurant settings are not available yet.", true);
+                    return;
+                }
+
+                ApplySettings(settings);
+                ClearStatus();
+                IsLoaded = true;
+            }, "Restaurant settings could not be loaded.");
+        }
+
+        private async Task SaveSettingsAsync()
+        {
+            TouchValidation();
+            if (!IsFormValid())
+            {
+                SetStatus(GetValidationSummary(), true);
+                return;
+            }
+
+            if (!TryParseTaxPercentage(TaxPercentageInput, out var taxPercentage))
+            {
+                SetStatus("Enter a valid tax percentage before saving.", true);
+                return;
+            }
+
+            await ExecuteBusyActionAsync(async () =>
+            {
+                var updatedSettings = await _applicationSettingsService.UpdateSettingsAsync(
+                    RestaurantName,
+                    Phone,
+                    taxPercentage);
+
+                ApplySettings(updatedSettings);
+                _onRestaurantNameSaved?.Invoke(updatedSettings.RestaurantName);
+                SetStatus("Settings saved successfully.", false);
+                IsLoaded = true;
+            }, "Settings could not be saved.");
+        }
 
         private async Task BackupDatabaseAsync()
         {
@@ -89,6 +268,11 @@ namespace ServeX.ViewModels
 
         private async Task ExecuteBusyActionAsync(Func<Task> action, string fallbackMessage)
         {
+            if (IsBusy)
+            {
+                return;
+            }
+
             IsBusy = true;
 
             try
@@ -97,6 +281,7 @@ namespace ServeX.ViewModels
             }
             catch (Exception exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage + " " + exception.Message, true);
             }
             finally
@@ -105,10 +290,67 @@ namespace ServeX.ViewModels
             }
         }
 
+        private void ApplySettings(AppSetting settings)
+        {
+            RestaurantName = settings.RestaurantName ?? string.Empty;
+            Phone = settings.Phone ?? string.Empty;
+            TaxPercentageInput = settings.TaxPercentage.ToString("0.##", CultureInfo.CurrentCulture);
+            LicenseKey = settings.LicenseKey ?? string.Empty;
+        }
+
         private void SetStatus(string message, bool isError)
         {
             StatusMessage = message;
             IsStatusError = isError;
+        }
+
+        private void ClearStatus()
+        {
+            StatusMessage = string.Empty;
+            IsStatusError = false;
+        }
+
+        private bool IsFormValid()
+        {
+            return string.IsNullOrEmpty(this[nameof(RestaurantName)]) &&
+                   string.IsNullOrEmpty(this[nameof(Phone)]) &&
+                   string.IsNullOrEmpty(this[nameof(TaxPercentageInput)]);
+        }
+
+        private string GetValidationSummary()
+        {
+            var errors = new[]
+            {
+                this[nameof(RestaurantName)],
+                this[nameof(Phone)],
+                this[nameof(TaxPercentageInput)]
+            }
+            .Where(message => !string.IsNullOrWhiteSpace(message))
+            .Distinct()
+            .ToList();
+
+            return errors.Any()
+                ? string.Join(" ", errors)
+                : "Please complete the restaurant settings before saving.";
+        }
+
+        private void NotifyValidationState()
+        {
+            _saveSettingsCommand.RaiseCanExecuteChanged();
+        }
+
+        private void TouchValidation()
+        {
+            OnPropertyChanged(nameof(RestaurantName));
+            OnPropertyChanged(nameof(Phone));
+            OnPropertyChanged(nameof(TaxPercentageInput));
+            NotifyValidationState();
+        }
+
+        private static bool TryParseTaxPercentage(string value, out decimal taxPercentage)
+        {
+            return decimal.TryParse(value, NumberStyles.Number, CultureInfo.CurrentCulture, out taxPercentage) ||
+                   decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out taxPercentage);
         }
     }
 }

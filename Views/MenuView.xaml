@@ -276,8 +276,59 @@
 
                 <Grid Grid.Row="2"
                       Margin="0,20,0,0">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding MenuItems}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Padding="14,10"
+                                Background="White"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Margin="0,0,10,0"
+                                           VerticalAlignment="Center"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           Foreground="#64748B"
+                                           Text="&#xE721;" />
+                                <TextBox Grid.Column="1"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         Foreground="#0F172A"
+                                         FontSize="14"
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                            </Grid>
+                        </Border>
+
+                        <Button Grid.Column="1"
+                                Margin="12,0,0,0"
+                                Padding="12,10"
+                                Command="{Binding ClearSearchCommand}"
+                                Style="{StaticResource SecondaryActionButtonStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Margin="0,0,6,0"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           Text="&#xE711;" />
+                                <TextBlock Text="Clear" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1"
+                                  Margin="0,18,0,0"
+                                  VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding FilteredMenuItems}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Margin="0,0,0,14"
@@ -396,7 +447,8 @@
                         </ItemsControl>
                     </ScrollViewer>
 
-                    <Border Padding="26"
+                    <Border Grid.Row="1"
+                            Padding="26"
                             Background="#F8FAFC"
                             BorderBrush="#E2E8F0"
                             BorderThickness="1"
@@ -410,13 +462,13 @@
                                        Text="&#xE8D2;"
                                        Foreground="#94A3B8" />
                             <TextBlock Margin="0,12,0,0"
-                                       Text="No menu items yet"
+                                       Text="{Binding EmptyStateTitle}"
                                        FontSize="18"
                                        FontWeight="SemiBold"
                                        Foreground="#0F172A"
                                        HorizontalAlignment="Center" />
                             <TextBlock Margin="0,8,0,0"
-                                       Text="Start by adding the first item to your menu."
+                                       Text="{Binding EmptyStateSubtitle}"
                                        Foreground="#64748B"
                                        HorizontalAlignment="Center" />
                         </StackPanel>

@@ -19,7 +19,7 @@ namespace ServeX.ViewModels
         private readonly LogService _logService = new LogService();
         private readonly RelayCommand _navigateCommand;
         private readonly RelayCommand _goBackCommand;
-        private readonly string _restaurantName;
+        private string _restaurantName;
         private readonly string _currentUsername;
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
@@ -38,6 +38,7 @@ namespace ServeX.ViewModels
             var dashboardService = new DashboardService();
             var databaseBackupService = new DatabaseBackupService();
             var saveFileDialogService = new SaveFileDialogService();
+            var applicationSettingsService = new ApplicationSettingsService();
 
             Dashboard = new DashboardViewModel(
                 dashboardService,
@@ -48,7 +49,11 @@ namespace ServeX.ViewModels
             Menu = new MenuViewModel(menuService);
             Tables = new TablesViewModel(new TableService(), orderWindowService);
             Parcel = new ParcelViewModel(orderService, billingWindowService);
-            Settings = new SettingsViewModel(databaseBackupService, saveFileDialogService);
+            Settings = new SettingsViewModel(
+                applicationSettingsService,
+                databaseBackupService,
+                saveFileDialogService,
+                UpdateRestaurantName);
             Menu.MenuItemsChanged += async (sender, args) => await RefreshWorkspaceAsync();
             Tables.TablesChanged += async (sender, args) => await RefreshWorkspaceAsync();
 
@@ -276,6 +281,7 @@ namespace ServeX.ViewModels
             await Menu.LoadAsync();
             await Tables.LoadAsync();
             await Parcel.LoadAsync();
+            await Settings.LoadAsync();
             await LoadSummaryAsync();
         }
 
@@ -295,6 +301,16 @@ namespace ServeX.ViewModels
         private void GoToMenu()
         {
             SelectedWorkspaceIndex = 1;
+        }
+
+        private void UpdateRestaurantName(string restaurantName)
+        {
+            _restaurantName = string.IsNullOrWhiteSpace(restaurantName)
+                ? "ServeX"
+                : restaurantName;
+
+            OnPropertyChanged(nameof(RestaurantName));
+            OnPropertyChanged(nameof(Title));
         }
 
         private async Task NavigateToAsync(object parameter)

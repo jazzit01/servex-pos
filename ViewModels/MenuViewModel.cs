@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ServeX.Models;
@@ -18,9 +19,11 @@ namespace ServeX.ViewModels
         private readonly RelayCommand _deleteCommand;
         private readonly RelayCommand _saveCommand;
         private readonly RelayCommand _cancelCommand;
+        private readonly RelayCommand _clearSearchCommand;
         private bool _isBusy;
         private bool _isEditorOpen;
         private int? _editingItemId;
+        private string _searchText = string.Empty;
         private string _editorName = string.Empty;
         private string _editorCategory = string.Empty;
         private string _editorPrice = string.Empty;
@@ -33,17 +36,21 @@ namespace ServeX.ViewModels
             _menuService = menuService ?? throw new ArgumentNullException(nameof(menuService));
             MenuItems = new ObservableCollection<MenuItem>();
             MenuItems.CollectionChanged += OnMenuItemsCollectionChanged;
+            FilteredMenuItems = new ObservableCollection<MenuItem>();
 
             _beginAddCommand = new RelayCommand(_ => OpenAddPanel(), _ => !IsBusy);
             _editCommand = new RelayCommand(item => OpenEditPanel(item as MenuItem), item => !IsBusy && item is MenuItem);
             _deleteCommand = new RelayCommand(async item => await DeleteAsync(item as MenuItem), item => !IsBusy && item is MenuItem);
             _saveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave);
             _cancelCommand = new RelayCommand(_ => CloseEditor(), _ => !IsBusy);
+            _clearSearchCommand = new RelayCommand(_ => SearchText = string.Empty, _ => HasSearchText);
         }
 
         public event EventHandler MenuItemsChanged;
 
         public ObservableCollection<MenuItem> MenuItems { get; }
+
+        public ObservableCollection<MenuItem> FilteredMenuItems { get; }
 
         public RelayCommand BeginAddCommand => _beginAddCommand;
 
@@ -54,6 +61,8 @@ namespace ServeX.ViewModels
         public RelayCommand SaveCommand => _saveCommand;
 
         public RelayCommand CancelCommand => _cancelCommand;
+
+        public RelayCommand ClearSearchCommand => _clearSearchCommand;
 
         public bool IsBusy
         {
@@ -67,6 +76,30 @@ namespace ServeX.ViewModels
                 }
             }
         }
+
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                if (SetProperty(ref _searchText, value))
+                {
+                    ApplySearchFilter();
+                    OnPropertyChanged(nameof(HasSearchText));
+                    OnPropertyChanged(nameof(EmptyStateTitle));
+                    OnPropertyChanged(nameof(EmptyStateSubtitle));
+                    _clearSearchCommand.RaiseCanExecuteChanged();
+                }
+            }
+        }
+
+        public bool HasSearchText => !string.IsNullOrWhiteSpace(SearchText);
+
+        public string EmptyStateTitle => HasSearchText ? "No matching menu items" : "No menu items yet";
+
+        public string EmptyStateSubtitle => HasSearchText
+            ? "Try a different name or category, or clear the search."
+            : "Start by adding the first item to your menu.";
 
         public bool IsEditorOpen
         {
@@ -149,7 +182,7 @@ namespace ServeX.ViewModels
 
         public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
 
-        public bool IsEmpty => MenuItems.Count == 0;
+        public bool IsEmpty => FilteredMenuItems.Count == 0;
 
         public bool CanSave => !IsBusy && IsFormValid();
 
@@ -165,6 +198,8 @@ namespace ServeX.ViewModels
                 {
                     MenuItems.Add(item);
                 }
+
+                ApplySearchFilter();
             }, "Menu items could not be loaded.");
         }
 
@@ -342,6 +377,8 @@ namespace ServeX.ViewModels
             {
                 MenuItems.Add(item);
             }
+
+            ApplySearchFilter();
         }
 
         private async Task ExecuteBusyActionAsync(Func<Task> action, string fallbackMessage)
@@ -413,6 +450,7 @@ namespace ServeX.ViewModels
             _deleteCommand.RaiseCanExecuteChanged();
             _saveCommand.RaiseCanExecuteChanged();
             _cancelCommand.RaiseCanExecuteChanged();
+            _clearSearchCommand.RaiseCanExecuteChanged();
         }
 
         private void SetStatus(string message, bool isError)
@@ -440,7 +478,29 @@ namespace ServeX.ViewModels
 
         private void OnMenuItemsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
+            ApplySearchFilter();
             OnPropertyChanged(nameof(IsEmpty));
+        }
+
+        private void ApplySearchFilter()
+        {
+            FilteredMenuItems.Clear();
+
+            var query = (SearchText ?? string.Empty).Trim();
+            var items = string.IsNullOrWhiteSpace(query)
+                ? MenuItems
+                : new ObservableCollection<MenuItem>(MenuItems.Where(item =>
+                    (!string.IsNullOrWhiteSpace(item.Name) && item.Name.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                    (!string.IsNullOrWhiteSpace(item.Category) && item.Category.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)));
+
+            foreach (var item in items)
+            {
+                FilteredMenuItems.Add(item);
+            }
+
+            OnPropertyChanged(nameof(IsEmpty));
+            OnPropertyChanged(nameof(EmptyStateTitle));
+            OnPropertyChanged(nameof(EmptyStateSubtitle));
         }
     }
 }
