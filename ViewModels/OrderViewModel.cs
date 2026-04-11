@@ -13,10 +13,12 @@ namespace ServeX.ViewModels
     [SupportedOSPlatform("windows")]
     public class OrderViewModel : ViewModelBase
     {
+        private readonly LogService _logService = new LogService();
         private readonly OrderService _orderService;
         private readonly BillingWindowService _billingWindowService;
         private readonly int _tableId;
         private bool _isBusy;
+        private bool _hasBlockingError;
         private int? _orderId;
         private string _tableNumber = string.Empty;
         private TableStatus _tableStatus = TableStatus.Available;
@@ -138,6 +140,12 @@ namespace ServeX.ViewModels
 
         public bool CanGenerateBill => !IsBusy && OrderItems.Count > 0;
 
+        public bool HasBlockingError
+        {
+            get => _hasBlockingError;
+            private set => SetProperty(ref _hasBlockingError, value);
+        }
+
         public decimal Subtotal => decimal.Round(OrderItems.Sum(item => item.LineTotal), 2);
 
         public decimal TaxPercentage
@@ -161,6 +169,8 @@ namespace ServeX.ViewModels
 
         public async Task LoadAsync()
         {
+            HasBlockingError = false;
+
             await ExecuteBusyActionAsync(async () =>
             {
                 var table = await _orderService.GetTableAsync(_tableId);
@@ -173,11 +183,14 @@ namespace ServeX.ViewModels
                 TableStatus = table.Status;
                 TaxPercentage = await _orderService.GetTaxPercentageAsync();
 
-                var menuItems = await _orderService.GetMenuItemsAsync();
+                var menuItems = await _orderService.GetMenuItemsAsync() ?? new System.Collections.Generic.List<MenuItem>();
                 MenuItems.Clear();
                 foreach (var menuItem in menuItems)
                 {
-                    MenuItems.Add(menuItem);
+                    if (menuItem != null)
+                    {
+                        MenuItems.Add(menuItem);
+                    }
                 }
 
                 Categories.Clear();
@@ -205,7 +218,7 @@ namespace ServeX.ViewModels
 
                 if (order != null)
                 {
-                    foreach (var item in order.Items.OrderBy(item => item.MenuItem?.Category).ThenBy(item => item.MenuItem?.Name))
+                    foreach (var item in (order.Items ?? Array.Empty<OrderItem>()).OrderBy(item => item.MenuItem?.Category).ThenBy(item => item.MenuItem?.Name))
                     {
                         AddLoadedItem(item);
                     }
@@ -219,6 +232,15 @@ namespace ServeX.ViewModels
 
                 NotifyTotalsChanged();
             }, "The order screen could not be loaded.");
+
+            if (string.IsNullOrWhiteSpace(TableNumber))
+            {
+                HasBlockingError = true;
+                if (!HasStatusMessage)
+                {
+                    SetStatus("The order screen could not be loaded.", true);
+                }
+            }
         }
 
         private void AddItem(MenuItem menuItem)
@@ -360,12 +382,16 @@ namespace ServeX.ViewModels
             {
                 await action();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException exception)
             {
+                _logService.LogError(fallbackMessage, exception);
+                HasBlockingError = true;
                 SetStatus(fallbackMessage, true);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                _logService.LogError(fallbackMessage, exception);
+                HasBlockingError = true;
                 SetStatus(fallbackMessage, true);
             }
             finally

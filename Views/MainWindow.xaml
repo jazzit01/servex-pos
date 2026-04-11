@@ -8,6 +8,8 @@
         Height="800"
         MinWidth="1000"
         MinHeight="700"
+        WindowStyle="SingleBorderWindow"
+        AllowsTransparency="False"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize"
         Style="{StaticResource ShellWindowStyle}">

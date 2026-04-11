@@ -14,43 +14,67 @@ namespace ServeX.Services
 
         public async Task<Table> GetTableAsync(int tableId)
         {
-            using (var context = new ServeXDbContext())
+            try
             {
-                return await context.Tables
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(table => table.Id == tableId);
+                using (var context = new ServeXDbContext())
+                {
+                    return await context.Tables
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(table => table.Id == tableId);
+                }
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError(string.Format("Table lookup failed for table id {0}", tableId), exception);
+                throw;
             }
         }
 
         public async Task<List<MenuItem>> GetMenuItemsAsync()
         {
-            using (var context = new ServeXDbContext())
+            try
             {
-                return await context.MenuItems
-                    .AsNoTracking()
-                    .OrderBy(menuItem => menuItem.Category)
-                    .ThenBy(menuItem => menuItem.Name)
-                    .ToListAsync();
+                using (var context = new ServeXDbContext())
+                {
+                    return await context.MenuItems
+                        .AsNoTracking()
+                        .OrderBy(menuItem => menuItem.Category)
+                        .ThenBy(menuItem => menuItem.Name)
+                        .ToListAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError("Menu item load failed for order screen", exception);
+                throw;
             }
         }
 
         public async Task<Order> GetActiveOrderForTableAsync(int tableId)
         {
-            using (var context = new ServeXDbContext())
+            try
             {
-                return await context.Orders
-                    .AsNoTracking()
-                    .Include(order => order.Items)
-                    .ThenInclude(orderItem => orderItem.MenuItem)
-                    .Include(order => order.Bill)
-                    .Where(order =>
-                        order.Type == OrderType.Table &&
-                        order.ReferenceId == tableId &&
-                        order.Status != OrderStatus.Billed &&
-                        order.Status != OrderStatus.Paid &&
-                        order.Status != OrderStatus.Cancelled)
-                    .OrderByDescending(order => order.CreatedAt)
-                    .FirstOrDefaultAsync();
+                using (var context = new ServeXDbContext())
+                {
+                    return await context.Orders
+                        .AsNoTracking()
+                        .Include(order => order.Items)
+                        .ThenInclude(orderItem => orderItem.MenuItem)
+                        .Include(order => order.Bill)
+                        .Where(order =>
+                            order.Type == OrderType.Table &&
+                            order.ReferenceId == tableId &&
+                            order.Status != OrderStatus.Billed &&
+                            order.Status != OrderStatus.Paid &&
+                            order.Status != OrderStatus.Cancelled)
+                        .OrderByDescending(order => order.CreatedAt)
+                        .FirstOrDefaultAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError(string.Format("Active order lookup failed for table id {0}", tableId), exception);
+                throw;
             }
         }
 

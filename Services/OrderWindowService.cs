@@ -12,6 +12,7 @@ namespace ServeX.Services
     {
         private readonly OrderService _orderService;
         private readonly BillingWindowService _billingWindowService;
+        private readonly LogService _logService = new LogService();
 
         public OrderWindowService(OrderService orderService, BillingWindowService billingWindowService)
         {
@@ -26,16 +27,45 @@ namespace ServeX.Services
                 return;
             }
 
-            var viewModel = new OrderViewModel(_orderService, _billingWindowService, table.Id);
-            await viewModel.LoadAsync();
-
-            var window = new OrderWindow
+            try
             {
-                Owner = Application.Current?.MainWindow,
-                DataContext = viewModel
-            };
+                if (table.Id <= 0)
+                {
+                    throw new System.InvalidOperationException("The selected table is invalid.");
+                }
 
-            window.ShowDialog();
+                var viewModel = new OrderViewModel(_orderService, _billingWindowService, table.Id);
+                await viewModel.LoadAsync();
+
+                if (viewModel.HasBlockingError)
+                {
+                    MessageBox.Show(
+                        string.IsNullOrWhiteSpace(viewModel.StatusMessage)
+                            ? "The order screen could not be opened right now."
+                            : viewModel.StatusMessage,
+                        "Order Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                var window = new OrderWindow
+                {
+                    Owner = Application.Current?.MainWindow,
+                    DataContext = viewModel
+                };
+
+                window.ShowDialog();
+            }
+            catch (System.Exception exception)
+            {
+                _logService.LogError(string.Format("Order window failed for table id {0}", table.Id), exception);
+                MessageBox.Show(
+                    "The order screen could not be opened right now.",
+                    "Order Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
         }
     }
 }
