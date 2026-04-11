@@ -4,13 +4,13 @@
         xmlns:viewModels="clr-namespace:ServeX.ViewModels"
         xmlns:views="clr-namespace:ServeX.Views"
         Title="{Binding WindowTitle}"
-        Width="1120"
-        Height="760"
-        MinWidth="980"
-        MinHeight="680"
-        Background="#EAF0F5"
+        Width="1220"
+        Height="820"
+        MinWidth="1040"
+        MinHeight="720"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="CanResize">
+        ResizeMode="CanResize"
+        Style="{StaticResource ShellWindowStyle}">
     <Window.Resources>
         <DataTemplate DataType="{x:Type viewModels:SetupViewModel}">
             <views:SetupView />
@@ -20,110 +20,132 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Grid Margin="24">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1.05*" />
-            <ColumnDefinition Width="1.15*" />
-        </Grid.ColumnDefinitions>
-
-        <Border Padding="40"
-                Background="#0F172A"
-                CornerRadius="30">
+    <Grid Margin="22">
+        <Border Style="{StaticResource SurfaceCardStyle}"
+                Background="{StaticResource ShellBrush}"
+                CornerRadius="{StaticResource RadiusXLarge}">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
 
-                <StackPanel>
-                    <Border Width="60"
-                            Height="60"
-                            Background="#DBEAFE"
-                            CornerRadius="30">
-                        <TextBlock HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="26"
-                                   Foreground="#1D4ED8"
-                                   Text="&#xE8D2;" />
-                    </Border>
-                    <TextBlock Margin="0,22,0,0"
-                               FontSize="36"
-                               FontWeight="Bold"
-                               Foreground="White"
-                               Text="ServeX" />
-                    <TextBlock Margin="0,10,0,0"
-                               FontSize="24"
-                               FontWeight="SemiBold"
-                               Foreground="#E2E8F0"
-                               Text="{Binding PanelTitle}" />
-                    <TextBlock Margin="0,12,0,0"
-                               Text="{Binding PanelSubtitle}"
-                               FontSize="16"
-                               Foreground="#CBD5E1"
-                               TextWrapping="Wrap" />
-                </StackPanel>
+                <Grid>
+                    <Grid.Background>
+                        <LinearGradientBrush StartPoint="0,0"
+                                             EndPoint="1,1">
+                            <GradientStop Color="#8D4F37" Offset="0" />
+                            <GradientStop Color="#5C3325" Offset="1" />
+                        </LinearGradientBrush>
+                    </Grid.Background>
 
-                <StackPanel Grid.Row="1"
-                            VerticalAlignment="Center">
-                    <Border Margin="0,0,0,16"
-                            Padding="18"
-                            Background="#162033"
-                            CornerRadius="22">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="Segoe MDL2 Assets"
-                                       FontSize="18"
-                                       Foreground="#60A5FA"
-                                       Text="&#xE73E;" />
-                            <TextBlock Margin="12,0,0,0"
-                                       Foreground="#E2E8F0"
-                                       Text="Secure first-run setup and admin sign-in flow." />
-                        </StackPanel>
-                    </Border>
-                    <Border Margin="0,0,0,16"
-                            Padding="18"
-                            Background="#162033"
-                            CornerRadius="22">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="Segoe MDL2 Assets"
-                                       FontSize="18"
-                                       Foreground="#34D399"
-                                       Text="&#xE930;" />
-                            <TextBlock Margin="12,0,0,0"
-                                       Foreground="#E2E8F0"
-                                       Text="Local development mode keeps setup and login simple." />
-                        </StackPanel>
-                    </Border>
-                    <Border Padding="18"
-                            Background="#162033"
-                            CornerRadius="22">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="Segoe MDL2 Assets"
-                                       FontSize="18"
-                                       Foreground="#F59E0B"
-                                       Text="&#xE74C;" />
-                            <TextBlock Margin="12,0,0,0"
-                                       Foreground="#E2E8F0"
-                                       Text="Smooth handoff into the main dashboard after login." />
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+                    <Grid Margin="42">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="2"
-                           Foreground="#94A3B8"
-                           Text="License is optional in local development." />
+                        <StackPanel>
+                            <Border Width="64"
+                                    Height="64"
+                                    Background="#F7EBDD"
+                                    CornerRadius="32">
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           FontSize="28"
+                                           Foreground="#8D4F37"
+                                           Text="&#xE8D2;" />
+                            </Border>
+
+                            <TextBlock Margin="0,24,0,0"
+                                       FontFamily="{StaticResource BrandFontFamily}"
+                                       FontSize="40"
+                                       FontWeight="Bold"
+                                       Foreground="White"
+                                       Text="ServeX" />
+
+                            <TextBlock Margin="0,12,0,0"
+                                       FontSize="24"
+                                       FontWeight="SemiBold"
+                                       Foreground="#F6EDE4"
+                                       Text="{Binding PanelTitle}" />
+
+                            <TextBlock Margin="0,12,0,0"
+                                       FontSize="16"
+                                       Foreground="#E9D9CB"
+                                       Text="{Binding PanelSubtitle}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1"
+                                    VerticalAlignment="Center">
+                            <Border Margin="0,0,0,16"
+                                    Padding="18"
+                                    Background="#20FFF8EF"
+                                    CornerRadius="{StaticResource RadiusMedium}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                               FontSize="18"
+                                               Foreground="#FFE6C1"
+                                               Text="&#xE8FD;" />
+                                    <TextBlock Margin="12,0,0,0"
+                                               Foreground="#FFF3E6"
+                                               Text="Built for a fast dining room, not a generic office dashboard." />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="0,0,0,16"
+                                    Padding="18"
+                                    Background="#20FFF8EF"
+                                    CornerRadius="{StaticResource RadiusMedium}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                               FontSize="18"
+                                               Foreground="#D5F3E0"
+                                               Text="&#xE930;" />
+                                    <TextBlock Margin="12,0,0,0"
+                                               Foreground="#FFF3E6"
+                                               Text="Restaurant identity, tax settings, and admin access stay in one place." />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Padding="18"
+                                    Background="#20FFF8EF"
+                                    CornerRadius="{StaticResource RadiusMedium}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                               FontSize="18"
+                                               Foreground="#F9D7C8"
+                                               Text="&#xE7BF;" />
+                                    <TextBlock Margin="12,0,0,0"
+                                               Foreground="#FFF3E6"
+                                               Text="Setup flows cleanly into login so staff can get into service quickly." />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <Border Grid.Row="2"
+                                Padding="16"
+                                Background="#20FFF8EF"
+                                CornerRadius="{StaticResource RadiusMedium}">
+                            <TextBlock Foreground="#F6EDE4"
+                                       Text="Local development mode is active, so the license field is optional."
+                                       TextWrapping="Wrap" />
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <Grid Grid.Column="1"
+                      Margin="28">
+                    <Border Style="{StaticResource SurfaceCardStyle}"
+                            Padding="34"
+                            Background="{StaticResource SurfaceBrush}">
+                        <ContentControl Content="{Binding CurrentViewModel}" />
+                    </Border>
+                </Grid>
             </Grid>
-        </Border>
-
-        <Border Grid.Column="1"
-                Margin="24,0,0,0"
-                Padding="30"
-                Background="White"
-                CornerRadius="30"
-                BorderBrush="#D8E3EC"
-                BorderThickness="1">
-            <ContentControl Content="{Binding CurrentViewModel}" />
         </Border>
     </Grid>
 </Window>

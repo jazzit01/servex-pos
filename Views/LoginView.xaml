@@ -4,95 +4,10 @@
              xmlns:helpers="clr-namespace:ServeX.Helpers">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-
-        <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
-            <Setter Property="Margin" Value="0,18,0,8" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#334155" />
-        </Style>
-
-        <Style x:Key="TextInputStyle" TargetType="TextBox">
-            <Setter Property="Padding" Value="14,12" />
-            <Setter Property="Background" Value="#F8FAFC" />
-            <Setter Property="BorderBrush" Value="#D8E3EC" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Validation.ErrorTemplate">
-                <Setter.Value>
-                    <ControlTemplate>
-                        <Border BorderBrush="#DC2626"
-                                BorderThickness="1"
-                                CornerRadius="12">
-                            <AdornedElementPlaceholder />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="Validation.HasError" Value="True">
-                    <Setter Property="ToolTip"
-                            Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="PasswordInputStyle" TargetType="PasswordBox">
-            <Setter Property="Padding" Value="14,12" />
-            <Setter Property="Background" Value="#F8FAFC" />
-            <Setter Property="BorderBrush" Value="#D8E3EC" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Validation.ErrorTemplate">
-                <Setter.Value>
-                    <ControlTemplate>
-                        <Border BorderBrush="#DC2626"
-                                BorderThickness="1"
-                                CornerRadius="12">
-                            <AdornedElementPlaceholder />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="Validation.HasError" Value="True">
-                    <Setter Property="ToolTip"
-                            Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
-            <Setter Property="Padding" Value="16,14" />
-            <Setter Property="Background" Value="#0F172A" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Root"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="18"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#1E293B" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Root" Property="Opacity" Value="0.55" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <Grid VerticalAlignment="Center"
-          MaxWidth="420">
+          MaxWidth="460">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -100,60 +15,71 @@
         </Grid.RowDefinitions>
 
         <StackPanel>
-            <TextBlock FontSize="30"
-                       FontWeight="Bold"
-                       Foreground="#0F172A"
-                       Text="Sign in" />
-            <TextBlock Margin="0,10,0,0"
-                       Foreground="#64748B"
-                       Text="{Binding RestaurantName, StringFormat=Continue into {0}.}" />
+            <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                       Text="Sign in to continue" />
+            <TextBlock Margin="0,8,0,0"
+                       Style="{StaticResource SectionSubtitleTextStyle}"
+                       Text="{Binding RestaurantName, StringFormat=Enter the admin credentials for {0} and continue into the live workspace.}" />
         </StackPanel>
 
         <Border Grid.Row="1"
-                Margin="0,22,0,0"
-                Padding="14"
-                CornerRadius="16"
+                Margin="0,24,0,0"
                 Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border.Style>
-                <Style TargetType="Border">
-                    <Setter Property="Background" Value="#DCFCE7" />
+                <Style TargetType="Border" BasedOn="{StaticResource StatusBannerBorderStyle}">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsStatusError}" Value="True">
-                            <Setter Property="Background" Value="#FEE2E2" />
+                            <Setter Property="Background" Value="{StaticResource DangerSoftBrush}" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Border.Style>
             <TextBlock Text="{Binding StatusMessage}"
                        FontWeight="SemiBold"
-                       Foreground="#0F172A"
+                       Foreground="{StaticResource TextBrush}"
                        TextWrapping="Wrap" />
         </Border>
 
-        <StackPanel Grid.Row="2"
-                    Margin="0,24,0,0">
-            <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Username" />
-            <TextBox Style="{StaticResource TextInputStyle}"
-                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+        <Border Grid.Row="2"
+                Margin="0,24,0,0"
+                Padding="24"
+                Style="{StaticResource SoftPanelStyle}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource FieldLabelStyle}"
+                           Text="Username" />
+                <TextBox Style="{StaticResource FormTextBoxStyle}"
+                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
 
-            <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Password" />
-            <PasswordBox Style="{StaticResource PasswordInputStyle}"
-                         helpers:PasswordBoxAssistant.BindPassword="True"
-                         helpers:PasswordBoxAssistant.BoundPassword="{Binding Password, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+                <TextBlock Style="{StaticResource FieldLabelStyle}"
+                           Text="Password" />
+                <PasswordBox Style="{StaticResource FormPasswordBoxStyle}"
+                             helpers:PasswordBoxAssistant.BindPassword="True"
+                             helpers:PasswordBoxAssistant.BoundPassword="{Binding Password, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
 
-            <Button Margin="0,28,0,0"
-                    HorizontalAlignment="Left"
-                    Command="{Binding LoginCommand}"
-                    Style="{StaticResource PrimaryButtonStyle}">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock FontFamily="Segoe MDL2 Assets"
-                               FontSize="16"
-                               Text="&#xE72E;" />
-                    <TextBlock Margin="10,0,0,0"
-                               FontWeight="SemiBold"
-                               Text="Login" />
-                </StackPanel>
-            </Button>
-        </StackPanel>
+                <Grid Margin="0,28,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock VerticalAlignment="Center"
+                               Foreground="{StaticResource MutedTextBrush}"
+                               Text="Use the admin account created during setup." />
+
+                    <Button Grid.Column="1"
+                            IsDefault="True"
+                            Command="{Binding LoginCommand}"
+                            Style="{StaticResource PrimaryActionButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="Segoe MDL2 Assets"
+                                       FontSize="16"
+                                       Text="&#xE72E;" />
+                            <TextBlock Margin="10,0,0,0"
+                                       Text="Login" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

@@ -8,6 +8,7 @@
         MinWidth="1000"
         MinHeight="680"
         WindowStartupLocation="CenterOwner"
-        Background="#EEF4F8">
+        ResizeMode="CanResize"
+        Style="{StaticResource ShellWindowStyle}">
     <views:BillingView />
 </Window>

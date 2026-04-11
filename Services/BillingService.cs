@@ -56,12 +56,14 @@ namespace ServeX.Services
                         .Include(item => item.Bill)
                         .FirstOrDefaultAsync(item => item.Id == orderId);
 
-                    if (order == null)
-                    {
-                        throw new InvalidOperationException("The order could not be found.");
-                    }
+                if (order == null)
+                {
+                    throw new InvalidOperationException("The order could not be found.");
+                }
 
-                    if (!order.Items.Any())
+                    var orderItems = order.Items ?? new List<OrderItem>();
+
+                    if (!orderItems.Any())
                     {
                         throw new InvalidOperationException("The order has no items to bill.");
                     }
@@ -72,7 +74,7 @@ namespace ServeX.Services
                     }
 
                     var taxRate = await GetTaxRateAsync(context);
-                    var subtotal = decimal.Round(order.Items.Sum(item => item.Price * item.Quantity), 2);
+                    var subtotal = decimal.Round(orderItems.Select(item => item.Price * item.Quantity).DefaultIfEmpty(0m).Sum(), 2);
                     var tax = decimal.Round(subtotal * taxRate, 2);
                     var grossTotal = subtotal + tax;
 
@@ -140,7 +142,7 @@ namespace ServeX.Services
                 Tax = orderData.Order.Bill.Tax,
                 Discount = orderData.Order.Bill.Discount,
                 Total = orderData.Order.Bill.Total,
-                Items = orderData.Order.Items.Select(item => new ReceiptLineItem
+                Items = (orderData.Order.Items ?? new List<OrderItem>()).Select(item => new ReceiptLineItem
                 {
                     Name = item.MenuItem?.Name ?? "Item",
                     Quantity = item.Quantity,

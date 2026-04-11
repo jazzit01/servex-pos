@@ -256,3 +256,5 @@ C:\Users\Ejaz\Documents\ServeX\.codex-build\auth-fix\runtimes\win-arm\native\e_s
 C:\Users\Ejaz\Documents\ServeX\.codex-build\auth-fix\runtimes\win-arm64\native\e_sqlite3.dll
 C:\Users\Ejaz\Documents\ServeX\.codex-build\auth-fix\runtimes\win-x64\native\e_sqlite3.dll
 C:\Users\Ejaz\Documents\ServeX\.codex-build\auth-fix\runtimes\win-x86\native\e_sqlite3.dll
+C:\Users\Ejaz\Documents\ServeX\obj\Debug\net8.0-windows\App.baml
+C:\Users\Ejaz\Documents\ServeX\obj\Debug\net8.0-windows\Styles\DesignSystem.baml

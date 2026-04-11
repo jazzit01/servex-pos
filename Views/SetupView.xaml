@@ -4,91 +4,6 @@
              xmlns:helpers="clr-namespace:ServeX.Helpers">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-
-        <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
-            <Setter Property="Margin" Value="0,18,0,8" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#334155" />
-        </Style>
-
-        <Style x:Key="TextInputStyle" TargetType="TextBox">
-            <Setter Property="Padding" Value="14,12" />
-            <Setter Property="Background" Value="#F8FAFC" />
-            <Setter Property="BorderBrush" Value="#D8E3EC" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Validation.ErrorTemplate">
-                <Setter.Value>
-                    <ControlTemplate>
-                        <Border BorderBrush="#DC2626"
-                                BorderThickness="1"
-                                CornerRadius="12">
-                            <AdornedElementPlaceholder />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="Validation.HasError" Value="True">
-                    <Setter Property="ToolTip"
-                            Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="PasswordInputStyle" TargetType="PasswordBox">
-            <Setter Property="Padding" Value="14,12" />
-            <Setter Property="Background" Value="#F8FAFC" />
-            <Setter Property="BorderBrush" Value="#D8E3EC" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Validation.ErrorTemplate">
-                <Setter.Value>
-                    <ControlTemplate>
-                        <Border BorderBrush="#DC2626"
-                                BorderThickness="1"
-                                CornerRadius="12">
-                            <AdornedElementPlaceholder />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="Validation.HasError" Value="True">
-                    <Setter Property="ToolTip"
-                            Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
-            <Setter Property="Padding" Value="16,14" />
-            <Setter Property="Background" Value="#0F172A" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Root"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="18"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#1E293B" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Root" Property="Opacity" Value="0.55" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -101,111 +16,147 @@
             </Grid.RowDefinitions>
 
             <StackPanel>
-                <TextBlock FontSize="30"
-                           FontWeight="Bold"
-                           Foreground="#0F172A"
-                           Text="Set up ServeX" />
-                <TextBlock Margin="0,10,0,0"
-                           Foreground="#64748B"
-                           Text="Enter the essential restaurant and admin details once, then continue to sign in." />
+                <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                           Text="Set up your restaurant" />
+                <TextBlock Margin="0,8,0,0"
+                           Style="{StaticResource SectionSubtitleTextStyle}"
+                           Text="Capture the essential business profile, tax rate, and admin access once so the team can move directly into service." />
             </StackPanel>
 
             <Border Grid.Row="1"
-                    Margin="0,20,0,0"
-                    Padding="14"
-                    CornerRadius="16"
+                    Margin="0,22,0,0"
                     Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background" Value="#DCFCE7" />
+                    <Style TargetType="Border" BasedOn="{StaticResource StatusBannerBorderStyle}">
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsStatusError}" Value="True">
-                                <Setter Property="Background" Value="#FEE2E2" />
+                                <Setter Property="Background" Value="{StaticResource DangerSoftBrush}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
                 <TextBlock Text="{Binding StatusMessage}"
                            FontWeight="SemiBold"
-                           Foreground="#0F172A"
+                           Foreground="{StaticResource TextBrush}"
                            TextWrapping="Wrap" />
             </Border>
 
             <Grid Grid.Row="2"
-                  Margin="0,22,0,0">
+                  Margin="0,26,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Margin="0,0,12,0">
-                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Restaurant Name" />
-                    <TextBox Style="{StaticResource TextInputStyle}"
-                             Text="{Binding RestaurantName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+                <Border Margin="0,0,12,0"
+                        Padding="22"
+                        Style="{StaticResource SoftPanelStyle}">
+                    <StackPanel>
+                        <TextBlock FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextBrush}"
+                                   Text="Restaurant Profile" />
+                        <TextBlock Margin="0,6,0,0"
+                                   Style="{StaticResource SectionSubtitleTextStyle}"
+                                   Text="These details appear across bills, tax calculations, and the shell header." />
 
-                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Address" />
-                    <TextBox Style="{StaticResource TextInputStyle}"
-                             Height="92"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             VerticalContentAlignment="Top"
-                             Text="{Binding Address, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+                        <TextBlock Style="{StaticResource FieldLabelStyle}"
+                                   Text="Restaurant Name" />
+                        <TextBox Style="{StaticResource FormTextBoxStyle}"
+                                 Text="{Binding RestaurantName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
 
-                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Phone" />
-                    <TextBox Style="{StaticResource TextInputStyle}"
-                             Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+                        <TextBlock Style="{StaticResource FieldLabelStyle}"
+                                   Text="Address" />
+                        <TextBox Style="{StaticResource FormTextBoxStyle}"
+                                 MinHeight="96"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalContentAlignment="Top"
+                                 Text="{Binding Address, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
 
-                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Tax %" />
-                    <TextBox Style="{StaticResource TextInputStyle}"
-                             Text="{Binding TaxPercentageInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
-                </StackPanel>
+                        <TextBlock Style="{StaticResource FieldLabelStyle}"
+                                   Text="Phone" />
+                        <TextBox Style="{StaticResource FormTextBoxStyle}"
+                                 Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
 
-                <StackPanel Grid.Column="1"
-                            Margin="12,0,0,0">
-                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Admin Username" />
-                    <TextBox Style="{StaticResource TextInputStyle}"
-                             Text="{Binding AdminUsername, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+                        <TextBlock Style="{StaticResource FieldLabelStyle}"
+                                   Text="Tax Percentage" />
+                        <TextBox Style="{StaticResource FormTextBoxStyle}"
+                                 Text="{Binding TaxPercentageInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+                    </StackPanel>
+                </Border>
 
-                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Admin Password" />
-                    <PasswordBox Style="{StaticResource PasswordInputStyle}"
-                                 helpers:PasswordBoxAssistant.BindPassword="True"
-                                 helpers:PasswordBoxAssistant.BoundPassword="{Binding AdminPassword, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+                <Border Grid.Column="1"
+                        Margin="12,0,0,0"
+                        Padding="22"
+                        Style="{StaticResource SoftPanelStyle}">
+                    <StackPanel>
+                        <TextBlock FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextBrush}"
+                                   Text="Admin Access" />
+                        <TextBlock Margin="0,6,0,0"
+                                   Style="{StaticResource SectionSubtitleTextStyle}"
+                                   Text="Create the first admin sign-in that will take ownership of this installation." />
 
-                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="License Key (Optional)" />
-                    <TextBox Style="{StaticResource TextInputStyle}"
-                             Text="{Binding LicenseKey, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+                        <TextBlock Style="{StaticResource FieldLabelStyle}"
+                                   Text="Admin Username" />
+                        <TextBox Style="{StaticResource FormTextBoxStyle}"
+                                 Text="{Binding AdminUsername, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
 
-                    <Border Margin="0,18,0,0"
-                            Padding="18"
-                            Background="#FFF7ED"
-                            CornerRadius="18">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="Segoe MDL2 Assets"
-                                       FontSize="16"
-                                       Foreground="#C2410C"
-                                       Text="&#xE946;" />
-                            <TextBlock Margin="10,0,0,0"
-                                       Foreground="#9A3412"
-                                       Text="Local development mode: you can leave this blank." />
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+                        <TextBlock Style="{StaticResource FieldLabelStyle}"
+                                   Text="Admin Password" />
+                        <PasswordBox Style="{StaticResource FormPasswordBoxStyle}"
+                                     helpers:PasswordBoxAssistant.BindPassword="True"
+                                     helpers:PasswordBoxAssistant.BoundPassword="{Binding AdminPassword, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+
+                        <TextBlock Style="{StaticResource FieldLabelStyle}"
+                                   Text="License Key" />
+                        <TextBox Style="{StaticResource FormTextBoxStyle}"
+                                 Text="{Binding LicenseKey, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+
+                        <Border Margin="0,18,0,0"
+                                Padding="16"
+                                Background="{StaticResource AccentSoftBrush}"
+                                CornerRadius="{StaticResource RadiusMedium}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe MDL2 Assets"
+                                           FontSize="16"
+                                           Foreground="{StaticResource WarningBrush}"
+                                           Text="&#xE946;" />
+                                <TextBlock Margin="10,0,0,0"
+                                           Foreground="{StaticResource TextBrush}"
+                                           Text="For local development, the license field can stay blank." />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
             </Grid>
 
-            <Button Grid.Row="3"
-                    Margin="0,28,0,0"
-                    HorizontalAlignment="Left"
-                    Command="{Binding SaveSetupCommand}"
-                    Style="{StaticResource PrimaryButtonStyle}">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock FontFamily="Segoe MDL2 Assets"
-                               FontSize="16"
-                               Text="&#xE8FB;" />
-                    <TextBlock Margin="10,0,0,0"
-                               FontWeight="SemiBold"
-                               Text="Save Setup" />
-                </StackPanel>
-            </Button>
+            <Grid Grid.Row="3"
+                  Margin="0,28,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock VerticalAlignment="Center"
+                           Foreground="{StaticResource MutedTextBrush}"
+                           Text="You will be taken to login as soon as setup is saved." />
+
+                <Button Grid.Column="1"
+                        IsDefault="True"
+                        Command="{Binding SaveSetupCommand}"
+                        Style="{StaticResource PrimaryActionButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock FontFamily="Segoe MDL2 Assets"
+                                   FontSize="16"
+                                   Text="&#xE8FB;" />
+                        <TextBlock Margin="10,0,0,0"
+                                   Text="Save Setup" />
+                    </StackPanel>
+                </Button>
+            </Grid>
         </Grid>
     </ScrollViewer>
 </UserControl>

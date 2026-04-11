@@ -18,13 +18,15 @@ namespace ServeX.Services
 
             using (var context = new ServeXDbContext())
             {
+                var todayBillTotals = await context.Bills
+                    .AsNoTracking()
+                    .Where(bill => bill.PaidAt.HasValue && bill.PaidAt.Value >= startUtc && bill.PaidAt.Value < endUtc)
+                    .Select(bill => bill.Total)
+                    .ToListAsync();
+
                 var snapshot = new DashboardSnapshot
                 {
-                    TodayRevenue = await context.Bills
-                        .AsNoTracking()
-                        .Where(bill => bill.PaidAt.HasValue && bill.PaidAt.Value >= startUtc && bill.PaidAt.Value < endUtc)
-                        .Select(bill => (decimal?)bill.Total)
-                        .SumAsync() ?? 0m,
+                    TodayRevenue = todayBillTotals.DefaultIfEmpty(0m).Sum(),
 
                     ActiveTables = await context.Tables
                         .AsNoTracking()
@@ -67,7 +69,7 @@ namespace ServeX.Services
                     Type = order.Type,
                     Status = order.Status,
                     CreatedAt = order.CreatedAt,
-                    Total = order.Bill?.Total ?? order.Items.Sum(item => item.Price * item.Quantity),
+                    Total = order.Bill?.Total ?? (order.Items ?? Array.Empty<OrderItem>()).Select(item => item.Price * item.Quantity).DefaultIfEmpty(0m).Sum(),
                     ReferenceLabel = GetReferenceLabel(order, tableMap)
                 }).ToList();
 

@@ -13,12 +13,25 @@ namespace ServeX.Services
 
         public async Task<List<Table>> GetTablesAsync()
         {
-            using (var context = new ServeXDbContext())
+            try
             {
-                return await context.Tables
-                    .AsNoTracking()
-                    .OrderBy(table => table.TableNumber)
-                    .ToListAsync();
+                using (var context = new ServeXDbContext())
+                {
+                    var items = await context.Tables
+                        .AsNoTracking()
+                        .OrderBy(table => table.TableNumber)
+                        .ToListAsync();
+
+                    return items
+                        .Where(table => table != null)
+                        .Select(NormalizeTable)
+                        .ToList();
+                }
+            }
+            catch (System.Exception exception)
+            {
+                _logService.LogError("Table load failed", exception);
+                throw;
             }
         }
 
@@ -31,8 +44,8 @@ namespace ServeX.Services
                     var entity = new Table
                     {
                         TableNumber = table.TableNumber,
-                        Area = table.Area,
-                        Status = table.Status
+                        Area = NormalizeArea(table.Area),
+                        Status = NormalizeStatus(table.Status)
                     };
 
                     context.Tables.Add(entity);
@@ -61,8 +74,8 @@ namespace ServeX.Services
                     }
 
                     entity.TableNumber = table.TableNumber;
-                    entity.Area = table.Area;
-                    entity.Status = table.Status;
+                    entity.Area = NormalizeArea(table.Area);
+                    entity.Status = NormalizeStatus(table.Status);
 
                     await context.SaveChangesAsync();
                     _logService.LogInfo(string.Format("Table updated: {0}", entity.TableNumber));
@@ -97,6 +110,27 @@ namespace ServeX.Services
                 _logService.LogError(string.Format("Table delete failed for id {0}", id), exception);
                 throw;
             }
+        }
+
+        private static Table NormalizeTable(Table table)
+        {
+            table.Area = NormalizeArea(table.Area);
+            table.Status = NormalizeStatus(table.Status);
+            return table;
+        }
+
+        private static TableArea NormalizeArea(TableArea area)
+        {
+            return System.Enum.IsDefined(typeof(TableArea), area)
+                ? area
+                : TableArea.Indoor;
+        }
+
+        private static TableStatus NormalizeStatus(TableStatus status)
+        {
+            return System.Enum.IsDefined(typeof(TableStatus), status)
+                ? status
+                : TableStatus.Available;
         }
     }
 }

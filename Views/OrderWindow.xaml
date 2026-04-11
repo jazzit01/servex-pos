@@ -8,6 +8,7 @@
         MinWidth="1100"
         MinHeight="700"
         WindowStartupLocation="CenterOwner"
-        Background="#EEF4F8">
+        ResizeMode="CanResize"
+        Style="{StaticResource ShellWindowStyle}">
     <views:OrderView />
 </Window>
