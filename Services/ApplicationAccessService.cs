@@ -34,12 +34,8 @@ namespace ServeX.Services
                         return StartupFlow.Setup;
                     }
 
-                    var flow = _licenseService.IsValid(settings.LicenseKey)
-                        ? StartupFlow.Login
-                        : StartupFlow.Blocked;
-
-                    _logService.LogInfo(string.Format("Startup flow resolved to {0}", flow));
-                    return flow;
+                    _logService.LogInfo("Startup flow resolved to login");
+                    return StartupFlow.Login;
                 }
             }
             catch (Exception exception)
@@ -57,11 +53,6 @@ namespace ServeX.Services
             }
 
             var normalizedLicenseKey = _licenseService.Normalize(request.LicenseKey);
-            if (!_licenseService.IsValid(normalizedLicenseKey))
-            {
-                throw new InvalidOperationException(_licenseService.GetValidationMessage());
-            }
-
             var normalizedUsername = request.AdminUsername.Trim();
 
             try
@@ -131,11 +122,6 @@ namespace ServeX.Services
                     if (settings == null)
                     {
                         throw new InvalidOperationException("ServeX setup is incomplete.");
-                    }
-
-                    if (!_licenseService.IsValid(settings.LicenseKey))
-                    {
-                        throw new InvalidOperationException("The stored license key is invalid. Setup must be corrected before signing in.");
                     }
 
                     var user = await context.Users

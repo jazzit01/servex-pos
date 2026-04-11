@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Globalization;
-using System.Text.RegularExpressions;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ServeX.Services;
@@ -33,7 +33,7 @@ namespace ServeX.ViewModels
             _licenseService = licenseService ?? throw new ArgumentNullException(nameof(licenseService));
             _onSetupCompletedAsync = onSetupCompletedAsync ?? throw new ArgumentNullException(nameof(onSetupCompletedAsync));
 
-            SaveSetupCommand = new RelayCommand(async _ => await SaveSetupAsync(), _ => CanSaveSetup);
+            SaveSetupCommand = new RelayCommand(async _ => await SaveSetupAsync(), _ => !IsBusy);
         }
 
         public RelayCommand SaveSetupCommand { get; }
@@ -155,7 +155,7 @@ namespace ServeX.ViewModels
             }
         }
 
-        public bool CanSaveSetup => !IsBusy && IsFormValid();
+        public bool CanSaveSetup => !IsBusy;
 
         public string Error => string.Empty;
 
@@ -200,11 +200,6 @@ namespace ServeX.ViewModels
                         if (Phone.Trim().Length > 30)
                         {
                             return "Phone number must be 30 characters or fewer.";
-                        }
-
-                        if (!Regex.IsMatch(Phone.Trim(), @"^[0-9+\-\s()]{7,30}$"))
-                        {
-                            return "Enter a valid phone number.";
                         }
 
                         return string.Empty;
@@ -259,16 +254,6 @@ namespace ServeX.ViewModels
                         return string.Empty;
 
                     case nameof(LicenseKey):
-                        if (string.IsNullOrWhiteSpace(LicenseKey))
-                        {
-                            return "License key is required.";
-                        }
-
-                        if (!_licenseService.IsValid(LicenseKey))
-                        {
-                            return _licenseService.GetValidationMessage();
-                        }
-
                         return string.Empty;
 
                     default:
@@ -282,7 +267,7 @@ namespace ServeX.ViewModels
             TouchValidation();
             if (!IsFormValid())
             {
-                SetStatus("Please fix the highlighted setup details before continuing.", true);
+                SetStatus(GetValidationSummary(), true);
                 return;
             }
 
@@ -343,8 +328,27 @@ namespace ServeX.ViewModels
                    string.IsNullOrEmpty(this[nameof(Phone)]) &&
                    string.IsNullOrEmpty(this[nameof(TaxPercentageInput)]) &&
                    string.IsNullOrEmpty(this[nameof(AdminUsername)]) &&
-                   string.IsNullOrEmpty(this[nameof(AdminPassword)]) &&
-                   string.IsNullOrEmpty(this[nameof(LicenseKey)]);
+                   string.IsNullOrEmpty(this[nameof(AdminPassword)]);
+        }
+
+        private string GetValidationSummary()
+        {
+            var errors = new[]
+            {
+                this[nameof(RestaurantName)],
+                this[nameof(Address)],
+                this[nameof(Phone)],
+                this[nameof(TaxPercentageInput)],
+                this[nameof(AdminUsername)],
+                this[nameof(AdminPassword)]
+            }
+            .Where(message => !string.IsNullOrWhiteSpace(message))
+            .Distinct()
+            .ToList();
+
+            return errors.Any()
+                ? string.Join(" ", errors)
+                : "Please complete the setup details before continuing.";
         }
 
         private void NotifyValidationState()

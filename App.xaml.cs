@@ -25,22 +25,6 @@ namespace ServeX
                 var applicationAccessService = new ApplicationAccessService(_licenseService);
                 var startupFlow = await applicationAccessService.GetStartupFlowAsync();
 
-                if (startupFlow == StartupFlow.Blocked)
-                {
-                    _logService.LogError(
-                        "Startup blocked because the stored license key is missing or invalid",
-                        new InvalidOperationException("Invalid license"));
-
-                    MessageBox.Show(
-                        "The stored ServeX license key is missing or invalid. Update the license key before starting the app.",
-                        "License Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-
-                    Shutdown(-1);
-                    return;
-                }
-
                 AuthWindow authWindow = null;
                 var authViewModel = new AuthWindowViewModel(
                     applicationAccessService,
