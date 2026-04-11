@@ -11,6 +11,8 @@ namespace ServeX.Models
 
         public int ReferenceId { get; set; }
 
+        public string CustomerName { get; set; }
+
         public OrderStatus Status { get; set; } = OrderStatus.Open;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

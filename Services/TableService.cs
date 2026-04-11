@@ -31,6 +31,7 @@ namespace ServeX.Services
                     var entity = new Table
                     {
                         TableNumber = table.TableNumber,
+                        Area = table.Area,
                         Status = table.Status
                     };
 
@@ -60,6 +61,7 @@ namespace ServeX.Services
                     }
 
                     entity.TableNumber = table.TableNumber;
+                    entity.Area = table.Area;
                     entity.Status = table.Status;
 
                     await context.SaveChangesAsync();

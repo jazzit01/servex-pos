@@ -69,6 +69,7 @@ namespace ServeX.Data
             modelBuilder.Entity<Table>(entity =>
             {
                 entity.Property(table => table.TableNumber).IsRequired().HasMaxLength(20);
+                entity.Property(table => table.Area).HasConversion<string>().HasMaxLength(20);
                 entity.Property(table => table.Status).HasConversion<string>().HasMaxLength(30);
                 entity.HasIndex(table => table.TableNumber).IsUnique();
             });
@@ -83,6 +84,7 @@ namespace ServeX.Data
             modelBuilder.Entity<Order>(entity =>
             {
                 entity.Property(order => order.Type).HasConversion<string>().HasMaxLength(20);
+                entity.Property(order => order.CustomerName).HasMaxLength(80);
                 entity.Property(order => order.Status).HasConversion<string>().HasMaxLength(30);
                 entity.Property(order => order.CreatedAt).IsRequired();
             });

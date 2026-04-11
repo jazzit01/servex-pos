@@ -129,6 +129,10 @@ namespace ServeX.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CustomerName")
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("ReferenceId")
                         .HasColumnType("INTEGER");
 
@@ -204,6 +208,11 @@ namespace ServeX.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
                         .IsRequired()

@@ -40,11 +40,13 @@ namespace ServeX.Services
                         new Table
                         {
                             TableNumber = "T1",
+                            Area = TableArea.Indoor,
                             Status = TableStatus.Available
                         },
                         new Table
                         {
                             TableNumber = "T2",
+                            Area = TableArea.Indoor,
                             Status = TableStatus.Available
                         });
                 }

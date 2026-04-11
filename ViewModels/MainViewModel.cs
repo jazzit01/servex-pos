@@ -41,6 +41,7 @@ namespace ServeX.ViewModels
                 RefreshFromDashboardActionAsync);
             Menu = new MenuViewModel(menuService);
             Tables = new TablesViewModel(new TableService(), orderWindowService);
+            Parcel = new ParcelViewModel(orderService, billingWindowService);
             Settings = new SettingsViewModel(databaseBackupService, saveFileDialogService);
             Menu.MenuItemsChanged += async (sender, args) => await RefreshWorkspaceAsync();
             Tables.TablesChanged += async (sender, args) => await RefreshWorkspaceAsync();
@@ -57,6 +58,8 @@ namespace ServeX.ViewModels
         public MenuViewModel Menu { get; }
 
         public TablesViewModel Tables { get; }
+
+        public ParcelViewModel Parcel { get; }
 
         public SettingsViewModel Settings { get; }
 
@@ -142,6 +145,7 @@ namespace ServeX.ViewModels
             await Dashboard.LoadAsync();
             await Menu.LoadAsync();
             await Tables.LoadAsync();
+            await Parcel.LoadAsync();
             await LoadSummaryAsync();
         }
 
@@ -149,6 +153,7 @@ namespace ServeX.ViewModels
         {
             await Menu.LoadAsync();
             await Tables.LoadAsync();
+            await Parcel.LoadAsync();
             await LoadSummaryAsync();
         }
 

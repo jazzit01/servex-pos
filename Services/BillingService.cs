@@ -131,7 +131,9 @@ namespace ServeX.Services
             return new ReceiptData
             {
                 OrderId = orderData.Order.Id,
-                TableNumber = orderData.Table?.TableNumber ?? "Parcel",
+                TableNumber = orderData.Order.Type == OrderType.Parcel
+                    ? GetParcelLabel(orderData.Order.CustomerName)
+                    : orderData.Table?.TableNumber ?? "Parcel",
                 PaymentMethod = orderData.Order.Bill.PaymentMethod ?? PaymentMethod.Cash,
                 PaidAt = orderData.Order.Bill.PaidAt ?? DateTime.UtcNow,
                 Subtotal = orderData.Order.Bill.Subtotal,
@@ -146,6 +148,13 @@ namespace ServeX.Services
                     LineTotal = item.Price * item.Quantity
                 }).ToList()
             };
+        }
+
+        public static string GetParcelLabel(string customerName)
+        {
+            return string.IsNullOrWhiteSpace(customerName)
+                ? "Parcel - Atithi"
+                : "Parcel - " + customerName.Trim();
         }
 
         public async Task<decimal> GetTaxPercentageAsync()
