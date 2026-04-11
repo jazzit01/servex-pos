@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 C:\Users\Ejaz\Documents\ServeX\App.xaml
-121335881429
+13-2049090899
 
-75611425841
+82-220092917
 217-522707383
-Views\AuthWindow.xaml;Views\BillingView.xaml;Views\BillingWindow.xaml;Views\DashboardView.xaml;Views\LoginView.xaml;Views\MainWindow.xaml;Views\MenuView.xaml;Views\OrderView.xaml;Views\OrderWindow.xaml;Views\SettingsView.xaml;Views\SetupView.xaml;Views\TablesView.xaml;
+Views\AuthWindow.xaml;Views\BillingView.xaml;Views\BillingWindow.xaml;Views\DashboardView.xaml;Views\LoginView.xaml;Views\MainWindow.xaml;Views\MenuView.xaml;Views\OrderView.xaml;Views\OrderWindow.xaml;Views\ParcelView.xaml;Views\SettingsView.xaml;Views\SetupView.xaml;Views\TablesView.xaml;
 
 False
 

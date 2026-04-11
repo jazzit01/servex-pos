@@ -6,6 +6,8 @@ namespace ServeX.Models
 
         public string TableNumber { get; set; }
 
+        public TableArea Area { get; set; } = TableArea.Indoor;
+
         public TableStatus Status { get; set; } = TableStatus.Available;
     }
 }

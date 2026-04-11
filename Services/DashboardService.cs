@@ -103,7 +103,9 @@ namespace ServeX.Services
                     return string.Format("Room #{0}", order.ReferenceId);
 
                 case OrderType.Parcel:
-                    return "Parcel";
+                    return string.IsNullOrWhiteSpace(order.CustomerName)
+                        ? "Parcel - Atithi"
+                        : "Parcel - " + order.CustomerName;
 
                 default:
                     return string.Format("#{0}", order.ReferenceId);

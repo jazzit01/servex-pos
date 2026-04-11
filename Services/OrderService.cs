@@ -54,6 +54,19 @@ namespace ServeX.Services
             }
         }
 
+        public async Task<Order> GetOrderAsync(int orderId)
+        {
+            using (var context = new ServeXDbContext())
+            {
+                return await context.Orders
+                    .AsNoTracking()
+                    .Include(order => order.Items)
+                    .ThenInclude(orderItem => orderItem.MenuItem)
+                    .Include(order => order.Bill)
+                    .FirstOrDefaultAsync(order => order.Id == orderId);
+            }
+        }
+
         public async Task<decimal> GetTaxPercentageAsync()
         {
             using (var context = new ServeXDbContext())
@@ -149,6 +162,100 @@ namespace ServeX.Services
             catch (Exception exception)
             {
                 _logService.LogError(string.Format("Order save failed for table id {0}", tableId), exception);
+                throw;
+            }
+        }
+
+        public async Task<Order> SaveParcelOrderAsync(int? orderId, string customerName, IEnumerable<OrderSaveItem> items)
+        {
+            var orderItems = items?
+                .Where(item => item.Quantity > 0)
+                .ToList() ?? new List<OrderSaveItem>();
+
+            if (!orderItems.Any())
+            {
+                throw new InvalidOperationException("Add at least one item before saving the parcel order.");
+            }
+
+            var normalizedCustomerName = string.IsNullOrWhiteSpace(customerName)
+                ? "Atithi"
+                : customerName.Trim();
+
+            try
+            {
+                using (var context = new ServeXDbContext())
+                {
+                    Order order = null;
+                    if (orderId.HasValue)
+                    {
+                        order = await context.Orders
+                            .Include(item => item.Items)
+                            .Include(item => item.Bill)
+                            .FirstOrDefaultAsync(item =>
+                                item.Id == orderId.Value &&
+                                item.Type == OrderType.Parcel &&
+                                item.Status != OrderStatus.Billed &&
+                                item.Status != OrderStatus.Paid &&
+                                item.Status != OrderStatus.Cancelled);
+                    }
+
+                    if (order == null)
+                    {
+                        order = new Order
+                        {
+                            Type = OrderType.Parcel,
+                            ReferenceId = 0,
+                            CustomerName = normalizedCustomerName,
+                            Status = OrderStatus.Open,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        context.Orders.Add(order);
+                    }
+                    else
+                    {
+                        order.CustomerName = normalizedCustomerName;
+                    }
+
+                    if (order.Items.Any())
+                    {
+                        context.OrderItems.RemoveRange(order.Items);
+                    }
+
+                    order.Items = new List<OrderItem>();
+                    foreach (var item in orderItems)
+                    {
+                        order.Items.Add(new OrderItem
+                        {
+                            MenuItemId = item.MenuItemId,
+                            Quantity = item.Quantity,
+                            Price = decimal.Round(item.Price, 2)
+                        });
+                    }
+
+                    var taxRate = await GetTaxRateAsync(context);
+                    var subtotal = decimal.Round(orderItems.Sum(item => item.Price * item.Quantity), 2);
+                    var tax = decimal.Round(subtotal * taxRate, 2);
+                    var total = subtotal + tax;
+
+                    if (order.Bill == null)
+                    {
+                        order.Bill = new Bill();
+                    }
+
+                    order.Bill.Subtotal = subtotal;
+                    order.Bill.Tax = tax;
+                    order.Bill.Discount = 0m;
+                    order.Bill.Total = total;
+
+                    await context.SaveChangesAsync();
+                    _logService.LogInfo(string.Format("Parcel order saved for customer {0} with {1} items", normalizedCustomerName, orderItems.Count));
+                    return order;
+                }
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError("Parcel order save failed", exception);
                 throw;
             }
         }

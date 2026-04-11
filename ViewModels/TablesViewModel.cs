@@ -22,11 +22,15 @@ namespace ServeX.ViewModels
         private readonly RelayCommand _saveCommand;
         private readonly RelayCommand _cancelCommand;
         private readonly RelayCommand _selectTableCommand;
+        private readonly RelayCommand _showIndoorTablesCommand;
+        private readonly RelayCommand _showOutdoorTablesCommand;
         private bool _isBusy;
         private bool _isEditorOpen;
         private int? _editingTableId;
         private string _editorTableNumber = string.Empty;
+        private TableArea _editorArea = TableArea.Indoor;
         private TableStatus _editorStatus = TableStatus.Available;
+        private TableArea _selectedAreaFilter = TableArea.Indoor;
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
@@ -37,6 +41,13 @@ namespace ServeX.ViewModels
 
             Tables = new ObservableCollection<Table>();
             Tables.CollectionChanged += OnTablesCollectionChanged;
+            FilteredTables = new ObservableCollection<Table>();
+
+            AvailableAreas = new ObservableCollection<TableArea>
+            {
+                TableArea.Indoor,
+                TableArea.Outdoor
+            };
 
             AvailableStatuses = new ObservableCollection<TableStatus>
             {
@@ -51,11 +62,17 @@ namespace ServeX.ViewModels
             _saveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave);
             _cancelCommand = new RelayCommand(_ => CloseEditor(), _ => !IsBusy);
             _selectTableCommand = new RelayCommand(async table => await OpenOrderScreenAsync(table as Table), table => !IsBusy && table is Table);
+            _showIndoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Indoor, _ => !IsBusy);
+            _showOutdoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Outdoor, _ => !IsBusy);
         }
 
         public event EventHandler TablesChanged;
 
         public ObservableCollection<Table> Tables { get; }
+
+        public ObservableCollection<Table> FilteredTables { get; }
+
+        public ObservableCollection<TableArea> AvailableAreas { get; }
 
         public ObservableCollection<TableStatus> AvailableStatuses { get; }
 
@@ -71,6 +88,10 @@ namespace ServeX.ViewModels
 
         public RelayCommand SelectTableCommand => _selectTableCommand;
 
+        public RelayCommand ShowIndoorTablesCommand => _showIndoorTablesCommand;
+
+        public RelayCommand ShowOutdoorTablesCommand => _showOutdoorTablesCommand;
+
         public bool IsBusy
         {
             get => _isBusy;
@@ -83,6 +104,25 @@ namespace ServeX.ViewModels
                 }
             }
         }
+
+        public TableArea SelectedAreaFilter
+        {
+            get => _selectedAreaFilter;
+            set
+            {
+                if (SetProperty(ref _selectedAreaFilter, value))
+                {
+                    ApplyAreaFilter();
+                    OnPropertyChanged(nameof(IsIndoorFilterSelected));
+                    OnPropertyChanged(nameof(IsOutdoorFilterSelected));
+                    OnPropertyChanged(nameof(FloorLayoutTitle));
+                }
+            }
+        }
+
+        public bool IsIndoorFilterSelected => SelectedAreaFilter == TableArea.Indoor;
+
+        public bool IsOutdoorFilterSelected => SelectedAreaFilter == TableArea.Outdoor;
 
         public bool IsEditorOpen
         {
@@ -100,6 +140,8 @@ namespace ServeX.ViewModels
 
         public string EditorTitle => IsEditMode ? "Edit table" : "Add a table";
 
+        public string FloorLayoutTitle => string.Format("{0} Floor Layout", SelectedAreaFilter);
+
         public string EditorTableNumber
         {
             get => _editorTableNumber;
@@ -109,6 +151,19 @@ namespace ServeX.ViewModels
                 {
                     OnPropertyChanged(nameof(CanSave));
                     NotifyValidationStates();
+                }
+            }
+        }
+
+        public TableArea EditorArea
+        {
+            get => _editorArea;
+            set
+            {
+                if (SetProperty(ref _editorArea, value))
+                {
+                    OnPropertyChanged(nameof(CanSave));
+                    NotifyCommandStates();
                 }
             }
         }
@@ -146,7 +201,7 @@ namespace ServeX.ViewModels
 
         public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
 
-        public bool IsEmpty => Tables.Count == 0;
+        public bool IsEmpty => FilteredTables.Count == 0;
 
         public bool CanSave => !IsBusy && IsFormValid();
 
@@ -205,6 +260,7 @@ namespace ServeX.ViewModels
             {
                 Id = _editingTableId.GetValueOrDefault(),
                 TableNumber = EditorTableNumber.Trim(),
+                Area = EditorArea,
                 Status = EditorStatus
             };
 
@@ -270,6 +326,7 @@ namespace ServeX.ViewModels
         {
             ResetEditor();
             _editingTableId = null;
+            EditorArea = SelectedAreaFilter;
             EditorStatus = TableStatus.Available;
             IsEditorOpen = true;
             OnPropertyChanged(nameof(IsEditMode));
@@ -287,6 +344,7 @@ namespace ServeX.ViewModels
 
             _editingTableId = table.Id;
             EditorTableNumber = table.TableNumber;
+            EditorArea = table.Area;
             EditorStatus = table.Status;
             IsEditorOpen = true;
             OnPropertyChanged(nameof(IsEditMode));
@@ -315,6 +373,8 @@ namespace ServeX.ViewModels
             {
                 Tables.Add(item);
             }
+
+            ApplyAreaFilter();
         }
 
         private async Task ExecuteBusyActionAsync(Func<Task> action, string fallbackMessage)
@@ -348,10 +408,23 @@ namespace ServeX.ViewModels
         {
             _editingTableId = null;
             EditorTableNumber = string.Empty;
+            EditorArea = SelectedAreaFilter;
             EditorStatus = TableStatus.Available;
             TouchValidation();
             OnPropertyChanged(nameof(IsEditMode));
             OnPropertyChanged(nameof(EditorTitle));
+        }
+
+        private void ApplyAreaFilter()
+        {
+            FilteredTables.Clear();
+
+            foreach (var table in Tables.Where(item => item.Area == SelectedAreaFilter).OrderBy(item => item.TableNumber))
+            {
+                FilteredTables.Add(table);
+            }
+
+            OnPropertyChanged(nameof(IsEmpty));
         }
 
         private bool IsFormValid()
@@ -379,6 +452,8 @@ namespace ServeX.ViewModels
             _saveCommand.RaiseCanExecuteChanged();
             _cancelCommand.RaiseCanExecuteChanged();
             _selectTableCommand.RaiseCanExecuteChanged();
+            _showIndoorTablesCommand.RaiseCanExecuteChanged();
+            _showOutdoorTablesCommand.RaiseCanExecuteChanged();
         }
 
         private void SetStatus(string message, bool isError)
@@ -400,6 +475,7 @@ namespace ServeX.ViewModels
 
         private void OnTablesCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
+            ApplyAreaFilter();
             OnPropertyChanged(nameof(IsEmpty));
             OnPropertyChanged(nameof(EditorTableNumber));
         }
