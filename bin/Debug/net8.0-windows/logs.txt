@@ -1,3 +1,23 @@
 ﻿[2026-04-10 18.50] INFO: Startup flow resolved to setup
 [2026-04-11 11.41] INFO: Startup flow resolved to setup
 [2026-04-11 11.55] INFO: Startup flow resolved to setup
+[2026-04-11 12.06] INFO: Startup flow resolved to setup
+[2026-04-11 13.36] INFO: Startup flow resolved to setup
+[2026-04-11 13:41] INFO: Startup flow resolved to setup
+[2026-04-11 13.52] INFO: Startup flow resolved to setup
+[2026-04-11 13.53] INFO: Startup flow resolved to setup
+[2026-04-11 13.55] INFO: Startup flow resolved to setup
+[2026-04-11 13.57] INFO: Startup flow resolved to setup
+[2026-04-11 14.03] INFO: Startup flow resolved to setup
+[2026-04-11 14.09] INFO: Startup flow resolved to setup
+[2026-04-11 14.11] INFO: Startup flow resolved to setup
+[2026-04-11 14.12] INFO: Startup flow resolved to setup
+[2026-04-11 14.13] INFO: Initial setup saved for restaurant Test cafe
+[2026-04-11 14.13] INFO: Login succeeded for user admin
+[2026-04-11 14.14] INFO: Table added: 1
+[2026-04-11 18.35] INFO: Startup flow resolved to login
+[2026-04-11 18.36] INFO: Login succeeded for user admin
+[2026-04-11 18.37] INFO: Order saved for table 1 with 2 items
+[2026-04-11 18.38] INFO: Payment confirmed for order #2 via Cash
+[2026-04-11 18.38] INFO: Receipt printed for order #2
+[2026-04-11 18.40] INFO: Table added: G1

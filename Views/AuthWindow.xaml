@@ -92,7 +92,7 @@
                                        Text="&#xE930;" />
                             <TextBlock Margin="12,0,0,0"
                                        Foreground="#E2E8F0"
-                                       Text="License-aware startup so invalid installs stay blocked." />
+                                       Text="Local development mode keeps setup and login simple." />
                         </StackPanel>
                     </Border>
                     <Border Padding="18"
@@ -112,7 +112,7 @@
 
                 <TextBlock Grid.Row="2"
                            Foreground="#94A3B8"
-                           Text="Use a license like SERVEX-DEMO-2026 during setup." />
+                           Text="License is optional in local development." />
             </Grid>
         </Border>
 

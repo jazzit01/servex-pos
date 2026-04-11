@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ServeX.Models;
@@ -30,7 +31,7 @@ namespace ServeX.ViewModels
             RestaurantName = restaurantName ?? "ServeX";
             _username = preferredUsername ?? string.Empty;
             _statusMessage = initialStatusMessage ?? string.Empty;
-            LoginCommand = new RelayCommand(async _ => await LoginAsync(), _ => CanLogin);
+            LoginCommand = new RelayCommand(async _ => await LoginAsync(), _ => !IsBusy);
         }
 
         public RelayCommand LoginCommand { get; }
@@ -94,7 +95,7 @@ namespace ServeX.ViewModels
             }
         }
 
-        public bool CanLogin => !IsBusy && IsFormValid();
+        public bool CanLogin => !IsBusy;
 
         public string Error => string.Empty;
 
@@ -131,7 +132,7 @@ namespace ServeX.ViewModels
             TouchValidation();
             if (!IsFormValid())
             {
-                SetStatus("Enter your username and password to continue.", true);
+                SetStatus(GetValidationSummary(), true);
                 return;
             }
 
@@ -179,6 +180,22 @@ namespace ServeX.ViewModels
         {
             return string.IsNullOrEmpty(this[nameof(Username)]) &&
                    string.IsNullOrEmpty(this[nameof(Password)]);
+        }
+
+        private string GetValidationSummary()
+        {
+            var errors = new[]
+            {
+                this[nameof(Username)],
+                this[nameof(Password)]
+            }
+            .Where(message => !string.IsNullOrWhiteSpace(message))
+            .Distinct()
+            .ToList();
+
+            return errors.Any()
+                ? string.Join(" ", errors)
+                : "Enter your username and password to continue.";
         }
 
         private void NotifyValidationState()

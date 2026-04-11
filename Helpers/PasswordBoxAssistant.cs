@@ -10,7 +10,10 @@ namespace ServeX.Helpers
                 "BoundPassword",
                 typeof(string),
                 typeof(PasswordBoxAssistant),
-                new PropertyMetadata(string.Empty, OnBoundPasswordChanged));
+                new FrameworkPropertyMetadata(
+                    string.Empty,
+                    FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                    OnBoundPasswordChanged));
 
         public static readonly DependencyProperty BindPasswordProperty =
             DependencyProperty.RegisterAttached(
