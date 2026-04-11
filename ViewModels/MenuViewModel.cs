@@ -361,9 +361,9 @@ namespace ServeX.ViewModels
             {
                 SetStatus(fallbackMessage, true);
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                SetStatus(fallbackMessage + " " + exception.Message, true);
+                SetStatus(fallbackMessage, true);
             }
             finally
             {

@@ -1,0 +1,365 @@
+<UserControl x:Class="ServeX.Views.BillingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="#0F766E" />
+            <Setter Property="BorderBrush" Value="#0F766E" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="14">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#0F5E57" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SoftButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Foreground" Value="#0F172A" />
+            <Setter Property="Background" Value="#E2E8F0" />
+            <Setter Property="BorderBrush" Value="#E2E8F0" />
+        </Style>
+
+        <Style x:Key="PaymentListBoxStyle" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBox">
+                        <ItemsPresenter />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PaymentListBoxItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="Foreground" Value="#0F172A" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Root"
+                                Padding="{TemplateBinding Padding}"
+                                Background="#F8FAFC"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="18">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#0F766E" />
+                                <Setter TargetName="Root" Property="Background" Value="#ECFDF5" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#F1F5F9" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="#EEF4F8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.6*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="Billing"
+                           FontSize="30"
+                           FontWeight="Bold"
+                           Foreground="#0F172A" />
+                <TextBlock Margin="0,8,0,0"
+                           Text="{Binding TableNumber, StringFormat=Review the receipt for table {0}.}"
+                           Foreground="#64748B" />
+            </StackPanel>
+
+            <Border Grid.Row="1"
+                    Margin="0,22,0,0"
+                    Padding="14"
+                    CornerRadius="16"
+                    Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="#DCFCE7" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                <Setter Property="Background" Value="#FEE2E2" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding StatusMessage}"
+                           FontWeight="SemiBold"
+                           Foreground="#0F172A" />
+            </Border>
+
+            <Border Grid.Row="2"
+                    Margin="0,22,0,0"
+                    Padding="20"
+                    Background="White"
+                    BorderBrush="#D8E3EC"
+                    BorderThickness="1"
+                    CornerRadius="26">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Items"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="#0F172A" />
+
+                    <ScrollViewer Grid.Row="1"
+                                  Margin="0,18,0,0"
+                                  VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,12"
+                                            Padding="16"
+                                            Background="#F8FAFC"
+                                            BorderBrush="#E2E8F0"
+                                            BorderThickness="1"
+                                            CornerRadius="18">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#0F172A" />
+                                                <TextBlock Margin="0,6,0,0"
+                                                           Foreground="#64748B"
+                                                           Text="{Binding Quantity, StringFormat=Qty: {0}}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1"
+                                                        HorizontalAlignment="Right">
+                                                <TextBlock HorizontalAlignment="Right"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#0F172A"
+                                                           Text="{Binding UnitPrice, StringFormat=Rs. {0:N2}}" />
+                                                <TextBlock Margin="0,6,0,0"
+                                                           HorizontalAlignment="Right"
+                                                           Foreground="#2563EB"
+                                                           FontWeight="Bold"
+                                                           Text="{Binding LineTotal, StringFormat=Line: Rs. {0:N2}}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Column="1"
+                Margin="0,24,24,24"
+                Padding="24"
+                Background="White"
+                BorderBrush="#D8E3EC"
+                BorderThickness="1"
+                CornerRadius="28">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="{Binding WindowTitle}"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Foreground="#0F172A" />
+
+                <StackPanel Grid.Row="1"
+                            Margin="0,22,0,0">
+                    <TextBlock Text="Payment Method"
+                               FontWeight="SemiBold"
+                               Foreground="#0F172A" />
+                    <ListBox Margin="0,14,0,0"
+                             ItemsSource="{Binding PaymentOptions}"
+                             SelectedItem="{Binding SelectedPaymentMethod}"
+                             Style="{StaticResource PaymentListBoxStyle}"
+                             ItemContainerStyle="{StaticResource PaymentListBoxItemStyle}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,10,0"
+                                               FontFamily="Segoe MDL2 Assets">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="&#xE8C7;" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding}" Value="Cash">
+                                                        <Setter Property="Text" Value="&#xEAFD;" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding}" Value="Card">
+                                                        <Setter Property="Text" Value="&#xE8C7;" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding}" Value="Upi">
+                                                        <Setter Property="Text" Value="&#xE8EA;" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock FontWeight="SemiBold"
+                                               Text="{Binding}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2"
+                            Margin="0,22,0,0">
+                    <TextBlock Text="Discount"
+                               FontWeight="SemiBold"
+                               Foreground="#0F172A" />
+                    <TextBox Margin="0,10,0,0"
+                             Padding="12,10"
+                             BorderBrush="#CBD5E1"
+                             BorderThickness="1"
+                             Background="#F8FAFC"
+                             Text="{Binding DiscountInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+                </StackPanel>
+
+                <Border Grid.Row="3"
+                        Margin="0,22,0,0"
+                        Padding="18"
+                        Background="#F8FAFC"
+                        CornerRadius="22">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Subtotal"
+                                       Foreground="#64748B" />
+                            <TextBlock Grid.Column="1"
+                                       FontWeight="SemiBold"
+                                       Foreground="#0F172A"
+                                       Text="{Binding Subtotal, StringFormat=Rs. {0:N2}}" />
+                        </Grid>
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding TaxLabel}"
+                                       Foreground="#64748B" />
+                            <TextBlock Grid.Column="1"
+                                       FontWeight="SemiBold"
+                                       Foreground="#0F172A"
+                                       Text="{Binding Tax, StringFormat=Rs. {0:N2}}" />
+                        </Grid>
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Discount"
+                                       Foreground="#64748B" />
+                            <TextBlock Grid.Column="1"
+                                       FontWeight="SemiBold"
+                                       Foreground="#0F172A"
+                                       Text="{Binding Discount, StringFormat=Rs. {0:N2}}" />
+                        </Grid>
+                        <Border Margin="0,16,0,16"
+                                Height="1"
+                                Background="#E2E8F0" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock FontSize="16"
+                                       FontWeight="Bold"
+                                       Foreground="#0F172A"
+                                       Text="Final Total" />
+                            <TextBlock Grid.Column="1"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Foreground="#0F766E"
+                                       Text="{Binding FinalTotal, StringFormat=Rs. {0:N2}}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Grid Grid.Row="4"
+                      Margin="0,22,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Margin="0,0,8,0"
+                            Command="{Binding PrintReceiptCommand}"
+                            Style="{StaticResource SoftButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Margin="0,0,8,0"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       Text="&#xE749;" />
+                            <TextBlock Text="Print Receipt" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="1"
+                            Margin="8,0,0,0"
+                            Command="{Binding ConfirmPaymentCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Margin="0,0,8,0"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       Text="&#xE73E;" />
+                            <TextBlock Text="Confirm Payment" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

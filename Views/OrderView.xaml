@@ -1,0 +1,481 @@
+<UserControl x:Class="ServeX.Views.OrderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+        <Style x:Key="CategoryListBoxStyle" TargetType="ListBox">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBox">
+                        <ItemsPresenter />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CategoryListBoxItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,0,10,10" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Foreground" Value="#475569" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Root"
+                                Padding="{TemplateBinding Padding}"
+                                Background="#E2E8F0"
+                                CornerRadius="999">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#0F172A" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#CBD5E1" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Root" Property="Background" Value="#0F172A" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="#2563EB" />
+            <Setter Property="BorderBrush" Value="#2563EB" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="14">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#1D4ED8" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SoftButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Foreground" Value="#0F172A" />
+            <Setter Property="Background" Value="#E2E8F0" />
+            <Setter Property="BorderBrush" Value="#E2E8F0" />
+        </Style>
+
+        <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Foreground" Value="#991B1B" />
+            <Setter Property="Background" Value="#FEE2E2" />
+            <Setter Property="BorderBrush" Value="#FEE2E2" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="#EEF4F8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2.2*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="Order Builder"
+                           FontSize="30"
+                           FontWeight="Bold"
+                           Foreground="#0F172A" />
+                <TextBlock Margin="0,8,0,0"
+                           Text="Choose categories, add dishes, and keep the table order moving."
+                           Foreground="#64748B" />
+            </StackPanel>
+
+            <ListBox Grid.Row="1"
+                     Margin="0,22,0,0"
+                     ItemsSource="{Binding Categories}"
+                     SelectedItem="{Binding SelectedCategory}"
+                     Style="{StaticResource CategoryListBoxStyle}"
+                     ItemContainerStyle="{StaticResource CategoryListBoxItemStyle}">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
+
+            <ScrollViewer Grid.Row="2"
+                          Margin="0,22,0,0"
+                          VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding FilteredMenuItems}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,0,14"
+                                    Padding="18"
+                                    Background="White"
+                                    BorderBrush="#D8E3EC"
+                                    BorderThickness="1"
+                                    CornerRadius="22">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}"
+                                                   FontSize="18"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#0F172A" />
+                                        <TextBlock Margin="0,8,0,0"
+                                                   Text="{Binding Category}"
+                                                   Foreground="#64748B" />
+                                        <StackPanel Margin="0,14,0,0"
+                                                    Orientation="Horizontal">
+                                            <Border Padding="12,6"
+                                                    Background="#DBEAFE"
+                                                    CornerRadius="999">
+                                                <TextBlock FontWeight="SemiBold"
+                                                           Foreground="#1D4ED8"
+                                                           Text="{Binding Price, StringFormat=Rs. {0:N2}}" />
+                                            </Border>
+                                            <Border Margin="10,0,0,0"
+                                                    Padding="12,6"
+                                                    CornerRadius="999">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#F1F5F9" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsAvailable}" Value="True">
+                                                                <Setter Property="Background" Value="#DCFCE7" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock FontWeight="SemiBold">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#475569" />
+                                                            <Setter Property="Text" Value="Unavailable" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsAvailable}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#15803D" />
+                                                                    <Setter Property="Text" Value="Available" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="1"
+                                            Width="120"
+                                            Height="44"
+                                            VerticalAlignment="Center"
+                                            Command="{Binding DataContext.AddItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            IsEnabled="{Binding IsAvailable}"
+                                            Style="{StaticResource PrimaryButtonStyle}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Margin="0,0,8,0"
+                                                       FontFamily="Segoe MDL2 Assets"
+                                                       Text="&#xE710;" />
+                                            <TextBlock Text="Add Item" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <Border Grid.Column="1"
+                Margin="0,24,24,24"
+                Padding="24"
+                Background="White"
+                BorderBrush="#D8E3EC"
+                BorderThickness="1"
+                CornerRadius="28">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel>
+                    <TextBlock FontSize="26"
+                               FontWeight="Bold"
+                               Foreground="#0F172A"
+                               Text="{Binding TableNumber}" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="#64748B"
+                               Text="Selected table" />
+                    <StackPanel Margin="0,18,0,0"
+                                Orientation="Horizontal">
+                        <Border Padding="12,6"
+                                Background="#DBEAFE"
+                                CornerRadius="999">
+                            <TextBlock FontWeight="SemiBold"
+                                       Foreground="#1D4ED8"
+                                       Text="Table" />
+                        </Border>
+                        <Border Margin="10,0,0,0"
+                                Padding="12,6"
+                                Background="#F8FAFC"
+                                CornerRadius="999">
+                            <TextBlock FontWeight="SemiBold"
+                                       Foreground="#475569"
+                                       Text="Room" />
+                        </Border>
+                        <Border Margin="10,0,0,0"
+                                Padding="12,6"
+                                Background="#F8FAFC"
+                                CornerRadius="999">
+                            <TextBlock FontWeight="SemiBold"
+                                       Foreground="#475569"
+                                       Text="Parcel" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Margin="0,16,0,0"
+                               Foreground="#64748B"
+                               Text="{Binding TableStatus, StringFormat=Current status: {0}}" />
+                </StackPanel>
+
+                <Border Grid.Row="1"
+                        Margin="0,20,0,0"
+                        Padding="14"
+                        CornerRadius="16"
+                        Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="#DCFCE7" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                    <Setter Property="Background" Value="#FEE2E2" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontWeight="SemiBold"
+                               Foreground="#0F172A" />
+                </Border>
+
+                <Grid Grid.Row="2"
+                      Margin="0,22,0,0">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding OrderItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,12"
+                                            Padding="14"
+                                            Background="#F8FAFC"
+                                            BorderBrush="#E2E8F0"
+                                            BorderThickness="1"
+                                            CornerRadius="18">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#0F172A" />
+                                                <TextBlock Margin="0,4,0,0"
+                                                           Text="{Binding Category}"
+                                                           Foreground="#64748B" />
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Column="1"
+                                                       VerticalAlignment="Center"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#1D4ED8"
+                                                       Text="{Binding LineTotal, StringFormat=Rs. {0:N2}}" />
+
+                                            <StackPanel Grid.Row="1"
+                                                        Grid.ColumnSpan="2"
+                                                        Margin="0,14,0,0"
+                                                        Orientation="Horizontal">
+                                                <Button Width="40"
+                                                        Height="34"
+                                                        Margin="0,0,8,0"
+                                                        Command="{Binding DataContext.DecreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource SoftButtonStyle}">
+                                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                                               Text="&#xE738;" />
+                                                </Button>
+                                                <Border Padding="12,8"
+                                                        Background="White"
+                                                        BorderBrush="#E2E8F0"
+                                                        BorderThickness="1"
+                                                        CornerRadius="12">
+                                                    <TextBlock FontWeight="SemiBold"
+                                                               Text="{Binding Quantity}" />
+                                                </Border>
+                                                <Button Width="40"
+                                                        Height="34"
+                                                        Margin="8,0,0,0"
+                                                        Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource SoftButtonStyle}">
+                                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                                               Text="&#xE710;" />
+                                                </Button>
+                                                <Button Margin="12,0,0,0"
+                                                        Padding="12,8"
+                                                        Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource DangerButtonStyle}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Margin="0,0,6,0"
+                                                                   FontFamily="Segoe MDL2 Assets"
+                                                                   Text="&#xE74D;" />
+                                                        <TextBlock Text="Remove" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <Border Padding="22"
+                            Background="#F8FAFC"
+                            BorderBrush="#E2E8F0"
+                            BorderThickness="1"
+                            CornerRadius="20"
+                            Visibility="{Binding IsEmptyOrder, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="#64748B"
+                                   Text="Add menu items to start the order." />
+                    </Border>
+                </Grid>
+
+                <Border Grid.Row="3"
+                        Margin="0,22,0,0"
+                        Padding="18"
+                        Background="#F8FAFC"
+                        CornerRadius="22">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Subtotal"
+                                       Foreground="#64748B" />
+                            <TextBlock Grid.Column="1"
+                                       FontWeight="SemiBold"
+                                       Foreground="#0F172A"
+                                       Text="{Binding Subtotal, StringFormat=Rs. {0:N2}}" />
+                        </Grid>
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding TaxLabel}"
+                                       Foreground="#64748B" />
+                            <TextBlock Grid.Column="1"
+                                       FontWeight="SemiBold"
+                                       Foreground="#0F172A"
+                                       Text="{Binding Tax, StringFormat=Rs. {0:N2}}" />
+                        </Grid>
+                        <Border Margin="0,16,0,16"
+                                Height="1"
+                                Background="#E2E8F0" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock FontSize="16"
+                                       FontWeight="Bold"
+                                       Text="Total"
+                                       Foreground="#0F172A" />
+                            <TextBlock Grid.Column="1"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Foreground="#2563EB"
+                                       Text="{Binding Total, StringFormat=Rs. {0:N2}}" />
+                        </Grid>
+                        <Grid Margin="0,18,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button Grid.Column="0"
+                                    Margin="0,0,8,0"
+                                    Command="{Binding SaveOrderCommand}"
+                                    Style="{StaticResource SoftButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,8,0"
+                                               FontFamily="Segoe MDL2 Assets"
+                                               Text="&#xE74E;" />
+                                    <TextBlock Text="Save Order" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button Grid.Column="1"
+                                    Margin="8,0,0,0"
+                                    Command="{Binding GenerateBillCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,8,0"
+                                               FontFamily="Segoe MDL2 Assets"
+                                               Text="&#xE8C7;" />
+                                    <TextBlock Text="Generate Bill" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -5,7 +5,8 @@ namespace ServeX.Models
         Open = 1,
         Preparing = 2,
         Served = 3,
-        Paid = 4,
-        Cancelled = 5
+        Billed = 4,
+        Paid = 5,
+        Cancelled = 6
     }
 }

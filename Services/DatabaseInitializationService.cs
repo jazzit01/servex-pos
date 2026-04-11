@@ -72,7 +72,12 @@ namespace ServeX.Services
                     var firstMenuItem = await context.MenuItems.OrderBy(menuItem => menuItem.Id).FirstAsync();
                     var quantity = 2;
                     var subtotal = firstMenuItem.Price * quantity;
-                    var tax = Math.Round(subtotal * 0.05m, 2);
+                    var configuredTax = await context.Settings
+                        .AsNoTracking()
+                        .Select(setting => (decimal?)setting.TaxPercentage)
+                        .FirstOrDefaultAsync();
+                    var taxRate = (configuredTax ?? 5m) / 100m;
+                    var tax = Math.Round(subtotal * taxRate, 2);
                     var discount = 0m;
                     var total = subtotal + tax - discount;
 

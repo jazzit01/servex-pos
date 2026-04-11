@@ -14,6 +14,10 @@ namespace ServeX.Models
 
         public decimal Total { get; set; }
 
+        public PaymentMethod? PaymentMethod { get; set; }
+
+        public System.DateTime? PaidAt { get; set; }
+
         public Order Order { get; set; }
     }
 }
