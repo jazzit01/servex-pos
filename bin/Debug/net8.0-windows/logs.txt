@@ -41,3 +41,12 @@
 [2026-04-11 20.36] INFO: Login succeeded for user admin
 [2026-04-11 20.37] INFO: Startup flow resolved to login
 [2026-04-11 20.37] INFO: Login succeeded for user admin
+[2026-04-11 20:48] INFO: Startup flow resolved to login
+[2026-04-11 20.49] INFO: Startup flow resolved to login
+[2026-04-11 20.49] INFO: Login succeeded for user admin
+[2026-04-11 20.49] ERROR: Unhandled UI exception - A TwoWay or OneWayToSource binding cannot work on the read-only property 'SelectedTableStatusLabel' of type 'ServeX.ViewModels.TablesViewModel'.
+[2026-04-11 20.49] ERROR: Unhandled UI exception - A TwoWay or OneWayToSource binding cannot work on the read-only property 'ReservedCount' of type 'ServeX.ViewModels.TablesViewModel'.
+[2026-04-11 20.49] ERROR: Unhandled UI exception - A TwoWay or OneWayToSource binding cannot work on the read-only property 'OccupiedCount' of type 'ServeX.ViewModels.TablesViewModel'.
+[2026-04-11 20.50] ERROR: Unhandled UI exception - A TwoWay or OneWayToSource binding cannot work on the read-only property 'SelectedTableStatusLabel' of type 'ServeX.ViewModels.TablesViewModel'.
+[2026-04-11 22:25] INFO: Startup flow resolved to login
+[2026-04-11 22:28] INFO: Startup flow resolved to login

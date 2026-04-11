@@ -4,7 +4,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
-        <Style x:Key="PrimaryActionButtonStyle" TargetType="Button">
+        <Style x:Key="MenuPrimaryActionButtonStyle" TargetType="Button">
             <Setter Property="Padding" Value="16,10" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="Background" Value="#2563EB" />
@@ -37,7 +37,7 @@
 
         <Style x:Key="SecondaryActionButtonStyle"
                TargetType="Button"
-               BasedOn="{StaticResource PrimaryActionButtonStyle}">
+               BasedOn="{StaticResource MenuPrimaryActionButtonStyle}">
             <Setter Property="Foreground" Value="#0F172A" />
             <Setter Property="Background" Value="#E2E8F0" />
             <Setter Property="BorderBrush" Value="#E2E8F0" />
@@ -45,7 +45,7 @@
 
         <Style x:Key="DangerActionButtonStyle"
                TargetType="Button"
-               BasedOn="{StaticResource PrimaryActionButtonStyle}">
+               BasedOn="{StaticResource MenuPrimaryActionButtonStyle}">
             <Setter Property="Foreground" Value="#991B1B" />
             <Setter Property="Background" Value="#FEE2E2" />
             <Setter Property="BorderBrush" Value="#FEE2E2" />
@@ -241,12 +241,15 @@
                     <Button Grid.Column="1"
                             VerticalAlignment="Center"
                             Command="{Binding BeginAddCommand}"
-                            Style="{StaticResource PrimaryActionButtonStyle}">
-                        <StackPanel Orientation="Horizontal">
+                            Style="{StaticResource PrimaryButtonStyle}">
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center">
                             <TextBlock Margin="0,0,8,0"
+                                       VerticalAlignment="Center"
                                        FontFamily="Segoe MDL2 Assets"
                                        Text="&#xE710;" />
-                            <TextBlock Text="+ Add Item" />
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="+ Add Item" />
                         </StackPanel>
                     </Button>
                 </Grid>

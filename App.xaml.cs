@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.Versioning;
 using System.Windows;
+using System.Windows.Threading;
 using ServeX.Services;
 using ServeX.ViewModels;
 using ServeX.Views;
@@ -18,6 +19,7 @@ namespace ServeX
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+            DispatcherUnhandledException += OnDispatcherUnhandledException;
 
             try
             {
@@ -72,6 +74,18 @@ namespace ServeX
 
                 Shutdown(-1);
             }
+        }
+
+        private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            _logService.LogError("Unhandled UI exception", e.Exception);
+            e.Handled = true;
+
+            MessageBox.Show(
+                "Something went wrong, but ServeX recovered.\n\nPlease try that action again.",
+                "ServeX",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
     }
 }

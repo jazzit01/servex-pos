@@ -145,10 +145,15 @@
                         <Button Grid.Column="1"
                                 VerticalAlignment="Center"
                                 Command="{Binding BeginAddCommand}"
-                                Style="{StaticResource PrimaryActionButtonStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Margin="0,0,8,0" FontFamily="Segoe MDL2 Assets" Text="&#xE710;" />
-                                <TextBlock Text="Add Table" />
+                                Style="{StaticResource PrimaryButtonStyle}">
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <TextBlock Margin="0,0,8,0"
+                                           VerticalAlignment="Center"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           Text="&#xE710;" />
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="Add Table" />
                             </StackPanel>
                         </Button>
                     </Grid>
