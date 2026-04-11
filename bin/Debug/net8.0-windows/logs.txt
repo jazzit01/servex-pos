@@ -50,3 +50,4 @@
 [2026-04-11 20.50] ERROR: Unhandled UI exception - A TwoWay or OneWayToSource binding cannot work on the read-only property 'SelectedTableStatusLabel' of type 'ServeX.ViewModels.TablesViewModel'.
 [2026-04-11 22:25] INFO: Startup flow resolved to login
 [2026-04-11 22:28] INFO: Startup flow resolved to login
+[2026-04-11 22:33] INFO: Startup flow resolved to login
