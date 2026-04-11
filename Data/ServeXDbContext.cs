@@ -18,6 +18,8 @@ namespace ServeX.Data
 
         public DbSet<MenuItem> MenuItems { get; set; }
 
+        public DbSet<AppSetting> Settings { get; set; }
+
         public DbSet<Table> Tables { get; set; }
 
         public DbSet<Room> Rooms { get; set; }
@@ -27,6 +29,8 @@ namespace ServeX.Data
         public DbSet<OrderItem> OrderItems { get; set; }
 
         public DbSet<Bill> Bills { get; set; }
+
+        public DbSet<User> Users { get; set; }
 
         public static string GetDatabaseFilePath()
         {
@@ -50,6 +54,16 @@ namespace ServeX.Data
                 entity.Property(item => item.Name).IsRequired().HasMaxLength(100);
                 entity.Property(item => item.Category).IsRequired().HasMaxLength(50);
                 entity.Property(item => item.Price).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<AppSetting>(entity =>
+            {
+                entity.ToTable("Settings");
+                entity.Property(setting => setting.RestaurantName).IsRequired().HasMaxLength(120);
+                entity.Property(setting => setting.Address).IsRequired().HasMaxLength(250);
+                entity.Property(setting => setting.Phone).IsRequired().HasMaxLength(30);
+                entity.Property(setting => setting.TaxPercentage).HasPrecision(5, 2);
+                entity.Property(setting => setting.LicenseKey).IsRequired().HasMaxLength(80);
             });
 
             modelBuilder.Entity<Table>(entity =>
@@ -94,11 +108,19 @@ namespace ServeX.Data
                 entity.Property(bill => bill.Tax).HasPrecision(18, 2);
                 entity.Property(bill => bill.Discount).HasPrecision(18, 2);
                 entity.Property(bill => bill.Total).HasPrecision(18, 2);
+                entity.Property(bill => bill.PaymentMethod).HasConversion<string>().HasMaxLength(20);
 
                 entity.HasOne(bill => bill.Order)
                     .WithOne(order => order.Bill)
                     .HasForeignKey<Bill>(bill => bill.OrderId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.Property(user => user.Username).IsRequired().HasMaxLength(50);
+                entity.Property(user => user.Password).IsRequired().HasMaxLength(200);
+                entity.HasIndex(user => user.Username).IsUnique();
             });
         }
     }

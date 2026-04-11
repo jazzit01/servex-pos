@@ -1,28 +1,70 @@
 using System.Threading.Tasks;
+using System.Runtime.Versioning;
 using Microsoft.EntityFrameworkCore;
 using ServeX.Data;
+using ServeX.Models;
 using ServeX.Services;
 
 namespace ServeX.ViewModels
 {
+    [SupportedOSPlatform("windows")]
     public class MainViewModel : ViewModelBase
     {
         private int _menuItemsCount;
         private int _tableCount;
         private int _roomCount;
         private int _orderCount;
+        private int _selectedWorkspaceIndex;
+        private readonly string _restaurantName;
+        private readonly string _currentUsername;
 
-        public MainViewModel()
+        public MainViewModel(AppSetting settings, User currentUser)
         {
-            Menu = new MenuViewModel(new MenuService());
-            Menu.MenuItemsChanged += async (sender, args) => await LoadSummaryAsync();
+            _restaurantName = settings?.RestaurantName ?? "ServeX";
+            _currentUsername = currentUser?.Username ?? "Admin";
+
+            var menuService = new MenuService();
+            var orderService = new OrderService();
+            var billingService = new BillingService();
+            var receiptPrintService = new ReceiptPrintService();
+            var billingWindowService = new BillingWindowService(billingService, receiptPrintService);
+            var orderWindowService = new OrderWindowService(orderService, billingWindowService);
+            var dashboardService = new DashboardService();
+            var databaseBackupService = new DatabaseBackupService();
+            var saveFileDialogService = new SaveFileDialogService();
+
+            Dashboard = new DashboardViewModel(
+                dashboardService,
+                orderWindowService,
+                GoToTables,
+                GoToMenu,
+                RefreshFromDashboardActionAsync);
+            Menu = new MenuViewModel(menuService);
+            Tables = new TablesViewModel(new TableService(), orderWindowService);
+            Settings = new SettingsViewModel(databaseBackupService, saveFileDialogService);
+            Menu.MenuItemsChanged += async (sender, args) => await RefreshWorkspaceAsync();
+            Tables.TablesChanged += async (sender, args) => await RefreshWorkspaceAsync();
+
+            SelectedWorkspaceIndex = 0;
         }
 
-        public string Title => "ServeX";
+        public string Title => string.Format("{0} - ServeX", _restaurantName);
 
-        public string WelcomeMessage => "Menu management and restaurant operations";
+        public string WelcomeMessage => string.Format("Signed in as {0} | Menu management and restaurant operations", _currentUsername);
+
+        public DashboardViewModel Dashboard { get; }
 
         public MenuViewModel Menu { get; }
+
+        public TablesViewModel Tables { get; }
+
+        public SettingsViewModel Settings { get; }
+
+        public int SelectedWorkspaceIndex
+        {
+            get => _selectedWorkspaceIndex;
+            set => SetProperty(ref _selectedWorkspaceIndex, value);
+        }
 
         public int MenuItemsCount
         {
@@ -81,8 +123,7 @@ namespace ServeX.ViewModels
 
         public async Task LoadAsync()
         {
-            await Menu.LoadAsync();
-            await LoadSummaryAsync();
+            await RefreshWorkspaceAsync();
         }
 
         private async Task LoadSummaryAsync()
@@ -94,6 +135,31 @@ namespace ServeX.ViewModels
                 RoomCount = await context.Rooms.CountAsync();
                 OrderCount = await context.Orders.CountAsync();
             }
+        }
+
+        private async Task RefreshWorkspaceAsync()
+        {
+            await Dashboard.LoadAsync();
+            await Menu.LoadAsync();
+            await Tables.LoadAsync();
+            await LoadSummaryAsync();
+        }
+
+        private async Task RefreshFromDashboardActionAsync()
+        {
+            await Menu.LoadAsync();
+            await Tables.LoadAsync();
+            await LoadSummaryAsync();
+        }
+
+        private void GoToTables()
+        {
+            SelectedWorkspaceIndex = 2;
+        }
+
+        private void GoToMenu()
+        {
+            SelectedWorkspaceIndex = 1;
         }
     }
 }
