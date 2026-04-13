@@ -18,7 +18,7 @@ namespace ServeX.Services
         {
             var fullMessage = ex == null
                 ? message
-                : string.Format("{0} - {1}", message, ex.Message);
+                : string.Format("{0} - {1} | StackTrace: {2}", message, ex.Message, ex);
 
             WriteEntry("ERROR", fullMessage);
         }
