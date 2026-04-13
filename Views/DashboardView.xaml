@@ -6,7 +6,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </UserControl.Resources>
 
-    <Grid Margin="24"
+    <Grid Margin="16"
           Background="Transparent"
           HorizontalAlignment="Stretch"
           VerticalAlignment="Stretch">
@@ -25,7 +25,7 @@
         </StackPanel>
 
         <Border Grid.Row="1"
-                Margin="0,16,0,0"
+                Margin="0,12,0,0"
                 Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border.Style>
                 <Style TargetType="Border" BasedOn="{StaticResource StatusBannerBorderStyle}">
@@ -43,15 +43,15 @@
         </Border>
 
         <Grid Grid.Row="2"
-              Margin="0,24,0,0"
+              Margin="0,16,0,0"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="280" />
             </Grid.ColumnDefinitions>
 
-            <Border Padding="24"
+            <Border Padding="18"
                     Style="{StaticResource SurfaceCardStyle}"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch">
@@ -86,17 +86,15 @@
                     </Grid>
 
                     <Grid Grid.Row="1"
-                          Margin="0,24,0,0"
+                          Margin="0,16,0,0"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Disabled">
-                            <ItemsControl ItemsSource="{Binding RecentOrders}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Margin="0,0,0,16"
-                                                Padding="16"
-                                                Style="{StaticResource SoftPanelStyle}">
+                        <ItemsControl ItemsSource="{Binding RecentOrders}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,12"
+                                            Padding="14"
+                                            Style="{StaticResource SoftPanelStyle}">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
@@ -117,10 +115,10 @@
                                                                        Text="{Binding Type}" />
                                                         </Border>
                                                     </StackPanel>
-                                                    <TextBlock Margin="0,8,0,0"
+                                                    <TextBlock Margin="0,6,0,0"
                                                                Foreground="{StaticResource MutedTextBrush}"
                                                                Text="{Binding ReferenceLabel}" />
-                                                    <TextBlock Margin="0,8,0,0"
+                                                    <TextBlock Margin="0,6,0,0"
                                                                Foreground="{StaticResource MutedTextBrush}"
                                                                Text="{Binding CreatedAt, StringFormat={}{0:dd MMM yyyy hh:mm tt}}" />
                                                 </StackPanel>
@@ -134,20 +132,19 @@
                                                                    Foreground="{StaticResource PrimaryBrush}"
                                                                    Text="{Binding Status}" />
                                                     </Border>
-                                                    <TextBlock Margin="0,16,0,0"
+                                                    <TextBlock Margin="0,12,0,0"
                                                                HorizontalAlignment="Right"
                                                                FontWeight="Bold"
                                                                Foreground="{StaticResource TextBrush}"
                                                                Text="{Binding Total, StringFormat=Rs. {0:N2}}" />
                                                 </StackPanel>
                                             </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
-                        <Border Padding="24"
+                        <Border Padding="18"
                                 Style="{StaticResource SoftPanelStyle}"
                                 Visibility="{Binding IsRecentOrdersEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock HorizontalAlignment="Left"
@@ -160,9 +157,9 @@
             </Border>
 
             <StackPanel Grid.Column="1"
-                        Margin="24,0,0,0"
+                        Margin="16,0,0,0"
                         HorizontalAlignment="Stretch">
-                <Border Padding="24"
+                <Border Padding="18"
                         Background="{StaticResource TextBrush}"
                         CornerRadius="{StaticResource RadiusLarge}">
                     <StackPanel HorizontalAlignment="Left">
@@ -175,8 +172,8 @@
                     </StackPanel>
                 </Border>
 
-                <Border Margin="0,24,0,0"
-                        Padding="24"
+                <Border Margin="0,16,0,0"
+                        Padding="18"
                         Style="{StaticResource SoftPanelStyle}">
                     <StackPanel HorizontalAlignment="Left">
                         <TextBlock Foreground="{StaticResource MutedTextBrush}"
@@ -189,8 +186,8 @@
                     </StackPanel>
                 </Border>
 
-                <Border Margin="0,16,0,0"
-                        Padding="24"
+                <Border Margin="0,12,0,0"
+                        Padding="18"
                         Background="{StaticResource SuccessSoftBrush}"
                         CornerRadius="{StaticResource RadiusLarge}">
                     <StackPanel HorizontalAlignment="Left">
@@ -204,8 +201,8 @@
                     </StackPanel>
                 </Border>
 
-                <Border Margin="0,16,0,0"
-                        Padding="24"
+                <Border Margin="0,12,0,0"
+                        Padding="18"
                         Background="{StaticResource AccentSoftBrush}"
                         CornerRadius="{StaticResource RadiusLarge}">
                     <StackPanel HorizontalAlignment="Left">
@@ -219,8 +216,8 @@
                     </StackPanel>
                 </Border>
 
-                <Border Margin="0,16,0,0"
-                        Padding="24"
+                <Border Margin="0,12,0,0"
+                        Padding="18"
                         Style="{StaticResource SoftPanelStyle}">
                     <StackPanel HorizontalAlignment="Left">
                         <TextBlock Foreground="{StaticResource MutedTextBrush}"
@@ -233,7 +230,7 @@
                     </StackPanel>
                 </Border>
 
-                <Button Margin="0,24,0,0"
+                <Button Margin="0,16,0,0"
                         Command="{Binding NewTableOrderCommand}"
                         Style="{StaticResource SecondaryActionButtonStyle}">
                     <StackPanel Orientation="Horizontal">
@@ -244,7 +241,7 @@
                     </StackPanel>
                 </Button>
 
-                <Button Margin="0,16,0,0"
+                <Button Margin="0,12,0,0"
                         Command="{Binding GoToTablesCommand}"
                         Style="{StaticResource SecondaryActionButtonStyle}">
                     <StackPanel Orientation="Horizontal">
@@ -255,7 +252,7 @@
                     </StackPanel>
                 </Button>
 
-                <Button Margin="0,16,0,0"
+                <Button Margin="0,12,0,0"
                         Command="{Binding GoToMenuCommand}"
                         Style="{StaticResource SecondaryActionButtonStyle}">
                     <StackPanel Orientation="Horizontal">

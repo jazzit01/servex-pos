@@ -53,7 +53,7 @@
 
     <Style x:Key="PrimaryHeadingTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource BrandFontFamily}" />
-        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontSize" Value="28" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -61,7 +61,7 @@
 
     <Style x:Key="SectionTitleTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource BrandFontFamily}" />
-        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontSize" Value="18" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -85,8 +85,8 @@
     </Style>
 
     <Style x:Key="PrimaryActionButtonStyle" TargetType="Button">
-        <Setter Property="Padding" Value="18,12" />
-        <Setter Property="MinHeight" Value="46" />
+        <Setter Property="Padding" Value="16,10" />
+        <Setter Property="MinHeight" Value="42" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
@@ -150,7 +150,7 @@
 
     <Style x:Key="NavButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="Padding" Value="16,14" />
+        <Setter Property="Padding" Value="14,12" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="1" />
@@ -317,8 +317,8 @@
     </Style>
 
     <Style x:Key="FormTextBoxStyle" TargetType="TextBox">
-        <Setter Property="MinHeight" Value="46" />
-        <Setter Property="Padding" Value="14,12" />
+        <Setter Property="MinHeight" Value="42" />
+        <Setter Property="Padding" Value="12,10" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
@@ -366,8 +366,8 @@
     </Style>
 
     <Style x:Key="FormPasswordBoxStyle" TargetType="PasswordBox">
-        <Setter Property="MinHeight" Value="46" />
-        <Setter Property="Padding" Value="14,12" />
+        <Setter Property="MinHeight" Value="42" />
+        <Setter Property="Padding" Value="12,10" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
@@ -415,8 +415,8 @@
     </Style>
 
     <Style x:Key="FormComboBoxStyle" TargetType="ComboBox">
-        <Setter Property="MinHeight" Value="46" />
-        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="MinHeight" Value="42" />
+        <Setter Property="Padding" Value="10,6" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />

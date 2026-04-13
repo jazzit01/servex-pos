@@ -53,8 +53,8 @@
         <DockPanel LastChildFill="True">
             <Border DockPanel.Dock="Right"
                     Width="300"
-                    Margin="0,24,24,24"
-                    Padding="24"
+                    Margin="0,16,16,16"
+                    Padding="18"
                     Style="{StaticResource SurfaceCardStyle}"
                     Visibility="{Binding IsEditorOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid>
@@ -74,7 +74,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Row="1"
-                                Margin="0,24,0,0">
+                                Margin="0,16,0,0">
                         <TextBlock Style="{StaticResource FieldLabelStyle}"
                                    Margin="0,0,0,8"
                                    Text="Name" />
@@ -99,7 +99,7 @@
                     </StackPanel>
 
                     <Grid Grid.Row="2"
-                          Margin="0,24,0,0">
+                          Margin="0,16,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
@@ -132,7 +132,7 @@
                 </Grid>
             </Border>
 
-            <Grid Margin="24"
+            <Grid Margin="16"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch">
                 <Grid.RowDefinitions>
@@ -189,7 +189,7 @@
                 </Border>
 
                 <Grid Grid.Row="2"
-                      Margin="0,24,0,0">
+                      Margin="0,16,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -237,8 +237,8 @@
                     </Grid>
 
                     <ScrollViewer Grid.Row="1"
-                                  Margin="0,24,0,0"
-                                  VerticalScrollBarVisibility="Auto">
+                                  Margin="0,16,0,0"
+                                  VerticalScrollBarVisibility="Hidden">
                         <ItemsControl ItemsSource="{Binding FilteredMenuItems}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
