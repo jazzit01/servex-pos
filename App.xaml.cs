@@ -82,7 +82,7 @@ namespace ServeX
             e.Handled = true;
 
             MessageBox.Show(
-                "Something went wrong, but ServeX recovered.\n\nPlease try that action again.",
+                e.Exception.Message,
                 "ServeX",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);

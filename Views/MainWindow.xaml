@@ -33,21 +33,28 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Grid Margin="12">
+    <Grid Margin="16"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch">
         <Border Style="{StaticResource SurfaceCardStyle}"
                 Background="{StaticResource ShellBrush}"
-                CornerRadius="{StaticResource RadiusXLarge}">
-            <Grid>
+                CornerRadius="{StaticResource RadiusXLarge}"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch">
+            <Grid HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="220" />
                     <ColumnDefinition Width="*" MinWidth="420" />
-                    <ColumnDefinition Width="240" />
+                    <ColumnDefinition Width="300" />
                 </Grid.ColumnDefinitions>
 
-                <Border Margin="18"
-                        Padding="22"
+                <Border Margin="20"
+                        Padding="20"
                         Background="{StaticResource PanelBrush}"
-                        CornerRadius="{StaticResource RadiusLarge}">
+                        CornerRadius="{StaticResource RadiusLarge}"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <Grid>
@@ -282,7 +289,9 @@
                 </Border>
 
                 <Grid Grid.Column="1"
-                      Margin="6,18,0,18">
+                      Margin="0,20,0,20"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -290,8 +299,9 @@
                     </Grid.RowDefinitions>
 
                     <Border Margin="0,0,18,18"
-                            Padding="26,22"
-                            Style="{StaticResource SurfaceCardStyle}">
+                            Padding="20"
+                            Style="{StaticResource SurfaceCardStyle}"
+                            HorizontalAlignment="Stretch">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -367,13 +377,17 @@
                     <Border Grid.Row="2"
                             Margin="0,0,18,0"
                             Padding="0"
-                            Style="{StaticResource SurfaceCardStyle}">
-                        <ContentControl Content="{Binding CurrentWorkspace}" />
+                            Style="{StaticResource SurfaceCardStyle}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch">
+                        <ContentControl Content="{Binding CurrentWorkspace}"
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch" />
                     </Border>
                 </Grid>
 
                 <ScrollViewer Grid.Column="2"
-                              Margin="0,18,18,18"
+                              Margin="0,20,20,20"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <Grid>
