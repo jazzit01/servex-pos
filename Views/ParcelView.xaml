@@ -28,7 +28,8 @@
                         <Border x:Name="Root"
                                 Padding="{TemplateBinding Padding}"
                                 Background="#E2E8F0"
-                                CornerRadius="999">
+                                CornerRadius="{StaticResource RadiusSmall}"
+                                ClipToBounds="True">
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -66,7 +67,8 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Root"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="14">
+                                CornerRadius="{StaticResource RadiusSmall}"
+                                ClipToBounds="True">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center" />
                         </Border>
@@ -151,7 +153,8 @@
                                     Background="White"
                                     BorderBrush="#D8E3EC"
                                     BorderThickness="1"
-                                    CornerRadius="22">
+                                    CornerRadius="{StaticResource RadiusSmall}"
+                                    ClipToBounds="True">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -170,14 +173,16 @@
                                                     Orientation="Horizontal">
                                             <Border Padding="12,6"
                                                     Background="#EDE9FE"
-                                                    CornerRadius="999">
+                                                    CornerRadius="{StaticResource RadiusSmall}"
+                                                    ClipToBounds="True">
                                                 <TextBlock FontWeight="SemiBold"
                                                            Foreground="#7C3AED"
                                                            Text="{Binding Price, StringFormat=Rs. {0:N2}}" />
                                             </Border>
                                             <Border Margin="10,0,0,0"
                                                     Padding="12,6"
-                                                    CornerRadius="999">
+                                                    CornerRadius="{StaticResource RadiusSmall}"
+                                                    ClipToBounds="True">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
                                                         <Setter Property="Background" Value="#F1F5F9" />
@@ -235,7 +240,8 @@
                 Background="White"
                 BorderBrush="#D8E3EC"
                 BorderThickness="1"
-                CornerRadius="28">
+                CornerRadius="{StaticResource RadiusLarge}"
+                ClipToBounds="True">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -254,29 +260,23 @@
                                Text="No table required" />
                     <StackPanel Margin="0,18,0,0"
                                 Orientation="Horizontal">
-                        <Border Padding="12,6"
-                                Background="#F8FAFC"
-                                CornerRadius="999">
-                            <TextBlock FontWeight="SemiBold"
-                                       Foreground="#475569"
-                                       Text="Table" />
-                        </Border>
-                        <Border Margin="10,0,0,0"
-                                Padding="12,6"
-                                Background="#F8FAFC"
-                                CornerRadius="999">
-                            <TextBlock FontWeight="SemiBold"
-                                       Foreground="#475569"
-                                       Text="Room" />
-                        </Border>
-                        <Border Margin="10,0,0,0"
-                                Padding="12,6"
-                                Background="#EDE9FE"
-                                CornerRadius="999">
-                            <TextBlock FontWeight="SemiBold"
-                                       Foreground="#7C3AED"
-                                       Text="Parcel" />
-                        </Border>
+                        <Button Focusable="False"
+                                IsHitTestVisible="False"
+                                Style="{StaticResource SegmentedTabButtonStyle}">
+                            <TextBlock Text="Table" />
+                        </Button>
+                        <Button Margin="10,0,0,0"
+                                Focusable="False"
+                                IsHitTestVisible="False"
+                                Style="{StaticResource SegmentedTabButtonStyle}">
+                            <TextBlock Text="Room" />
+                        </Button>
+                        <Button Margin="10,0,0,0"
+                                Focusable="False"
+                                IsHitTestVisible="False"
+                                Style="{StaticResource SelectedSegmentedTabButtonStyle}">
+                            <TextBlock Text="Parcel" />
+                        </Button>
                     </StackPanel>
 
                     <TextBlock Margin="0,18,0,0"
@@ -294,7 +294,8 @@
                 <Border Grid.Row="1"
                         Margin="0,20,0,0"
                         Padding="14"
-                        CornerRadius="16"
+                        CornerRadius="{StaticResource RadiusSmall}"
+                        ClipToBounds="True"
                         Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Border.Style>
                         <Style TargetType="Border">
@@ -322,7 +323,8 @@
                                             Background="#F8FAFC"
                                             BorderBrush="#E2E8F0"
                                             BorderThickness="1"
-                                            CornerRadius="18">
+                                            CornerRadius="{StaticResource RadiusSmall}"
+                                            ClipToBounds="True">
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
@@ -365,7 +367,8 @@
                                                         Background="White"
                                                         BorderBrush="#E2E8F0"
                                                         BorderThickness="1"
-                                                        CornerRadius="12">
+                                                        CornerRadius="{StaticResource RadiusSmall}"
+                                                        ClipToBounds="True">
                                                     <TextBlock FontWeight="SemiBold"
                                                                Text="{Binding Quantity}" />
                                                 </Border>
@@ -402,7 +405,8 @@
                             Background="#F8FAFC"
                             BorderBrush="#E2E8F0"
                             BorderThickness="1"
-                            CornerRadius="20"
+                            CornerRadius="{StaticResource RadiusSmall}"
+                            ClipToBounds="True"
                             Visibility="{Binding IsEmptyOrder, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <TextBlock HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
@@ -415,7 +419,8 @@
                         Margin="0,22,0,0"
                         Padding="18"
                         Background="#F8FAFC"
-                        CornerRadius="22">
+                        CornerRadius="{StaticResource RadiusSmall}"
+                        ClipToBounds="True">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>

@@ -13,12 +13,22 @@ namespace ServeX.Services
 
         public async Task<AppSetting> GetSettingsAsync()
         {
-            using (var context = new ServeXDbContext())
+            try
             {
-                return await context.Settings
-                    .AsNoTracking()
-                    .OrderBy(setting => setting.Id)
-                    .FirstOrDefaultAsync();
+                using (var context = new ServeXDbContext())
+                {
+                    var settings = await context.Settings
+                        .AsNoTracking()
+                        .OrderBy(setting => setting.Id)
+                        .FirstOrDefaultAsync();
+
+                    return settings ?? CreateDefaultSettings();
+                }
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError("Loading application settings failed", exception);
+                return CreateDefaultSettings();
             }
         }
 
@@ -68,7 +78,8 @@ namespace ServeX.Services
 
                     if (settings == null)
                     {
-                        throw new InvalidOperationException("Restaurant settings have not been created yet.");
+                        settings = CreateDefaultSettings();
+                        context.Settings.Add(settings);
                     }
 
                     settings.RestaurantName = restaurantName.Trim();
@@ -87,6 +98,18 @@ namespace ServeX.Services
                 _logService.LogError("Updating application settings failed", exception);
                 throw;
             }
+        }
+
+        private static AppSetting CreateDefaultSettings()
+        {
+            return new AppSetting
+            {
+                RestaurantName = "ServeX",
+                Address = string.Empty,
+                Phone = string.Empty,
+                TaxPercentage = 5m,
+                LicenseKey = string.Empty
+            };
         }
     }
 }

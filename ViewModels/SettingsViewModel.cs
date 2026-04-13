@@ -193,23 +193,22 @@ namespace ServeX.ViewModels
 
         public async Task LoadAsync()
         {
-            await ExecuteBusyActionAsync(async () =>
+            try
             {
-                var settings = await _applicationSettingsService.GetSettingsAsync();
-                if (settings == null)
+                await ExecuteBusyActionAsync(async () =>
                 {
-                    RestaurantName = string.Empty;
-                    Phone = string.Empty;
-                    TaxPercentageInput = "5";
-                    LicenseKey = string.Empty;
-                    SetStatus("Restaurant settings are not available yet.", true);
-                    return;
-                }
-
-                ApplySettings(settings);
-                ClearStatus();
-                IsLoaded = true;
-            }, "Restaurant settings could not be loaded.");
+                    var settings = await _applicationSettingsService.GetSettingsAsync();
+                    ApplySettings(settings);
+                    ClearStatus();
+                    IsLoaded = true;
+                }, "Restaurant settings could not be loaded.");
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError("Settings view model load failed", exception);
+                ApplySettings(null);
+                SetStatus(GetDevelopmentSafeMessage("Restaurant settings could not be loaded.", exception), true);
+            }
         }
 
         private async Task SaveSettingsAsync()
@@ -282,7 +281,7 @@ namespace ServeX.ViewModels
             catch (Exception exception)
             {
                 _logService.LogError(fallbackMessage, exception);
-                SetStatus(fallbackMessage + " " + exception.Message, true);
+                SetStatus(GetDevelopmentSafeMessage(fallbackMessage, exception), true);
             }
             finally
             {
@@ -292,10 +291,12 @@ namespace ServeX.ViewModels
 
         private void ApplySettings(AppSetting settings)
         {
-            RestaurantName = settings.RestaurantName ?? string.Empty;
-            Phone = settings.Phone ?? string.Empty;
-            TaxPercentageInput = settings.TaxPercentage.ToString("0.##", CultureInfo.CurrentCulture);
-            LicenseKey = settings.LicenseKey ?? string.Empty;
+            var safeSettings = settings ?? CreateDefaultSettings();
+
+            RestaurantName = safeSettings.RestaurantName ?? string.Empty;
+            Phone = safeSettings.Phone ?? string.Empty;
+            TaxPercentageInput = safeSettings.TaxPercentage.ToString("0.##", CultureInfo.CurrentCulture);
+            LicenseKey = safeSettings.LicenseKey ?? string.Empty;
         }
 
         private void SetStatus(string message, bool isError)
@@ -351,6 +352,26 @@ namespace ServeX.ViewModels
         {
             return decimal.TryParse(value, NumberStyles.Number, CultureInfo.CurrentCulture, out taxPercentage) ||
                    decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out taxPercentage);
+        }
+
+        private static AppSetting CreateDefaultSettings()
+        {
+            return new AppSetting
+            {
+                RestaurantName = "ServeX",
+                Phone = string.Empty,
+                TaxPercentage = 5m,
+                LicenseKey = string.Empty
+            };
+        }
+
+        private static string GetDevelopmentSafeMessage(string fallbackMessage, Exception exception)
+        {
+#if DEBUG
+            return exception?.Message ?? fallbackMessage;
+#else
+            return fallbackMessage;
+#endif
         }
     }
 }
