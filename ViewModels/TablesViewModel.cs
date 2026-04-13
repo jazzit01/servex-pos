@@ -1,11 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using ServeX.Models;
 using ServeX.Services;
 
@@ -24,14 +23,16 @@ namespace ServeX.ViewModels
         private readonly RelayCommand _cancelCommand;
         private readonly RelayCommand _selectTableCommand;
         private readonly RelayCommand _openSelectedOrderCommand;
+        private readonly RelayCommand _openFloorOrderCommand;
         private readonly RelayCommand _editSelectedCommand;
         private readonly RelayCommand _deleteSelectedCommand;
         private readonly RelayCommand _showIndoorTablesCommand;
         private readonly RelayCommand _showOutdoorTablesCommand;
+        private readonly ObservableCollection<Table> _tables = new ObservableCollection<Table>();
         private bool _isBusy;
         private bool _isEditorOpen;
         private int? _editingTableId;
-        private Table _selectedTable;
+        private TableFloorItemViewModel _selectedTable;
         private string _editorTableNumber = string.Empty;
         private TableArea _editorArea = TableArea.Indoor;
         private TableStatus _editorStatus = TableStatus.Available;
@@ -44,9 +45,7 @@ namespace ServeX.ViewModels
             _tableService = tableService ?? throw new ArgumentNullException(nameof(tableService));
             _orderWindowService = orderWindowService ?? throw new ArgumentNullException(nameof(orderWindowService));
 
-            Tables = new ObservableCollection<Table>();
-            Tables.CollectionChanged += OnTablesCollectionChanged;
-            FilteredTables = new ObservableCollection<Table>();
+            VisibleTables = new ObservableCollection<TableFloorItemViewModel>();
 
             AvailableAreas = new ObservableCollection<TableArea>
             {
@@ -62,12 +61,13 @@ namespace ServeX.ViewModels
             };
 
             _beginAddCommand = new RelayCommand(_ => OpenAddPanel(), _ => !IsBusy);
-            _editCommand = new RelayCommand(table => OpenEditPanel(table as Table), table => !IsBusy && table is Table);
-            _deleteCommand = new RelayCommand(async table => await DeleteAsync(table as Table), table => !IsBusy && table is Table);
+            _editCommand = new RelayCommand(table => OpenEditPanel(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
+            _deleteCommand = new RelayCommand(async table => await DeleteAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
             _saveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave);
             _cancelCommand = new RelayCommand(_ => CloseEditor(), _ => !IsBusy);
-            _selectTableCommand = new RelayCommand(table => SelectedTable = table as Table, table => table is Table);
+            _selectTableCommand = new RelayCommand(table => SelectTable(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
             _openSelectedOrderCommand = new RelayCommand(async _ => await OpenOrderScreenAsync(SelectedTable), _ => !IsBusy && SelectedTable != null);
+            _openFloorOrderCommand = new RelayCommand(async table => await OpenOrderScreenAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
             _editSelectedCommand = new RelayCommand(_ => OpenEditPanel(SelectedTable), _ => !IsBusy && SelectedTable != null);
             _deleteSelectedCommand = new RelayCommand(async _ => await DeleteAsync(SelectedTable), _ => !IsBusy && SelectedTable != null);
             _showIndoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Indoor, _ => !IsBusy);
@@ -76,9 +76,7 @@ namespace ServeX.ViewModels
 
         public event EventHandler TablesChanged;
 
-        public ObservableCollection<Table> Tables { get; }
-
-        public ObservableCollection<Table> FilteredTables { get; }
+        public ObservableCollection<TableFloorItemViewModel> VisibleTables { get; }
 
         public ObservableCollection<TableArea> AvailableAreas { get; }
 
@@ -97,6 +95,8 @@ namespace ServeX.ViewModels
         public RelayCommand SelectTableCommand => _selectTableCommand;
 
         public RelayCommand OpenSelectedOrderCommand => _openSelectedOrderCommand;
+
+        public RelayCommand OpenFloorOrderCommand => _openFloorOrderCommand;
 
         public RelayCommand EditSelectedCommand => _editSelectedCommand;
 
@@ -131,6 +131,7 @@ namespace ServeX.ViewModels
                     OnPropertyChanged(nameof(IsOutdoorFilterSelected));
                     OnPropertyChanged(nameof(FloorLayoutTitle));
                     OnPropertyChanged(nameof(FloorLayoutSubtitle));
+                    OnPropertyChanged(nameof(SelectedAreaLabel));
                 }
             }
         }
@@ -155,11 +156,15 @@ namespace ServeX.ViewModels
 
         public string EditorTitle => IsEditMode ? "Edit table" : "Add a table";
 
-        public string FloorLayoutTitle => string.Format("{0} Floor", SelectedAreaFilter);
+        public string FloorLayoutTitle => SelectedAreaFilter == TableArea.Indoor
+            ? "Indoor Floor"
+            : "Outdoor Floor";
 
-        public string FloorLayoutSubtitle => string.Format(
-            "Choose a {0} table to inspect it, edit placement, or continue into service.",
-            SelectedAreaFilter == TableArea.Indoor ? "dining room" : "patio");
+        public string FloorLayoutSubtitle => SelectedAreaFilter == TableArea.Indoor
+            ? "Select a dining table to continue service, update details, or reopen the order."
+            : "Track patio tables clearly so the outdoor floor stays as readable as the main room.";
+
+        public string SelectedAreaLabel => SelectedAreaFilter.ToString();
 
         public string EditorTableNumber
         {
@@ -200,18 +205,21 @@ namespace ServeX.ViewModels
             }
         }
 
-        public Table SelectedTable
+        public TableFloorItemViewModel SelectedTable
         {
             get => _selectedTable;
-            set
+            private set
             {
                 if (SetProperty(ref _selectedTable, value))
                 {
+                    UpdateSelectionStates();
                     OnPropertyChanged(nameof(HasSelectedTable));
                     OnPropertyChanged(nameof(SelectedTableHeading));
                     OnPropertyChanged(nameof(SelectedTableAreaLabel));
                     OnPropertyChanged(nameof(SelectedTableStatusLabel));
                     OnPropertyChanged(nameof(SelectedTableStatusDescription));
+                    OnPropertyChanged(nameof(SelectedGuestLabel));
+                    OnPropertyChanged(nameof(SelectedServiceCaption));
                     OnPropertyChanged(nameof(SelectionHint));
                     NotifyCommandStates();
                 }
@@ -222,11 +230,15 @@ namespace ServeX.ViewModels
 
         public string SelectedTableHeading => SelectedTable == null
             ? "No table selected"
-            : string.Format("Table {0}", SelectedTable.TableNumber);
+            : SelectedTable.Heading;
 
         public string SelectedTableAreaLabel => SelectedTable?.Area.ToString() ?? SelectedAreaFilter.ToString();
 
-        public string SelectedTableStatusLabel => SelectedTable?.Status.ToString() ?? "Waiting";
+        public string SelectedTableStatusLabel => SelectedTable?.StatusLabel ?? "Waiting";
+
+        public string SelectedGuestLabel => SelectedTable?.CustomerDisplayName ?? "Atithi";
+
+        public string SelectedServiceCaption => SelectedTable?.ServiceCaption ?? "Choose a table from the floor to continue.";
 
         public string SelectedTableStatusDescription
         {
@@ -234,17 +246,17 @@ namespace ServeX.ViewModels
             {
                 if (SelectedTable == null)
                 {
-                    return "Choose a table on the floor to review its current state and next action.";
+                    return "Choose a table on the floor to review its state and the next service action.";
                 }
 
                 switch (SelectedTable.Status)
                 {
                     case TableStatus.Available:
-                        return "Ready for the next guest or a fresh service session.";
+                        return "Available and ready for the next guest.";
                     case TableStatus.Occupied:
-                        return "An active service session is already in motion for this table.";
+                        return string.Format("Occupied and linked to {0}.", SelectedGuestLabel);
                     case TableStatus.Reserved:
-                        return "Held aside for an upcoming party while staying visible to the team.";
+                        return string.Format("Reserved and being held for {0}.", SelectedGuestLabel);
                     default:
                         return "Status is being tracked for this table.";
                 }
@@ -252,16 +264,16 @@ namespace ServeX.ViewModels
         }
 
         public string SelectionHint => SelectedTable == null
-            ? "Tap a table shape from the floor to begin."
-            : "Use the actions below to open service, edit details, or remove the table.";
+            ? "Click a table block in the floor layout to inspect it."
+            : "Open the order, edit the table, or remove it using the actions below.";
 
-        public int AreaTableCount => FilteredTables.Count;
+        public int VisibleTablesCount => VisibleTables.Count;
 
-        public int AvailableCount => FilteredTables.Count(table => table.Status == TableStatus.Available);
+        public int AvailableCount => VisibleTables.Count(table => table.Status == TableStatus.Available);
 
-        public int OccupiedCount => FilteredTables.Count(table => table.Status == TableStatus.Occupied);
+        public int OccupiedCount => VisibleTables.Count(table => table.Status == TableStatus.Occupied);
 
-        public int ReservedCount => FilteredTables.Count(table => table.Status == TableStatus.Reserved);
+        public int ReservedCount => VisibleTables.Count(table => table.Status == TableStatus.Reserved);
 
         public string StatusMessage
         {
@@ -283,7 +295,7 @@ namespace ServeX.ViewModels
 
         public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
 
-        public bool IsEmpty => FilteredTables.Count == 0;
+        public bool IsEmpty => VisibleTables.Count == 0;
 
         public bool CanSave => !IsBusy && IsFormValid();
 
@@ -300,7 +312,7 @@ namespace ServeX.ViewModels
                     {
                         SetStatus("No tables exist yet. Add the first table to begin mapping the floor.", false);
                     }
-                    else if (!IsStatusError)
+                    else
                     {
                         ClearStatus();
                     }
@@ -331,7 +343,7 @@ namespace ServeX.ViewModels
                             return "Table number must be 20 characters or fewer.";
                         }
 
-                        if (Tables.Any(table =>
+                        if (_tables.Any(table =>
                                 table.Id != _editingTableId.GetValueOrDefault() &&
                                 string.Equals(table.TableNumber, EditorTableNumber.Trim(), StringComparison.OrdinalIgnoreCase)))
                         {
@@ -378,14 +390,14 @@ namespace ServeX.ViewModels
                     await _tableService.AddTableAsync(table);
                 }
 
-                await RefreshAsync();
+                await RefreshAsync(table.TableNumber);
                 CloseEditor(false);
                 SetStatus(successMessage, false);
                 RaiseTablesChanged();
             }, "The table could not be saved. Make sure the table number is unique.");
         }
 
-        private async Task DeleteAsync(Table table)
+        private async Task DeleteAsync(TableFloorItemViewModel table)
         {
             if (table == null)
             {
@@ -395,14 +407,10 @@ namespace ServeX.ViewModels
             await ExecuteBusyActionAsync(async () =>
             {
                 await _tableService.DeleteTableAsync(table.Id);
+
                 if (_editingTableId == table.Id)
                 {
-                    CloseEditor();
-                }
-
-                if (SelectedTable?.Id == table.Id)
-                {
-                    SelectedTable = null;
+                    CloseEditor(false);
                 }
 
                 await RefreshAsync();
@@ -411,7 +419,7 @@ namespace ServeX.ViewModels
             }, "The table could not be deleted.");
         }
 
-        private async Task OpenOrderScreenAsync(Table table)
+        private async Task OpenOrderScreenAsync(TableFloorItemViewModel table)
         {
             if (table == null)
             {
@@ -420,41 +428,81 @@ namespace ServeX.ViewModels
 
             await ExecuteBusyActionAsync(async () =>
             {
-                await _orderWindowService.ShowForTableAsync(table);
-                await RefreshAsync();
+                var rawTable = GetTableById(table.Id);
+                if (rawTable == null)
+                {
+                    throw new InvalidOperationException("The selected table could not be found.");
+                }
+
+                await _orderWindowService.ShowForTableAsync(rawTable);
+                await RefreshAsync(rawTable.TableNumber);
                 RaiseTablesChanged();
             }, "The order screen could not be opened.");
         }
 
         private void OpenAddPanel()
         {
-            ResetEditor();
-            _editingTableId = null;
-            EditorArea = SelectedAreaFilter;
-            EditorStatus = TableStatus.Available;
-            IsEditorOpen = true;
-            OnPropertyChanged(nameof(IsEditMode));
-            OnPropertyChanged(nameof(EditorTitle));
-            ClearStatus();
-            NotifyCommandStates();
+            try
+            {
+                ResetEditor();
+                _editingTableId = null;
+                EditorArea = TableArea.Indoor;
+                EditorStatus = TableStatus.Available;
+                IsEditorOpen = true;
+                OnPropertyChanged(nameof(IsEditMode));
+                OnPropertyChanged(nameof(EditorTitle));
+                ClearStatus();
+                NotifyCommandStates();
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError("Opening add table editor failed", exception);
+                SetStatus(GetDevelopmentSafeMessage("The add table form could not be opened.", exception), true);
+            }
         }
 
-        private void OpenEditPanel(Table table)
+        private void OpenEditPanel(TableFloorItemViewModel table)
         {
-            if (table == null)
+            try
             {
-                return;
-            }
+                if (table == null)
+                {
+                    return;
+                }
 
-            _editingTableId = table.Id;
-            EditorTableNumber = table.TableNumber;
-            EditorArea = table.Area;
-            EditorStatus = table.Status;
-            IsEditorOpen = true;
-            OnPropertyChanged(nameof(IsEditMode));
-            OnPropertyChanged(nameof(EditorTitle));
-            ClearStatus();
-            NotifyCommandStates();
+                _editingTableId = table.Id;
+                EditorTableNumber = table.TableNumber;
+                EditorArea = table.Area;
+                EditorStatus = NormalizeEditableStatus(table.Status);
+                IsEditorOpen = true;
+                OnPropertyChanged(nameof(IsEditMode));
+                OnPropertyChanged(nameof(EditorTitle));
+                ClearStatus();
+                NotifyCommandStates();
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError("Opening edit table editor failed", exception);
+                SetStatus(GetDevelopmentSafeMessage("The selected table could not be opened for editing.", exception), true);
+            }
+        }
+
+        private void SelectTable(TableFloorItemViewModel table)
+        {
+            try
+            {
+                if (table == null)
+                {
+                    return;
+                }
+
+                SelectedTable = table;
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError("Selecting table from floor failed", exception);
+                SetStatus(GetDevelopmentSafeMessage("The selected table could not be loaded.", exception), true);
+            }
         }
 
         private void CloseEditor(bool clearStatus = true)
@@ -469,28 +517,22 @@ namespace ServeX.ViewModels
             NotifyCommandStates();
         }
 
-        private async Task RefreshAsync()
+        private async Task RefreshAsync(string selectedTableNumber = null)
         {
             try
             {
-                var items = await _tableService.GetTablesAsync() ?? new System.Collections.Generic.List<Table>();
-                Tables.Clear();
+                var items = await _tableService.GetTablesAsync() ?? new List<Table>();
+                var activeGuestNames = await _tableService.GetActiveGuestNamesByTableAsync() ?? new Dictionary<int, string>();
+                var previousSelectionId = SelectedTable?.Id;
+                var preferredTableNumber = selectedTableNumber;
+
+                _tables.Clear();
                 foreach (var item in items.Where(item => item != null))
                 {
-                    if (!System.Enum.IsDefined(typeof(TableArea), item.Area))
-                    {
-                        item.Area = TableArea.Indoor;
-                    }
-
-                    if (!System.Enum.IsDefined(typeof(TableStatus), item.Status))
-                    {
-                        item.Status = TableStatus.Available;
-                    }
-
-                    Tables.Add(item);
+                    _tables.Add(item);
                 }
 
-                ApplyAreaFilter();
+                ApplyAreaFilter(previousSelectionId, preferredTableNumber, activeGuestNames);
             }
             catch (Exception exception)
             {
@@ -528,28 +570,63 @@ namespace ServeX.ViewModels
         {
             _editingTableId = null;
             EditorTableNumber = string.Empty;
-            EditorArea = SelectedAreaFilter;
+            EditorArea = TableArea.Indoor;
             EditorStatus = TableStatus.Available;
             TouchValidation();
             OnPropertyChanged(nameof(IsEditMode));
             OnPropertyChanged(nameof(EditorTitle));
         }
 
-        private void ApplyAreaFilter()
+        private void ApplyAreaFilter(int? preferredSelectionId = null, string preferredTableNumber = null, IReadOnlyDictionary<int, string> activeGuestNames = null)
         {
-            FilteredTables.Clear();
+            var selectionId = preferredSelectionId ?? SelectedTable?.Id;
+            VisibleTables.Clear();
 
-            foreach (var table in Tables.Where(item => item.Area == SelectedAreaFilter).OrderBy(item => item.TableNumber))
+            foreach (var table in _tables
+                         .Where(item => item.Area == SelectedAreaFilter)
+                         .OrderBy(item => item.TableNumber))
             {
-                FilteredTables.Add(table);
+                var customerName = activeGuestNames != null && activeGuestNames.TryGetValue(table.Id, out var activeGuestName)
+                    ? activeGuestName
+                    : "Atithi";
+
+                VisibleTables.Add(new TableFloorItemViewModel
+                {
+                    Id = table.Id,
+                    TableNumber = table.TableNumber,
+                    Area = table.Area,
+                    Status = NormalizeEditableStatus(table.Status),
+                    CustomerName = customerName,
+                    HasActiveOrder = activeGuestNames != null && activeGuestNames.ContainsKey(table.Id)
+                });
             }
 
-            SynchronizeSelection();
-            OnPropertyChanged(nameof(IsEmpty));
-            OnPropertyChanged(nameof(AreaTableCount));
-            OnPropertyChanged(nameof(AvailableCount));
-            OnPropertyChanged(nameof(OccupiedCount));
-            OnPropertyChanged(nameof(ReservedCount));
+            SynchronizeSelection(selectionId, preferredTableNumber);
+            NotifySummaryProperties();
+        }
+
+        private void SynchronizeSelection(int? preferredSelectionId, string preferredTableNumber)
+        {
+            if (VisibleTables.Count == 0)
+            {
+                SelectedTable = null;
+                return;
+            }
+
+            TableFloorItemViewModel nextSelection = null;
+
+            if (!string.IsNullOrWhiteSpace(preferredTableNumber))
+            {
+                nextSelection = VisibleTables.FirstOrDefault(table =>
+                    string.Equals(table.TableNumber, preferredTableNumber, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (nextSelection == null && preferredSelectionId.HasValue)
+            {
+                nextSelection = VisibleTables.FirstOrDefault(table => table.Id == preferredSelectionId.Value);
+            }
+
+            SelectedTable = nextSelection ?? VisibleTables.FirstOrDefault();
         }
 
         private bool IsFormValid()
@@ -578,10 +655,28 @@ namespace ServeX.ViewModels
             _cancelCommand.RaiseCanExecuteChanged();
             _selectTableCommand.RaiseCanExecuteChanged();
             _openSelectedOrderCommand.RaiseCanExecuteChanged();
+            _openFloorOrderCommand.RaiseCanExecuteChanged();
             _editSelectedCommand.RaiseCanExecuteChanged();
             _deleteSelectedCommand.RaiseCanExecuteChanged();
             _showIndoorTablesCommand.RaiseCanExecuteChanged();
             _showOutdoorTablesCommand.RaiseCanExecuteChanged();
+        }
+
+        private void NotifySummaryProperties()
+        {
+            OnPropertyChanged(nameof(IsEmpty));
+            OnPropertyChanged(nameof(VisibleTablesCount));
+            OnPropertyChanged(nameof(AvailableCount));
+            OnPropertyChanged(nameof(OccupiedCount));
+            OnPropertyChanged(nameof(ReservedCount));
+        }
+
+        private void UpdateSelectionStates()
+        {
+            foreach (var table in VisibleTables)
+            {
+                table.IsSelected = SelectedTable != null && table.Id == SelectedTable.Id;
+            }
         }
 
         private void SetStatus(string message, bool isError)
@@ -592,14 +687,10 @@ namespace ServeX.ViewModels
 
         private void ResetTableCollections()
         {
-            Tables.Clear();
-            FilteredTables.Clear();
+            _tables.Clear();
+            VisibleTables.Clear();
             SelectedTable = null;
-            OnPropertyChanged(nameof(IsEmpty));
-            OnPropertyChanged(nameof(AreaTableCount));
-            OnPropertyChanged(nameof(AvailableCount));
-            OnPropertyChanged(nameof(OccupiedCount));
-            OnPropertyChanged(nameof(ReservedCount));
+            NotifySummaryProperties();
         }
 
         private void ClearStatus()
@@ -613,32 +704,16 @@ namespace ServeX.ViewModels
             TablesChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        private void OnTablesCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private Table GetTableById(int tableId)
         {
-            ApplyAreaFilter();
-            OnPropertyChanged(nameof(IsEmpty));
-            OnPropertyChanged(nameof(EditorTableNumber));
+            return _tables.FirstOrDefault(table => table.Id == tableId);
         }
 
-        private void SynchronizeSelection()
+        private static TableStatus NormalizeEditableStatus(TableStatus status)
         {
-            if (FilteredTables.Count == 0)
-            {
-                SelectedTable = null;
-                return;
-            }
-
-            if (SelectedTable != null)
-            {
-                var matchingTable = FilteredTables.FirstOrDefault(table => table.Id == SelectedTable.Id);
-                if (matchingTable != null)
-                {
-                    SelectedTable = matchingTable;
-                    return;
-                }
-            }
-
-            SelectedTable = FilteredTables.FirstOrDefault();
+            return status == TableStatus.Occupied || status == TableStatus.Reserved
+                ? status
+                : TableStatus.Available;
         }
 
         private static string GetDevelopmentSafeMessage(string fallbackMessage, Exception exception)

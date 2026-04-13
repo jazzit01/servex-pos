@@ -35,17 +35,64 @@ namespace ServeX.Services
             }
         }
 
+        public async Task<Dictionary<int, string>> GetActiveGuestNamesByTableAsync()
+        {
+            try
+            {
+                using (var context = new ServeXDbContext())
+                {
+                    var activeOrders = await context.Orders
+                        .AsNoTracking()
+                        .Where(order =>
+                            order.Type == OrderType.Table &&
+                            order.Status != OrderStatus.Billed &&
+                            order.Status != OrderStatus.Paid &&
+                            order.Status != OrderStatus.Cancelled)
+                        .OrderByDescending(order => order.CreatedAt)
+                        .Select(order => new
+                        {
+                            order.ReferenceId,
+                            order.CustomerName
+                        })
+                        .ToListAsync();
+
+                    return activeOrders
+                        .GroupBy(order => order.ReferenceId)
+                        .ToDictionary(
+                            group => group.Key,
+                            group =>
+                            {
+                                var customerName = group
+                                    .Select(order => order.CustomerName)
+                                    .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name));
+
+                                return string.IsNullOrWhiteSpace(customerName)
+                                    ? "Atithi"
+                                    : customerName.Trim();
+                            });
+                }
+            }
+            catch (System.Exception exception)
+            {
+                _logService.LogError("Active guest lookup failed for tables", exception);
+                throw;
+            }
+        }
+
         public async Task<Table> AddTableAsync(Table table)
         {
             try
             {
                 using (var context = new ServeXDbContext())
                 {
+                    var normalizedTableNumber = NormalizeTableNumber(table?.TableNumber);
+                    await EnsureUniqueTableNumberAsync(context, normalizedTableNumber);
+
                     var entity = new Table
                     {
-                        TableNumber = table.TableNumber,
-                        Area = NormalizeArea(table.Area),
-                        Status = NormalizeStatus(table.Status)
+                        TableNumber = normalizedTableNumber,
+                        Area = NormalizeArea(table?.Area ?? TableArea.Indoor),
+                        Status = NormalizeStatus(table?.Status ?? TableStatus.Available)
                     };
 
                     context.Tables.Add(entity);
@@ -67,13 +114,66 @@ namespace ServeX.Services
             {
                 using (var context = new ServeXDbContext())
                 {
+                    if (table == null)
+                    {
+                        throw new System.InvalidOperationException("The selected table could not be loaded.");
+                    }
+
+                    var normalizedTableNumber = NormalizeTableNumber(table?.TableNumber);
+                    await EnsureUniqueTableNumberAsync(context, normalizedTableNumber, table?.Id);
+
                     var entity = await context.Tables.FirstOrDefaultAsync(item => item.Id == table.Id);
                     if (entity == null)
+                    {
+                        throw new System.InvalidOperationException("The selected table could not be found.");
+                    }
+
+                    if (table.Status == TableStatus.Cleaning)
+                    {
+                        table.Status = TableStatus.Available;
+                    }
+
+                    if (table.Area == 0)
+                    {
+                        table.Area = TableArea.Indoor;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(normalizedTableNumber))
+                    {
+                        throw new System.InvalidOperationException("Table number is required.");
+                    }
+
+                    if (!System.Enum.IsDefined(typeof(TableArea), table.Area))
+                    {
+                        table.Area = TableArea.Indoor;
+                    }
+
+                    if (!System.Enum.IsDefined(typeof(TableStatus), table.Status) || table.Status == TableStatus.Cleaning)
+                    {
+                        table.Status = TableStatus.Available;
+                    }
+
+                    if (!System.Enum.IsDefined(typeof(TableArea), entity.Area))
+                    {
+                        entity.Area = TableArea.Indoor;
+                    }
+
+                    if (!System.Enum.IsDefined(typeof(TableStatus), entity.Status) || entity.Status == TableStatus.Cleaning)
+                    {
+                        entity.Status = TableStatus.Available;
+                    }
+
+                    if (entity.Id <= 0)
+                    {
+                        throw new System.InvalidOperationException("The selected table is invalid.");
+                    }
+
+                    if (entity.TableNumber == null)
                     {
                         return;
                     }
 
-                    entity.TableNumber = table.TableNumber;
+                    entity.TableNumber = normalizedTableNumber;
                     entity.Area = NormalizeArea(table.Area);
                     entity.Status = NormalizeStatus(table.Status);
 
@@ -119,6 +219,32 @@ namespace ServeX.Services
             return table;
         }
 
+        private static string NormalizeTableNumber(string tableNumber)
+        {
+            return string.IsNullOrWhiteSpace(tableNumber)
+                ? string.Empty
+                : tableNumber.Trim();
+        }
+
+        private static async Task EnsureUniqueTableNumberAsync(ServeXDbContext context, string tableNumber, int? currentTableId = null)
+        {
+            if (string.IsNullOrWhiteSpace(tableNumber))
+            {
+                throw new System.InvalidOperationException("Table number is required.");
+            }
+
+            var normalizedTableNumber = tableNumber.Trim().ToLower();
+            var duplicateExists = await context.Tables
+                .AnyAsync(table =>
+                    table.Id != currentTableId.GetValueOrDefault() &&
+                    (table.TableNumber ?? string.Empty).ToLower() == normalizedTableNumber);
+
+            if (duplicateExists)
+            {
+                throw new System.InvalidOperationException("Table number must be unique.");
+            }
+        }
+
         private static TableArea NormalizeArea(TableArea area)
         {
             return System.Enum.IsDefined(typeof(TableArea), area)
@@ -128,9 +254,12 @@ namespace ServeX.Services
 
         private static TableStatus NormalizeStatus(TableStatus status)
         {
-            return System.Enum.IsDefined(typeof(TableStatus), status)
-                ? status
-                : TableStatus.Available;
+            if (!System.Enum.IsDefined(typeof(TableStatus), status) || status == TableStatus.Cleaning)
+            {
+                return TableStatus.Available;
+            }
+
+            return status;
         }
     }
 }
