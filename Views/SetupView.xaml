@@ -6,8 +6,10 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <Grid MaxWidth="760"
+              HorizontalAlignment="Center">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -24,7 +26,7 @@
             </StackPanel>
 
             <Border Grid.Row="1"
-                    Margin="0,22,0,0"
+                    Margin="0,20,0,0"
                     Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource StatusBannerBorderStyle}">
@@ -42,14 +44,14 @@
             </Border>
 
             <Grid Grid.Row="2"
-                  Margin="0,26,0,0">
+                  Margin="0,20,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <Border Margin="0,0,12,0"
-                        Padding="22"
+                        Padding="20"
                         Style="{StaticResource SoftPanelStyle}">
                     <StackPanel>
                         <TextBlock FontSize="18"
@@ -61,6 +63,7 @@
                                    Text="These details appear across bills, tax calculations, and the shell header." />
 
                         <TextBlock Style="{StaticResource FieldLabelStyle}"
+                                   Margin="0,0,0,8"
                                    Text="Restaurant Name" />
                         <TextBox Style="{StaticResource FormTextBoxStyle}"
                                  Text="{Binding RestaurantName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
@@ -88,7 +91,7 @@
 
                 <Border Grid.Column="1"
                         Margin="12,0,0,0"
-                        Padding="22"
+                        Padding="20"
                         Style="{StaticResource SoftPanelStyle}">
                     <StackPanel>
                         <TextBlock FontSize="18"
@@ -100,6 +103,7 @@
                                    Text="Create the first admin sign-in that will take ownership of this installation." />
 
                         <TextBlock Style="{StaticResource FieldLabelStyle}"
+                                   Margin="0,0,0,8"
                                    Text="Admin Username" />
                         <TextBox Style="{StaticResource FormTextBoxStyle}"
                                  Text="{Binding AdminUsername, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
@@ -134,7 +138,7 @@
             </Grid>
 
             <Grid Grid.Row="3"
-                  Margin="0,28,0,0">
+                  Margin="0,20,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
@@ -147,7 +151,7 @@
                 <Button Grid.Column="1"
                         IsDefault="True"
                         Command="{Binding SaveSetupCommand}"
-                        Style="{StaticResource PrimaryActionButtonStyle}">
+                        Style="{StaticResource PrimaryButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock FontFamily="Segoe MDL2 Assets"
                                    FontSize="16"

@@ -291,18 +291,27 @@ namespace ServeX.ViewModels
 
         public async Task LoadAsync()
         {
-            await ExecuteBusyActionAsync(async () =>
+            try
             {
-                await RefreshAsync();
-                if (IsEmpty)
+                await ExecuteBusyActionAsync(async () =>
                 {
-                    SetStatus("No tables exist yet. Add the first table to begin mapping the floor.", false);
-                }
-                else if (!IsStatusError)
-                {
-                    ClearStatus();
-                }
-            }, "Tables could not be loaded.");
+                    await RefreshAsync();
+                    if (IsEmpty)
+                    {
+                        SetStatus("No tables exist yet. Add the first table to begin mapping the floor.", false);
+                    }
+                    else if (!IsStatusError)
+                    {
+                        ClearStatus();
+                    }
+                }, "Tables could not be loaded.");
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError("Tables view model load failed", exception);
+                ResetTableCollections();
+                SetStatus(GetDevelopmentSafeMessage("Tables could not be loaded.", exception), true);
+            }
         }
 
         public string this[string columnName]
@@ -462,24 +471,33 @@ namespace ServeX.ViewModels
 
         private async Task RefreshAsync()
         {
-            var items = await _tableService.GetTablesAsync() ?? new System.Collections.Generic.List<Table>();
-            Tables.Clear();
-            foreach (var item in items.Where(item => item != null))
+            try
             {
-                if (!System.Enum.IsDefined(typeof(TableArea), item.Area))
+                var items = await _tableService.GetTablesAsync() ?? new System.Collections.Generic.List<Table>();
+                Tables.Clear();
+                foreach (var item in items.Where(item => item != null))
                 {
-                    item.Area = TableArea.Indoor;
+                    if (!System.Enum.IsDefined(typeof(TableArea), item.Area))
+                    {
+                        item.Area = TableArea.Indoor;
+                    }
+
+                    if (!System.Enum.IsDefined(typeof(TableStatus), item.Status))
+                    {
+                        item.Status = TableStatus.Available;
+                    }
+
+                    Tables.Add(item);
                 }
 
-                if (!System.Enum.IsDefined(typeof(TableStatus), item.Status))
-                {
-                    item.Status = TableStatus.Available;
-                }
-
-                Tables.Add(item);
+                ApplyAreaFilter();
             }
-
-            ApplyAreaFilter();
+            catch (Exception exception)
+            {
+                _logService.LogError("Refreshing tables failed", exception);
+                ResetTableCollections();
+                throw;
+            }
         }
 
         private async Task ExecuteBusyActionAsync(Func<Task> action, string fallbackMessage)
@@ -495,15 +513,10 @@ namespace ServeX.ViewModels
             {
                 await action();
             }
-            catch (DbUpdateException)
-            {
-                _logService.LogError(fallbackMessage, null);
-                SetStatus(fallbackMessage, true);
-            }
             catch (Exception exception)
             {
                 _logService.LogError(fallbackMessage, exception);
-                SetStatus(fallbackMessage, true);
+                SetStatus(GetDevelopmentSafeMessage(fallbackMessage, exception), true);
             }
             finally
             {
@@ -577,6 +590,18 @@ namespace ServeX.ViewModels
             IsStatusError = isError;
         }
 
+        private void ResetTableCollections()
+        {
+            Tables.Clear();
+            FilteredTables.Clear();
+            SelectedTable = null;
+            OnPropertyChanged(nameof(IsEmpty));
+            OnPropertyChanged(nameof(AreaTableCount));
+            OnPropertyChanged(nameof(AvailableCount));
+            OnPropertyChanged(nameof(OccupiedCount));
+            OnPropertyChanged(nameof(ReservedCount));
+        }
+
         private void ClearStatus()
         {
             StatusMessage = string.Empty;
@@ -614,6 +639,15 @@ namespace ServeX.ViewModels
             }
 
             SelectedTable = FilteredTables.FirstOrDefault();
+        }
+
+        private static string GetDevelopmentSafeMessage(string fallbackMessage, Exception exception)
+        {
+#if DEBUG
+            return exception?.Message ?? fallbackMessage;
+#else
+            return fallbackMessage;
+#endif
         }
     }
 }

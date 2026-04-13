@@ -18,7 +18,8 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Root"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="14">
+                                CornerRadius="{StaticResource RadiusSmall}"
+                                ClipToBounds="True">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center" />
                         </Border>
@@ -65,7 +66,8 @@
                                 Background="#F8FAFC"
                                 BorderBrush="#E2E8F0"
                                 BorderThickness="1"
-                                CornerRadius="18">
+                                CornerRadius="{StaticResource RadiusSmall}"
+                                ClipToBounds="True">
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -109,7 +111,8 @@
             <Border Grid.Row="1"
                     Margin="0,22,0,0"
                     Padding="14"
-                    CornerRadius="16"
+                    CornerRadius="{StaticResource RadiusSmall}"
+                    ClipToBounds="True"
                     Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Border.Style>
                     <Style TargetType="Border">
@@ -132,7 +135,8 @@
                     Background="White"
                     BorderBrush="#D8E3EC"
                     BorderThickness="1"
-                    CornerRadius="26">
+                    CornerRadius="{StaticResource RadiusLarge}"
+                    ClipToBounds="True">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -155,7 +159,8 @@
                                             Background="#F8FAFC"
                                             BorderBrush="#E2E8F0"
                                             BorderThickness="1"
-                                            CornerRadius="18">
+                                            CornerRadius="{StaticResource RadiusSmall}"
+                                            ClipToBounds="True">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -197,7 +202,8 @@
                 Background="White"
                 BorderBrush="#D8E3EC"
                 BorderThickness="1"
-                CornerRadius="28">
+                CornerRadius="{StaticResource RadiusLarge}"
+                ClipToBounds="True">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -269,7 +275,8 @@
                         Margin="0,22,0,0"
                         Padding="18"
                         Background="#F8FAFC"
-                        CornerRadius="22">
+                        CornerRadius="{StaticResource RadiusSmall}"
+                        ClipToBounds="True">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
