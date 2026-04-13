@@ -8,7 +8,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </UserControl.Resources>
 
-    <Grid Margin="24"
+    <Grid Margin="16"
           HorizontalAlignment="Stretch"
           VerticalAlignment="Stretch">
         <Grid.RowDefinitions>
@@ -17,7 +17,7 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
-                Margin="0,0,0,24"
+                Margin="0,0,0,16"
                 Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border.Style>
                 <Style TargetType="Border"
@@ -39,18 +39,18 @@
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="240" />
-                <ColumnDefinition Width="24" />
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="16" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="24" />
-                <ColumnDefinition Width="320" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="300" />
             </Grid.ColumnDefinitions>
 
             <ScrollViewer Grid.Column="0"
-                          VerticalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Hidden"
                           HorizontalScrollBarVisibility="Disabled">
                 <StackPanel HorizontalAlignment="Stretch">
-                    <Border Padding="24"
+                    <Border Padding="18"
                             Style="{StaticResource SurfaceCardStyle}">
                         <StackPanel HorizontalAlignment="Left">
                             <TextBlock Style="{StaticResource CardSectionTitleTextStyle}"
@@ -59,7 +59,7 @@
                                        Style="{StaticResource SectionSubtitleTextStyle}"
                                        Text="Switch between indoor and outdoor, watch live counts, and add new tables without leaving the floor." />
 
-                            <Button Margin="0,24,0,0"
+                            <Button Margin="0,16,0,0"
                                     Command="{Binding BeginAddCommand}"
                                     Style="{StaticResource PrimaryButtonStyle}">
                                 <StackPanel Orientation="Horizontal">
@@ -119,8 +119,8 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Margin="0,16,0,0"
-                            Padding="20"
+                    <Border Margin="0,12,0,0"
+                            Padding="16"
                             Style="{StaticResource SoftPanelStyle}">
                         <StackPanel>
                             <TextBlock Foreground="{StaticResource MutedTextBrush}"
@@ -133,8 +133,8 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Margin="0,16,0,0"
-                            Padding="20"
+                    <Border Margin="0,12,0,0"
+                            Padding="16"
                             Background="{StaticResource SuccessSoftBrush}"
                             CornerRadius="{StaticResource RadiusLarge}">
                         <StackPanel>
@@ -148,8 +148,8 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Margin="0,16,0,0"
-                            Padding="20"
+                    <Border Margin="0,12,0,0"
+                            Padding="16"
                             Background="{StaticResource DangerSoftBrush}"
                             CornerRadius="{StaticResource RadiusLarge}">
                         <StackPanel>
@@ -163,8 +163,8 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Margin="0,16,0,0"
-                            Padding="20"
+                    <Border Margin="0,12,0,0"
+                            Padding="16"
                             Background="{StaticResource WarningSoftBrush}"
                             CornerRadius="{StaticResource RadiusLarge}">
                         <StackPanel>
@@ -181,7 +181,7 @@
             </ScrollViewer>
 
             <Border Grid.Column="2"
-                    Padding="24"
+                    Padding="18"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Style="{StaticResource SurfaceCardStyle}">
@@ -217,10 +217,10 @@
                     </Grid>
 
                     <Grid Grid.Row="1"
-                          Margin="0,24,0,0"
+                          Margin="0,16,0,0"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                        <ScrollViewer VerticalScrollBarVisibility="Hidden"
                                       HorizontalScrollBarVisibility="Disabled">
                             <ItemsControl ItemsSource="{Binding VisibleTables}">
                                 <ItemsControl.ItemsPanel>
@@ -391,10 +391,10 @@
             </Border>
 
             <ScrollViewer Grid.Column="4"
-                          VerticalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Hidden"
                           HorizontalScrollBarVisibility="Disabled">
                 <StackPanel HorizontalAlignment="Stretch">
-                    <Border Padding="24"
+                    <Border Padding="18"
                             Style="{StaticResource SurfaceCardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -515,8 +515,8 @@
                         </Grid>
                     </Border>
 
-                    <Border Margin="0,16,0,0"
-                            Padding="24"
+                    <Border Margin="0,12,0,0"
+                            Padding="18"
                             Style="{StaticResource SurfaceCardStyle}"
                             Visibility="{Binding IsEditorOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <Grid>

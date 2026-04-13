@@ -79,3 +79,4 @@
 [2026-04-13 18.04] INFO: Table deleted: T2
 [2026-04-13 18.04] INFO: Table deleted: G1
 [2026-04-13 18.25] INFO: Startup flow resolved to login
+[2026-04-13 18.34] INFO: Startup flow resolved to login

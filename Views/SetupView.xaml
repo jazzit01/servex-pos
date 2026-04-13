@@ -6,7 +6,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
+    <ScrollViewer VerticalScrollBarVisibility="Hidden"
                   HorizontalScrollBarVisibility="Disabled">
         <Grid MaxWidth="760"
               HorizontalAlignment="Center">
@@ -26,7 +26,7 @@
             </StackPanel>
 
             <Border Grid.Row="1"
-                    Margin="0,20,0,0"
+                    Margin="0,16,0,0"
                     Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource StatusBannerBorderStyle}">
@@ -44,14 +44,14 @@
             </Border>
 
             <Grid Grid.Row="2"
-                  Margin="0,20,0,0">
+                  Margin="0,16,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Margin="0,0,12,0"
-                        Padding="20"
+                <Border Margin="0,0,8,0"
+                        Padding="16"
                         Style="{StaticResource SoftPanelStyle}">
                     <StackPanel>
                         <TextBlock FontSize="18"
@@ -71,7 +71,7 @@
                         <TextBlock Style="{StaticResource FieldLabelStyle}"
                                    Text="Address" />
                         <TextBox Style="{StaticResource FormTextBoxStyle}"
-                                 MinHeight="96"
+                                 MinHeight="72"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
                                  VerticalContentAlignment="Top"
@@ -90,8 +90,8 @@
                 </Border>
 
                 <Border Grid.Column="1"
-                        Margin="12,0,0,0"
-                        Padding="20"
+                        Margin="8,0,0,0"
+                        Padding="16"
                         Style="{StaticResource SoftPanelStyle}">
                     <StackPanel>
                         <TextBlock FontSize="18"
@@ -119,8 +119,8 @@
                         <TextBox Style="{StaticResource FormTextBoxStyle}"
                                  Text="{Binding LicenseKey, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
 
-                        <Border Margin="0,18,0,0"
-                                Padding="16"
+                        <Border Margin="0,16,0,0"
+                                Padding="14"
                                 Background="{StaticResource AccentSoftBrush}"
                                 CornerRadius="{StaticResource RadiusMedium}">
                             <StackPanel Orientation="Horizontal">
@@ -138,7 +138,7 @@
             </Grid>
 
             <Grid Grid.Row="3"
-                  Margin="0,20,0,0">
+                  Margin="0,16,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />

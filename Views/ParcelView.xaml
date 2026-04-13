@@ -12,7 +12,7 @@
             <ColumnDefinition Width="360" />
         </Grid.ColumnDefinitions>
 
-        <Grid Margin="24,24,0,24">
+        <Grid Margin="16,16,0,16">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -28,7 +28,7 @@
             </StackPanel>
 
             <ListBox Grid.Row="1"
-                     Margin="0,24,0,0"
+                     Margin="0,16,0,0"
                      HorizontalAlignment="Stretch"
                      ItemsSource="{Binding Categories}"
                      SelectedItem="{Binding SelectedCategory}"
@@ -42,10 +42,10 @@
             </ListBox>
 
             <ScrollViewer Grid.Row="2"
-                          Margin="0,24,0,0"
+                          Margin="0,16,0,0"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
-                          VerticalScrollBarVisibility="Auto">
+                          VerticalScrollBarVisibility="Hidden">
                 <ItemsControl ItemsSource="{Binding FilteredMenuItems}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -129,8 +129,8 @@
         </Grid>
 
         <Border Grid.Column="2"
-                Margin="0,24,24,24"
-                Padding="24"
+                Margin="0,16,16,16"
+                Padding="18"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 Style="{StaticResource SurfaceCardStyle}">
@@ -196,8 +196,8 @@
                 </Border>
 
                 <Grid Grid.Row="2"
-                      Margin="0,24,0,0">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                      Margin="0,16,0,0">
+                    <ScrollViewer VerticalScrollBarVisibility="Hidden">
                         <ItemsControl ItemsSource="{Binding OrderItems}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -287,8 +287,8 @@
                 </Grid>
 
                 <Border Grid.Row="3"
-                        Margin="0,24,0,0"
-                        Padding="20"
+                        Margin="0,16,0,0"
+                        Padding="16"
                         Style="{StaticResource SoftPanelStyle}">
                     <StackPanel>
                         <Grid>
