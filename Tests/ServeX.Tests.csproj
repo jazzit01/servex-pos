@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework Condition="'$(TestWindows)' != 'true'">net8.0</TargetFramework>
+    <TargetFramework Condition="'$(TestWindows)' == 'true'">net8.0-windows</TargetFramework>
+    <UseWPF Condition="'$(TestWindows)' == 'true'">true</UseWPF>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TestWindows)' == 'true'">
+    <ProjectReference Include="../ServeX.csproj" />
+  </ItemGroup>
+  <!-- Compile the actual platform-neutral production files on Linux, with the same
+       migrations/provider. No fake persistence implementation or WPF stubs. -->
+  <ItemGroup Condition="'$(TestWindows)' != 'true'">
+    <Compile Remove="WindowsCompositionTests.cs" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <Compile Include="../Models/*.cs" Link="Production/Models/%(Filename)%(Extension)" />
+    <Compile Include="../Data/ServeXDbContext.cs" Link="Production/Data/ServeXDbContext.cs" />
+    <Compile Include="../Migrations/*.cs" Link="Production/Migrations/%(Filename)%(Extension)" />
+    <Compile Include="../Infrastructure/Persistence/*.cs" Link="Production/Persistence/%(Filename)%(Extension)" />
+    <Compile Include="../Application/CoreServices.cs" Link="Production/CoreServices.cs" />
+    <Compile Include="../Presentation/Navigation/*.cs" Link="Production/Navigation/%(Filename)%(Extension)" />
+    <Compile Include="../ViewModels/ViewModelBase.cs;../ViewModels/RelayCommand.cs;../ViewModels/AsyncRelayCommand.cs;../ViewModels/OrderLineItemViewModel.cs" Link="Production/ViewModels/%(Filename)%(Extension)" />
+    <Compile Include="../Services/*.cs" Exclude="../Services/*WindowService.cs;../Services/DialogService.cs;../Services/SaveFileDialogService.cs;../Services/ReceiptPrintService.cs" Link="Production/Services/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

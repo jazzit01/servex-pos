@@ -9,6 +9,9 @@ namespace ServeX.Services
         private static readonly object SyncRoot = new object();
         public static string LogFilePath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ServeX", "Logs", "servex.log");
 
+        private readonly string _filePath;
+        public LogService(string logFilePath = null) { _filePath = logFilePath ?? LogFilePath; }
+
         public void LogInfo(string message)
         {
             WriteEntry("INFO", message);
@@ -23,7 +26,7 @@ namespace ServeX.Services
             WriteEntry("ERROR", fullMessage);
         }
 
-        private static void WriteEntry(string type, string message)
+        private void WriteEntry(string type, string message)
         {
             try
             {
@@ -41,8 +44,8 @@ namespace ServeX.Services
 
                 lock (SyncRoot)
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(LogFilePath));
-                    File.AppendAllText(LogFilePath, line, Encoding.UTF8);
+                    Directory.CreateDirectory(Path.GetDirectoryName(_filePath));
+                    File.AppendAllText(_filePath, line, Encoding.UTF8);
                 }
             }
             catch (Exception exception)

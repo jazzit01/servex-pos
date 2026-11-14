@@ -228,6 +228,8 @@ namespace ServeX.Services
                                 item.Status != OrderStatus.Billed &&
                                 item.Status != OrderStatus.Paid &&
                                 item.Status != OrderStatus.Cancelled);
+                        if (order == null)
+                            throw new InvalidOperationException("The parcel order is no longer editable. Refresh before starting a new order.");
                     }
 
                     if (order == null)

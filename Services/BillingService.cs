@@ -75,10 +75,15 @@ namespace ServeX.Services
                         throw new InvalidOperationException("The order has no items to bill.");
                     }
 
-                    if (order.Status == OrderStatus.Billed || order.Bill?.PaidAt != null)
+                    if (order.Status == OrderStatus.Billed || order.Status == OrderStatus.Paid || order.Bill?.PaidAt != null)
                     {
                         throw new InvalidOperationException("This order has already been billed.");
                     }
+
+                    if (order.Status == OrderStatus.Cancelled)
+                        throw new InvalidOperationException("A cancelled order cannot be billed.");
+                    if (!Enum.IsDefined(paymentMethod))
+                        throw new InvalidOperationException("Select a valid payment method.");
 
                     var taxRate = await GetTaxRateAsync(context);
                     var subtotal = decimal.Round(orderItems.Select(item => item.Price * item.Quantity).DefaultIfEmpty(0m).Sum(), 2);
