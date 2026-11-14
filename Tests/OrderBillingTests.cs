@@ -98,7 +98,7 @@ public class OrderBillingTests
         var orders = db.Services.GetRequiredService<OrderService>();
         var saved = await orders.SaveParcelOrderAsync(null, "  Guest  ",
             new[] { new OrderSaveItem { MenuItemId = ids.MenuId, Quantity = 1, Price = 19.99m } });
-        var edited = await orders.SaveParcelOrderAsync(saved.Id, "Guest", 
+        var edited = await orders.SaveParcelOrderAsync(saved.Id, "Guest",
             new[] { new OrderSaveItem { MenuItemId = ids.MenuId, Quantity = 2, Price = 19.99m } });
         Assert.Equal(saved.Id, edited.Id);
         Assert.Equal("Guest", edited.CustomerName);
