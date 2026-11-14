@@ -9,25 +9,23 @@ namespace ServeX.Services
     [SupportedOSPlatform("windows")]
     public class BillingWindowService
     {
-        private readonly BillingService _billingService;
-        private readonly ReceiptPrintService _receiptPrintService;
+        private readonly System.Func<int, BillingViewModel> _createViewModel;
+        private readonly System.Func<BillingWindow> _createWindow;
 
-        public BillingWindowService(BillingService billingService, ReceiptPrintService receiptPrintService)
+        public BillingWindowService(System.Func<int, BillingViewModel> createViewModel, System.Func<BillingWindow> createWindow)
         {
-            _billingService = billingService;
-            _receiptPrintService = receiptPrintService;
+            _createViewModel = createViewModel;
+            _createWindow = createWindow;
         }
 
         public async Task ShowAsync(int orderId)
         {
-            var viewModel = new BillingViewModel(_billingService, _receiptPrintService, orderId);
+            var viewModel = _createViewModel(orderId);
             await viewModel.LoadAsync();
 
-            var window = new BillingWindow
-            {
-                Owner = Application.Current?.MainWindow,
-                DataContext = viewModel
-            };
+            var window = _createWindow();
+            window.Owner = System.Windows.Application.Current?.MainWindow;
+            window.DataContext = viewModel;
 
             window.ShowDialog();
         }

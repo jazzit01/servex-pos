@@ -9,11 +9,14 @@ namespace ServeX.Services
 {
     public class ApplicationAccessService
     {
+        private readonly IDbContextFactory<ServeXDbContext> _contexts;
         private readonly LicenseService _licenseService;
-        private readonly LogService _logService = new LogService();
+        private readonly LogService _logService;
 
-        public ApplicationAccessService(LicenseService licenseService)
+        public ApplicationAccessService(LicenseService licenseService, IDbContextFactory<ServeXDbContext> contexts, LogService logService)
         {
+            _contexts = contexts;
+            _logService = logService;
             _licenseService = licenseService ?? throw new ArgumentNullException(nameof(licenseService));
         }
 
@@ -21,7 +24,7 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var settings = await context.Settings
                         .AsNoTracking()
@@ -57,7 +60,7 @@ namespace ServeX.Services
 
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     if (await context.Settings.AnyAsync())
                     {
@@ -112,7 +115,7 @@ namespace ServeX.Services
 
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var settings = await context.Settings
                         .AsNoTracking()

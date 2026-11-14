@@ -10,13 +10,20 @@ namespace ServeX.Services
 {
     public class OrderService
     {
-        private readonly LogService _logService = new LogService();
+        private readonly IDbContextFactory<ServeXDbContext> _contexts;
+        public OrderService(IDbContextFactory<ServeXDbContext> contexts, LogService logService)
+        {
+            _contexts = contexts;
+            _logService = logService;
+        }
+
+        private readonly LogService _logService;
 
         public async Task<Table> GetTableAsync(int tableId)
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     return await context.Tables
                         .AsNoTracking()
@@ -34,7 +41,7 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     return await context.MenuItems
                         .AsNoTracking()
@@ -54,7 +61,7 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     return await context.Orders
                         .AsNoTracking()
@@ -80,7 +87,7 @@ namespace ServeX.Services
 
         public async Task<Order> GetOrderAsync(int orderId)
         {
-            using (var context = new ServeXDbContext())
+            using (var context = _contexts.CreateDbContext())
             {
                 return await context.Orders
                     .AsNoTracking()
@@ -93,7 +100,7 @@ namespace ServeX.Services
 
         public async Task<decimal> GetTaxPercentageAsync()
         {
-            using (var context = new ServeXDbContext())
+            using (var context = _contexts.CreateDbContext())
             {
                 return await GetTaxPercentageAsync(context);
             }
@@ -112,7 +119,7 @@ namespace ServeX.Services
 
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var table = await context.Tables.FirstOrDefaultAsync(item => item.Id == tableId);
                     if (table == null)
@@ -207,7 +214,7 @@ namespace ServeX.Services
 
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     Order order = null;
                     if (orderId.HasValue)

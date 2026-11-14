@@ -5,11 +5,11 @@ using ServeX.Services;
 
 namespace ServeX.ViewModels
 {
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public class AuthWindowViewModel : ViewModelBase
     {
-        private readonly ApplicationAccessService _applicationAccessService;
+        private readonly ServeX.Application.PresentationFactory _factory;
         private readonly ApplicationSettingsService _applicationSettingsService;
-        private readonly LicenseService _licenseService;
         private readonly Func<User, Task> _onAuthenticatedAsync;
         private object _currentViewModel;
         private string _windowTitle = "ServeX";
@@ -17,14 +17,11 @@ namespace ServeX.ViewModels
         private string _panelSubtitle = "Restaurant operations, billing, and service flow in one place.";
 
         public AuthWindowViewModel(
-            ApplicationAccessService applicationAccessService,
             ApplicationSettingsService applicationSettingsService,
-            LicenseService licenseService,
-            Func<User, Task> onAuthenticatedAsync)
+            Func<User, Task> onAuthenticatedAsync, ServeX.Application.PresentationFactory factory)
         {
-            _applicationAccessService = applicationAccessService ?? throw new ArgumentNullException(nameof(applicationAccessService));
+            _factory = factory;
             _applicationSettingsService = applicationSettingsService ?? throw new ArgumentNullException(nameof(applicationSettingsService));
-            _licenseService = licenseService ?? throw new ArgumentNullException(nameof(licenseService));
             _onAuthenticatedAsync = onAuthenticatedAsync ?? throw new ArgumentNullException(nameof(onAuthenticatedAsync));
         }
 
@@ -60,6 +57,8 @@ namespace ServeX.ViewModels
                 return;
             }
 
+            if (startupFlow != StartupFlow.Login)
+                throw new InvalidOperationException("Startup access is blocked. Check the database and application configuration.");
             await ShowLoginAsync();
         }
 
@@ -68,7 +67,7 @@ namespace ServeX.ViewModels
             WindowTitle = "ServeX Setup";
             PanelTitle = "First-time setup";
             PanelSubtitle = "Configure your restaurant and create the admin account. License is optional in local development.";
-            CurrentViewModel = new SetupViewModel(_applicationAccessService, _licenseService, OnSetupCompletedAsync);
+            CurrentViewModel = _factory.CreateSetup(OnSetupCompletedAsync);
         }
 
         private async Task ShowLoginAsync(string preferredUsername = "", string statusMessage = "")
@@ -79,8 +78,7 @@ namespace ServeX.ViewModels
             WindowTitle = "ServeX Login";
             PanelTitle = restaurantName;
             PanelSubtitle = "Sign in to continue managing service, orders, billing, and the live floor.";
-            CurrentViewModel = new LoginViewModel(
-                _applicationAccessService,
+            CurrentViewModel = _factory.CreateLogin(
                 restaurantName,
                 _onAuthenticatedAsync,
                 preferredUsername,

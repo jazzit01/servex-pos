@@ -14,6 +14,7 @@ namespace ServeX.ViewModels
     [SupportedOSPlatform("windows")]
     public class BillingViewModel : ViewModelBase, IDataErrorInfo
     {
+        private readonly LogService _logService;
         private readonly BillingService _billingService;
         private readonly ReceiptPrintService _receiptPrintService;
         private readonly int _orderId;
@@ -27,8 +28,9 @@ namespace ServeX.ViewModels
         private ReceiptData _receiptData;
         private decimal _taxPercentage = 5m;
 
-        public BillingViewModel(BillingService billingService, ReceiptPrintService receiptPrintService, int orderId)
+        public BillingViewModel(BillingService billingService, ReceiptPrintService receiptPrintService, int orderId, LogService logService)
         {
+            _logService = logService;
             _billingService = billingService ?? throw new ArgumentNullException(nameof(billingService));
             _receiptPrintService = receiptPrintService ?? throw new ArgumentNullException(nameof(receiptPrintService));
             _orderId = orderId;
@@ -41,7 +43,7 @@ namespace ServeX.ViewModels
                 PaymentMethod.Upi
             };
 
-            ConfirmPaymentCommand = new RelayCommand(async _ => await ConfirmPaymentAsync(), _ => CanConfirmPayment);
+            ConfirmPaymentCommand = new AsyncRelayCommand(async _ => await ConfirmPaymentAsync(), _ => CanConfirmPayment);
             PrintReceiptCommand = new RelayCommand(_ => PrintReceipt(), _ => CanPrintReceipt);
         }
 
@@ -49,7 +51,7 @@ namespace ServeX.ViewModels
 
         public ObservableCollection<PaymentMethod> PaymentOptions { get; }
 
-        public RelayCommand ConfirmPaymentCommand { get; }
+        public AsyncRelayCommand ConfirmPaymentCommand { get; }
 
         public RelayCommand PrintReceiptCommand { get; }
 
@@ -302,8 +304,9 @@ namespace ServeX.ViewModels
                 _receiptPrintService.PrintReceipt(_receiptData);
                 SetStatus("Receipt sent to the printer.", false);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                _logService.LogError("Receipt printing failed", exception);
                 SetStatus("Receipt printing failed. Please check the printer and try again.", true);
             }
         }
@@ -321,12 +324,14 @@ namespace ServeX.ViewModels
             {
                 await action();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
             finally

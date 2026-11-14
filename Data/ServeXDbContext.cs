@@ -32,18 +32,22 @@ namespace ServeX.Data
 
         public DbSet<User> Users { get; set; }
 
+        private static readonly Lazy<ServeX.Infrastructure.Persistence.DatabaseLocation> DefaultLocation =
+            new Lazy<ServeX.Infrastructure.Persistence.DatabaseLocation>(() =>
+                ServeX.Infrastructure.Persistence.DatabaseLocation.Resolve(AppContext.BaseDirectory,
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    Environment.GetEnvironmentVariable("SERVEX_DATABASE_PATH")));
+
         public static string GetDatabaseFilePath()
         {
-            var dataDirectory = Path.Combine(AppContext.BaseDirectory, "Data");
-            Directory.CreateDirectory(dataDirectory);
-            return Path.Combine(dataDirectory, "servex.db");
+            return DefaultLocation.Value.FilePath;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlite("Data Source=" + GetDatabaseFilePath());
+                optionsBuilder.UseSqlite(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder { DataSource = GetDatabaseFilePath() }.ToString());
             }
         }
 

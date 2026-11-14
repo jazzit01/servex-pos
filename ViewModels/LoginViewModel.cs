@@ -10,6 +10,7 @@ namespace ServeX.ViewModels
 {
     public class LoginViewModel : ViewModelBase, IDataErrorInfo
     {
+        private readonly LogService _logService;
         private readonly ApplicationAccessService _applicationAccessService;
         private readonly Func<User, Task> _onLoginSucceededAsync;
         private bool _isBusy;
@@ -21,20 +22,21 @@ namespace ServeX.ViewModels
         public LoginViewModel(
             ApplicationAccessService applicationAccessService,
             string restaurantName,
-            Func<User, Task> onLoginSucceededAsync,
+            Func<User, Task> onLoginSucceededAsync, LogService logService,
             string preferredUsername = "",
             string initialStatusMessage = "")
         {
+            _logService = logService;
             _applicationAccessService = applicationAccessService ?? throw new ArgumentNullException(nameof(applicationAccessService));
             _onLoginSucceededAsync = onLoginSucceededAsync ?? throw new ArgumentNullException(nameof(onLoginSucceededAsync));
 
             RestaurantName = restaurantName ?? "ServeX";
             _username = preferredUsername ?? string.Empty;
             _statusMessage = initialStatusMessage ?? string.Empty;
-            LoginCommand = new RelayCommand(async _ => await LoginAsync(), _ => !IsBusy);
+            LoginCommand = new AsyncRelayCommand(async _ => await LoginAsync(), _ => !IsBusy);
         }
 
-        public RelayCommand LoginCommand { get; }
+        public AsyncRelayCommand LoginCommand { get; }
 
         public string RestaurantName { get; }
 
@@ -162,12 +164,14 @@ namespace ServeX.ViewModels
             {
                 await action();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
             finally

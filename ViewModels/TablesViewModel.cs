@@ -13,19 +13,19 @@ namespace ServeX.ViewModels
     [SupportedOSPlatform("windows")]
     public class TablesViewModel : ViewModelBase, IDataErrorInfo
     {
-        private readonly LogService _logService = new LogService();
+        private readonly LogService _logService;
         private readonly TableService _tableService;
         private readonly OrderWindowService _orderWindowService;
         private readonly RelayCommand _beginAddCommand;
         private readonly RelayCommand _editCommand;
-        private readonly RelayCommand _deleteCommand;
-        private readonly RelayCommand _saveCommand;
+        private readonly AsyncRelayCommand _deleteCommand;
+        private readonly AsyncRelayCommand _saveCommand;
         private readonly RelayCommand _cancelCommand;
         private readonly RelayCommand _selectTableCommand;
-        private readonly RelayCommand _openSelectedOrderCommand;
-        private readonly RelayCommand _openFloorOrderCommand;
+        private readonly AsyncRelayCommand _openSelectedOrderCommand;
+        private readonly AsyncRelayCommand _openFloorOrderCommand;
         private readonly RelayCommand _editSelectedCommand;
-        private readonly RelayCommand _deleteSelectedCommand;
+        private readonly AsyncRelayCommand _deleteSelectedCommand;
         private readonly RelayCommand _showIndoorTablesCommand;
         private readonly RelayCommand _showOutdoorTablesCommand;
         private readonly ObservableCollection<Table> _tables = new ObservableCollection<Table>();
@@ -40,8 +40,9 @@ namespace ServeX.ViewModels
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
-        public TablesViewModel(TableService tableService, OrderWindowService orderWindowService)
+        public TablesViewModel(TableService tableService, OrderWindowService orderWindowService, LogService logService)
         {
+            _logService = logService;
             _tableService = tableService ?? throw new ArgumentNullException(nameof(tableService));
             _orderWindowService = orderWindowService ?? throw new ArgumentNullException(nameof(orderWindowService));
 
@@ -62,14 +63,14 @@ namespace ServeX.ViewModels
 
             _beginAddCommand = new RelayCommand(_ => OpenAddPanel(), _ => !IsBusy);
             _editCommand = new RelayCommand(table => OpenEditPanel(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
-            _deleteCommand = new RelayCommand(async table => await DeleteAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
-            _saveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave);
+            _deleteCommand = new AsyncRelayCommand(async table => await DeleteAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
+            _saveCommand = new AsyncRelayCommand(async _ => await SaveAsync(), _ => CanSave);
             _cancelCommand = new RelayCommand(_ => CloseEditor(), _ => !IsBusy);
             _selectTableCommand = new RelayCommand(table => SelectTable(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
-            _openSelectedOrderCommand = new RelayCommand(async _ => await OpenOrderScreenAsync(SelectedTable), _ => !IsBusy && SelectedTable != null);
-            _openFloorOrderCommand = new RelayCommand(async table => await OpenOrderScreenAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
+            _openSelectedOrderCommand = new AsyncRelayCommand(async _ => await OpenOrderScreenAsync(SelectedTable), _ => !IsBusy && SelectedTable != null);
+            _openFloorOrderCommand = new AsyncRelayCommand(async table => await OpenOrderScreenAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
             _editSelectedCommand = new RelayCommand(_ => OpenEditPanel(SelectedTable), _ => !IsBusy && SelectedTable != null);
-            _deleteSelectedCommand = new RelayCommand(async _ => await DeleteAsync(SelectedTable), _ => !IsBusy && SelectedTable != null);
+            _deleteSelectedCommand = new AsyncRelayCommand(async _ => await DeleteAsync(SelectedTable), _ => !IsBusy && SelectedTable != null);
             _showIndoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Indoor, _ => !IsBusy);
             _showOutdoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Outdoor, _ => !IsBusy);
         }
@@ -86,21 +87,21 @@ namespace ServeX.ViewModels
 
         public RelayCommand EditCommand => _editCommand;
 
-        public RelayCommand DeleteCommand => _deleteCommand;
+        public AsyncRelayCommand DeleteCommand => _deleteCommand;
 
-        public RelayCommand SaveCommand => _saveCommand;
+        public AsyncRelayCommand SaveCommand => _saveCommand;
 
         public RelayCommand CancelCommand => _cancelCommand;
 
         public RelayCommand SelectTableCommand => _selectTableCommand;
 
-        public RelayCommand OpenSelectedOrderCommand => _openSelectedOrderCommand;
+        public AsyncRelayCommand OpenSelectedOrderCommand => _openSelectedOrderCommand;
 
-        public RelayCommand OpenFloorOrderCommand => _openFloorOrderCommand;
+        public AsyncRelayCommand OpenFloorOrderCommand => _openFloorOrderCommand;
 
         public RelayCommand EditSelectedCommand => _editSelectedCommand;
 
-        public RelayCommand DeleteSelectedCommand => _deleteSelectedCommand;
+        public AsyncRelayCommand DeleteSelectedCommand => _deleteSelectedCommand;
 
         public RelayCommand ShowIndoorTablesCommand => _showIndoorTablesCommand;
 

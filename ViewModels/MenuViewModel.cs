@@ -13,11 +13,12 @@ namespace ServeX.ViewModels
 {
     public class MenuViewModel : ViewModelBase, IDataErrorInfo
     {
+        private readonly LogService _logService;
         private readonly MenuService _menuService;
         private readonly RelayCommand _beginAddCommand;
         private readonly RelayCommand _editCommand;
-        private readonly RelayCommand _deleteCommand;
-        private readonly RelayCommand _saveCommand;
+        private readonly AsyncRelayCommand _deleteCommand;
+        private readonly AsyncRelayCommand _saveCommand;
         private readonly RelayCommand _cancelCommand;
         private readonly RelayCommand _clearSearchCommand;
         private bool _isBusy;
@@ -31,8 +32,9 @@ namespace ServeX.ViewModels
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
-        public MenuViewModel(MenuService menuService)
+        public MenuViewModel(MenuService menuService, LogService logService)
         {
+            _logService = logService;
             _menuService = menuService ?? throw new ArgumentNullException(nameof(menuService));
             MenuItems = new ObservableCollection<MenuItem>();
             MenuItems.CollectionChanged += OnMenuItemsCollectionChanged;
@@ -40,8 +42,8 @@ namespace ServeX.ViewModels
 
             _beginAddCommand = new RelayCommand(_ => OpenAddPanel(), _ => !IsBusy);
             _editCommand = new RelayCommand(item => OpenEditPanel(item as MenuItem), item => !IsBusy && item is MenuItem);
-            _deleteCommand = new RelayCommand(async item => await DeleteAsync(item as MenuItem), item => !IsBusy && item is MenuItem);
-            _saveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave);
+            _deleteCommand = new AsyncRelayCommand(async item => await DeleteAsync(item as MenuItem), item => !IsBusy && item is MenuItem);
+            _saveCommand = new AsyncRelayCommand(async _ => await SaveAsync(), _ => CanSave);
             _cancelCommand = new RelayCommand(_ => CloseEditor(), _ => !IsBusy);
             _clearSearchCommand = new RelayCommand(_ => SearchText = string.Empty, _ => HasSearchText);
         }
@@ -56,9 +58,9 @@ namespace ServeX.ViewModels
 
         public RelayCommand EditCommand => _editCommand;
 
-        public RelayCommand DeleteCommand => _deleteCommand;
+        public AsyncRelayCommand DeleteCommand => _deleteCommand;
 
-        public RelayCommand SaveCommand => _saveCommand;
+        public AsyncRelayCommand SaveCommand => _saveCommand;
 
         public RelayCommand CancelCommand => _cancelCommand;
 
@@ -394,12 +396,14 @@ namespace ServeX.ViewModels
             {
                 await action();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
             finally

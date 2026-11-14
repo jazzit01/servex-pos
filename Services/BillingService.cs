@@ -10,11 +10,18 @@ namespace ServeX.Services
 {
     public class BillingService
     {
-        private readonly LogService _logService = new LogService();
+        private readonly IDbContextFactory<ServeXDbContext> _contexts;
+        public BillingService(IDbContextFactory<ServeXDbContext> contexts, LogService logService)
+        {
+            _contexts = contexts;
+            _logService = logService;
+        }
+
+        private readonly LogService _logService;
 
         public async Task<BillingOrderData> GetBillingOrderAsync(int orderId)
         {
-            using (var context = new ServeXDbContext())
+            using (var context = _contexts.CreateDbContext())
             {
                 var order = await context.Orders
                     .AsNoTracking()
@@ -48,7 +55,7 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var order = await context.Orders
                         .Include(item => item.Items)
@@ -161,7 +168,7 @@ namespace ServeX.Services
 
         public async Task<decimal> GetTaxPercentageAsync()
         {
-            using (var context = new ServeXDbContext())
+            using (var context = _contexts.CreateDbContext())
             {
                 return await GetTaxPercentageAsync(context);
             }

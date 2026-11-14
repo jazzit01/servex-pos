@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
 using System.Runtime.Versioning;
 using System.Windows;
-using Microsoft.EntityFrameworkCore;
-using ServeX.Data;
+using ServeX.Presentation.Navigation;
+
 using ServeX.Models;
 using ServeX.Services;
 
@@ -15,52 +15,47 @@ namespace ServeX.ViewModels
         private int _tableCount;
         private int _roomCount;
         private int _orderCount;
-        private int _selectedWorkspaceIndex;
-        private readonly LogService _logService = new LogService();
-        private readonly RelayCommand _navigateCommand;
+        private readonly WorkspaceNavigation _navigation;
+        private readonly WorkspaceSummaryService _summaryService;
+        private readonly LogService _logService;
+        private readonly AsyncRelayCommand _navigateCommand;
         private readonly RelayCommand _goBackCommand;
         private string _restaurantName;
         private readonly string _currentUsername;
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
-        public MainViewModel(AppSetting settings, User currentUser)
+        public MainViewModel(AppSetting settings, User currentUser, DashboardViewModel dashboard,
+            MenuViewModel menu, TablesViewModel tables, ParcelViewModel parcel, SettingsViewModel settingsViewModel,
+            WorkspaceNavigation navigation, WorkspaceSummaryService summaryService, LogService logService)
         {
             _restaurantName = settings?.RestaurantName ?? "ServeX";
             _currentUsername = currentUser?.Username ?? "Admin";
-
-            var menuService = new MenuService();
-            var orderService = new OrderService();
-            var billingService = new BillingService();
-            var receiptPrintService = new ReceiptPrintService();
-            var billingWindowService = new BillingWindowService(billingService, receiptPrintService);
-            var orderWindowService = new OrderWindowService(orderService, billingWindowService);
-            var dashboardService = new DashboardService();
-            var databaseBackupService = new DatabaseBackupService();
-            var saveFileDialogService = new SaveFileDialogService();
-            var applicationSettingsService = new ApplicationSettingsService();
-
-            Dashboard = new DashboardViewModel(
-                dashboardService,
-                orderWindowService,
-                GoToTables,
-                GoToMenu,
-                RefreshFromDashboardActionAsync);
-            Menu = new MenuViewModel(menuService);
-            Tables = new TablesViewModel(new TableService(), orderWindowService);
-            Parcel = new ParcelViewModel(orderService, billingWindowService);
-            Settings = new SettingsViewModel(
-                applicationSettingsService,
-                databaseBackupService,
-                saveFileDialogService,
-                UpdateRestaurantName);
-            Menu.MenuItemsChanged += async (sender, args) => await RefreshWorkspaceAsync();
-            Tables.TablesChanged += async (sender, args) => await RefreshWorkspaceAsync();
-
-            _navigateCommand = new RelayCommand(async parameter => await NavigateToAsync(parameter), _ => true);
-            _goBackCommand = new RelayCommand(_ => SelectedWorkspaceIndex = 0, _ => CanGoBack);
-
-            SelectedWorkspaceIndex = 0;
+            _navigation = navigation;
+            _summaryService = summaryService;
+            _logService = logService;
+            Dashboard = dashboard;
+            Menu = menu;
+            Tables = tables;
+            Parcel = parcel;
+            Settings = settingsViewModel;
+            Dashboard.RefreshWorkspace = RefreshFromDashboardActionAsync;
+            Settings.RestaurantNameSaved += UpdateRestaurantName;
+            Menu.MenuItemsChanged += async (sender, args) => await RefreshAfterChangeAsync();
+            Tables.TablesChanged += async (sender, args) => await RefreshAfterChangeAsync();
+            _navigateCommand = new AsyncRelayCommand(NavigateToAsync);
+            _goBackCommand = new RelayCommand(_ => _navigation.GoBack(), _ => CanGoBack);
+            _navigation.PropertyChanged += (sender, args) =>
+            {
+                if (args.PropertyName != nameof(WorkspaceNavigation.Current)) return;
+                OnPropertyChanged(nameof(SelectedDestination));
+                OnPropertyChanged(nameof(CurrentWorkspace));
+                OnPropertyChanged(nameof(CurrentSectionTitle));
+                OnPropertyChanged(nameof(CurrentSectionSubtitle));
+                OnPropertyChanged(nameof(CurrentSectionIconGlyph));
+                OnPropertyChanged(nameof(CanGoBack));
+                _goBackCommand.RaiseCanExecuteChanged();
+            };
         }
 
         public string Title => string.Format("{0} - ServeX", _restaurantName);
@@ -91,7 +86,7 @@ namespace ServeX.ViewModels
 
         public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
 
-        public RelayCommand NavigateCommand => _navigateCommand;
+        public AsyncRelayCommand NavigateCommand => _navigateCommand;
 
         public RelayCommand GoBackCommand => _goBackCommand;
 
@@ -109,15 +104,15 @@ namespace ServeX.ViewModels
         {
             get
             {
-                switch (SelectedWorkspaceIndex)
+                switch (SelectedDestination)
                 {
-                    case 1:
+                    case WorkspaceDestination.Menu:
                         return Menu;
-                    case 2:
+                    case WorkspaceDestination.Tables:
                         return Tables;
-                    case 3:
+                    case WorkspaceDestination.Parcel:
                         return Parcel;
-                    case 4:
+                    case WorkspaceDestination.Settings:
                         return Settings;
                     default:
                         return Dashboard;
@@ -125,22 +120,7 @@ namespace ServeX.ViewModels
             }
         }
 
-        public int SelectedWorkspaceIndex
-        {
-            get => _selectedWorkspaceIndex;
-            set
-            {
-                if (SetProperty(ref _selectedWorkspaceIndex, value))
-                {
-                    OnPropertyChanged(nameof(CurrentWorkspace));
-                    OnPropertyChanged(nameof(CurrentSectionTitle));
-                    OnPropertyChanged(nameof(CurrentSectionSubtitle));
-                    OnPropertyChanged(nameof(CurrentSectionIconGlyph));
-                    OnPropertyChanged(nameof(CanGoBack));
-                    _goBackCommand.RaiseCanExecuteChanged();
-                }
-            }
-        }
+        public WorkspaceDestination SelectedDestination => _navigation.Current;
 
         public int MenuItemsCount
         {
@@ -201,15 +181,15 @@ namespace ServeX.ViewModels
         {
             get
             {
-                switch (SelectedWorkspaceIndex)
+                switch (SelectedDestination)
                 {
-                    case 1:
+                    case WorkspaceDestination.Menu:
                         return "Menu management";
-                    case 2:
+                    case WorkspaceDestination.Tables:
                         return "Dining floor";
-                    case 3:
+                    case WorkspaceDestination.Parcel:
                         return "Parcel desk";
-                    case 4:
+                    case WorkspaceDestination.Settings:
                         return "Settings and backups";
                     default:
                         return "Service dashboard";
@@ -221,15 +201,15 @@ namespace ServeX.ViewModels
         {
             get
             {
-                switch (SelectedWorkspaceIndex)
+                switch (SelectedDestination)
                 {
-                    case 1:
+                    case WorkspaceDestination.Menu:
                         return "Maintain categories, pricing, availability, and item quality without leaving the service flow.";
-                    case 2:
+                    case WorkspaceDestination.Tables:
                         return "Monitor indoor and outdoor tables, inspect live status, and move directly into orders.";
-                    case 3:
+                    case WorkspaceDestination.Parcel:
                         return "Handle takeaway orders with the same speed, totals, and billing flow as the floor.";
-                    case 4:
+                    case WorkspaceDestination.Settings:
                         return "Protect the database, confirm environment details, and keep day-to-day operations safe.";
                     default:
                         return "Track revenue, table activity, and recent orders from one calm operational overview.";
@@ -241,15 +221,15 @@ namespace ServeX.ViewModels
         {
             get
             {
-                switch (SelectedWorkspaceIndex)
+                switch (SelectedDestination)
                 {
-                    case 1:
+                    case WorkspaceDestination.Menu:
                         return "\uE8D2";
-                    case 2:
+                    case WorkspaceDestination.Tables:
                         return "\uE14C";
-                    case 3:
+                    case WorkspaceDestination.Parcel:
                         return "\uE7BF";
-                    case 4:
+                    case WorkspaceDestination.Settings:
                         return "\uE713";
                     default:
                         return "\uE80F";
@@ -257,7 +237,7 @@ namespace ServeX.ViewModels
             }
         }
 
-        public bool CanGoBack => SelectedWorkspaceIndex != 0;
+        public bool CanGoBack => _navigation.CanGoBack;
 
         public async Task LoadAsync()
         {
@@ -266,12 +246,20 @@ namespace ServeX.ViewModels
 
         private async Task LoadSummaryAsync()
         {
-            using (var context = new ServeXDbContext())
+            var summary = await _summaryService.LoadAsync();
+            MenuItemsCount = summary.MenuItems;
+            TableCount = summary.Tables;
+            RoomCount = summary.Rooms;
+            OrderCount = summary.Orders;
+        }
+
+        private async Task RefreshAfterChangeAsync()
+        {
+            try { await RefreshWorkspaceAsync(); }
+            catch (System.Exception exception)
             {
-                MenuItemsCount = await context.MenuItems.CountAsync();
-                TableCount = await context.Tables.CountAsync();
-                RoomCount = await context.Rooms.CountAsync();
-                OrderCount = await context.Orders.CountAsync();
+                _logService.LogError("Workspace refresh failed", exception);
+                SetStatus("Changes were saved, but the workspace could not be refreshed. Please try again.", true);
             }
         }
 
@@ -293,16 +281,6 @@ namespace ServeX.ViewModels
             await LoadSummaryAsync();
         }
 
-        private void GoToTables()
-        {
-            SelectedWorkspaceIndex = 2;
-        }
-
-        private void GoToMenu()
-        {
-            SelectedWorkspaceIndex = 1;
-        }
-
         private void UpdateRestaurantName(string restaurantName)
         {
             _restaurantName = string.IsNullOrWhiteSpace(restaurantName)
@@ -315,19 +293,12 @@ namespace ServeX.ViewModels
 
         private async Task NavigateToAsync(object parameter)
         {
-            if (parameter == null)
-            {
-                return;
-            }
-
-            if (!int.TryParse(parameter.ToString(), out var targetIndex))
-            {
-                return;
-            }
+            if (parameter is not WorkspaceDestination destination || !System.Enum.IsDefined(destination)) return;
+            if (destination == SelectedDestination) return;
 
             try
             {
-                if (targetIndex == 2)
+                if (destination == WorkspaceDestination.Tables)
                 {
                     await Tables.LoadAsync();
 
@@ -349,7 +320,7 @@ namespace ServeX.ViewModels
                     ClearStatus();
                 }
 
-                SelectedWorkspaceIndex = targetIndex;
+                _navigation.Navigate(destination);
             }
             catch (System.Exception exception)
             {

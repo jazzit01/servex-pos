@@ -10,6 +10,7 @@ namespace ServeX.ViewModels
 {
     public class SetupViewModel : ViewModelBase, IDataErrorInfo
     {
+        private readonly LogService _logService;
         private readonly ApplicationAccessService _applicationAccessService;
         private readonly LicenseService _licenseService;
         private readonly Func<string, Task> _onSetupCompletedAsync;
@@ -27,16 +28,17 @@ namespace ServeX.ViewModels
         public SetupViewModel(
             ApplicationAccessService applicationAccessService,
             LicenseService licenseService,
-            Func<string, Task> onSetupCompletedAsync)
+            Func<string, Task> onSetupCompletedAsync, LogService logService)
         {
+            _logService = logService;
             _applicationAccessService = applicationAccessService ?? throw new ArgumentNullException(nameof(applicationAccessService));
             _licenseService = licenseService ?? throw new ArgumentNullException(nameof(licenseService));
             _onSetupCompletedAsync = onSetupCompletedAsync ?? throw new ArgumentNullException(nameof(onSetupCompletedAsync));
 
-            SaveSetupCommand = new RelayCommand(async _ => await SaveSetupAsync(), _ => !IsBusy);
+            SaveSetupCommand = new AsyncRelayCommand(async _ => await SaveSetupAsync(), _ => !IsBusy);
         }
 
-        public RelayCommand SaveSetupCommand { get; }
+        public AsyncRelayCommand SaveSetupCommand { get; }
 
         public string RestaurantName
         {
@@ -307,12 +309,14 @@ namespace ServeX.ViewModels
             {
                 await action();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
             finally

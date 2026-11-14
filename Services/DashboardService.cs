@@ -9,6 +9,12 @@ namespace ServeX.Services
 {
     public class DashboardService
     {
+        private readonly IDbContextFactory<ServeXDbContext> _contexts;
+        public DashboardService(IDbContextFactory<ServeXDbContext> contexts, LogService logService)
+        {
+            _contexts = contexts;
+        }
+
         public async Task<DashboardSnapshot> GetSnapshotAsync()
         {
             var startLocal = DateTime.Today;
@@ -16,7 +22,7 @@ namespace ServeX.Services
             var startUtc = startLocal.ToUniversalTime();
             var endUtc = endLocal.ToUniversalTime();
 
-            using (var context = new ServeXDbContext())
+            using (var context = _contexts.CreateDbContext())
             {
                 var todayBillTotals = await context.Bills
                     .AsNoTracking()
@@ -79,7 +85,7 @@ namespace ServeX.Services
 
         public async Task<Table> GetPreferredTableForNewOrderAsync()
         {
-            using (var context = new ServeXDbContext())
+            using (var context = _contexts.CreateDbContext())
             {
                 return await context.Tables
                     .AsNoTracking()

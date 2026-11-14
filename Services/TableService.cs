@@ -9,13 +9,20 @@ namespace ServeX.Services
 {
     public class TableService
     {
-        private readonly LogService _logService = new LogService();
+        private readonly IDbContextFactory<ServeXDbContext> _contexts;
+        public TableService(IDbContextFactory<ServeXDbContext> contexts, LogService logService)
+        {
+            _contexts = contexts;
+            _logService = logService;
+        }
+
+        private readonly LogService _logService;
 
         public async Task<List<Table>> GetTablesAsync()
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var items = await context.Tables
                         .AsNoTracking()
@@ -39,7 +46,7 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var activeOrders = await context.Orders
                         .AsNoTracking()
@@ -83,7 +90,7 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var normalizedTableNumber = NormalizeTableNumber(table?.TableNumber);
                     await EnsureUniqueTableNumberAsync(context, normalizedTableNumber);
@@ -112,7 +119,7 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     if (table == null)
                     {
@@ -192,13 +199,16 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var entity = await context.Tables.FirstOrDefaultAsync(item => item.Id == id);
                     if (entity == null)
                     {
                         return;
                     }
+
+                    if (await context.Orders.AnyAsync(order => order.Type == OrderType.Table && order.ReferenceId == id))
+                        throw new System.InvalidOperationException("Tables linked to order history cannot be deleted.");
 
                     context.Tables.Remove(entity);
                     await context.SaveChangesAsync();

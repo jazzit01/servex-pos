@@ -9,32 +9,39 @@ namespace ServeX.Services
 {
     public class ApplicationSettingsService
     {
-        private readonly LogService _logService = new LogService();
+        private readonly IDbContextFactory<ServeXDbContext> _contexts;
+        public ApplicationSettingsService(IDbContextFactory<ServeXDbContext> contexts, LogService logService)
+        {
+            _contexts = contexts;
+            _logService = logService;
+        }
+
+        private readonly LogService _logService;
 
         public async Task<AppSetting> GetSettingsAsync()
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var settings = await context.Settings
                         .AsNoTracking()
                         .OrderBy(setting => setting.Id)
                         .FirstOrDefaultAsync();
 
-                    return settings ?? CreateDefaultSettings();
+                    return settings;
                 }
             }
             catch (Exception exception)
             {
                 _logService.LogError("Loading application settings failed", exception);
-                return CreateDefaultSettings();
+                throw;
             }
         }
 
         public async Task<decimal> GetTaxPercentageAsync()
         {
-            using (var context = new ServeXDbContext())
+            using (var context = _contexts.CreateDbContext())
             {
                 var taxPercentage = await context.Settings
                     .AsNoTracking()
@@ -70,7 +77,7 @@ namespace ServeX.Services
 
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var settings = await context.Settings
                         .OrderBy(setting => setting.Id)
@@ -78,8 +85,7 @@ namespace ServeX.Services
 
                     if (settings == null)
                     {
-                        settings = CreateDefaultSettings();
-                        context.Settings.Add(settings);
+                        throw new InvalidOperationException("ServeX setup is incomplete. Settings were not saved.");
                     }
 
                     settings.RestaurantName = restaurantName.Trim();
@@ -100,16 +106,5 @@ namespace ServeX.Services
             }
         }
 
-        private static AppSetting CreateDefaultSettings()
-        {
-            return new AppSetting
-            {
-                RestaurantName = "ServeX",
-                Address = string.Empty,
-                Phone = string.Empty,
-                TaxPercentage = 5m,
-                LicenseKey = string.Empty
-            };
-        }
     }
 }

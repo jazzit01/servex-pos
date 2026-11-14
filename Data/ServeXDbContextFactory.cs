@@ -8,7 +8,7 @@ namespace ServeX.Data
         public ServeXDbContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<ServeXDbContext>();
-            optionsBuilder.UseSqlite("Data Source=" + ServeXDbContext.GetDatabaseFilePath());
+            optionsBuilder.UseSqlite(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder { DataSource = ServeXDbContext.GetDatabaseFilePath() }.ToString());
             return new ServeXDbContext(optionsBuilder.Options);
         }
     }

@@ -4,17 +4,19 @@ using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ServeX.Services;
+using ServeX.Presentation.Navigation;
 
 namespace ServeX.ViewModels
 {
     [SupportedOSPlatform("windows")]
     public class DashboardViewModel : ViewModelBase
     {
+        private readonly LogService _logService;
         private readonly DashboardService _dashboardService;
         private readonly OrderWindowService _orderWindowService;
         private readonly Action _goToTables;
         private readonly Action _goToMenu;
-        private readonly Func<Task> _refreshWorkspace;
+        public Func<Task> RefreshWorkspace { private get; set; } = () => Task.CompletedTask;
         private bool _isBusy;
         private decimal _todayRevenue;
         private int _activeTables;
@@ -26,26 +28,24 @@ namespace ServeX.ViewModels
         public DashboardViewModel(
             DashboardService dashboardService,
             OrderWindowService orderWindowService,
-            Action goToTables,
-            Action goToMenu,
-            Func<Task> refreshWorkspace)
+            WorkspaceNavigation navigation, LogService logService)
         {
+            _logService = logService;
             _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
             _orderWindowService = orderWindowService ?? throw new ArgumentNullException(nameof(orderWindowService));
-            _goToTables = goToTables ?? throw new ArgumentNullException(nameof(goToTables));
-            _goToMenu = goToMenu ?? throw new ArgumentNullException(nameof(goToMenu));
-            _refreshWorkspace = refreshWorkspace ?? throw new ArgumentNullException(nameof(refreshWorkspace));
+            _goToTables = () => navigation.Navigate(WorkspaceDestination.Tables);
+            _goToMenu = () => navigation.Navigate(WorkspaceDestination.Menu);
 
             RecentOrders = new ObservableCollection<DashboardRecentOrder>();
 
-            NewTableOrderCommand = new RelayCommand(async _ => await OpenNewTableOrderAsync(), _ => !IsBusy);
+            NewTableOrderCommand = new AsyncRelayCommand(async _ => await OpenNewTableOrderAsync(), _ => !IsBusy);
             GoToTablesCommand = new RelayCommand(_ => _goToTables(), _ => !IsBusy);
             GoToMenuCommand = new RelayCommand(_ => _goToMenu(), _ => !IsBusy);
         }
 
         public ObservableCollection<DashboardRecentOrder> RecentOrders { get; }
 
-        public RelayCommand NewTableOrderCommand { get; }
+        public AsyncRelayCommand NewTableOrderCommand { get; }
 
         public RelayCommand GoToTablesCommand { get; }
 
@@ -132,7 +132,7 @@ namespace ServeX.ViewModels
                 }
 
                 await _orderWindowService.ShowForTableAsync(table);
-                await _refreshWorkspace();
+                await RefreshWorkspace();
                 await LoadSnapshotAsync();
                 ClearStatus();
             }, "A new table order could not be started.");
@@ -151,12 +151,14 @@ namespace ServeX.ViewModels
             {
                 await action();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
             catch (Exception exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage + " " + exception.Message, true);
             }
             finally

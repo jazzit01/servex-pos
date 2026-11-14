@@ -10,14 +10,15 @@ namespace ServeX.Services
     [SupportedOSPlatform("windows")]
     public class OrderWindowService
     {
-        private readonly OrderService _orderService;
-        private readonly BillingWindowService _billingWindowService;
-        private readonly LogService _logService = new LogService();
+        private readonly System.Func<int, OrderViewModel> _createViewModel;
+        private readonly System.Func<OrderWindow> _createWindow;
+        private readonly LogService _logService;
 
-        public OrderWindowService(OrderService orderService, BillingWindowService billingWindowService)
+        public OrderWindowService(System.Func<int, OrderViewModel> createViewModel, System.Func<OrderWindow> createWindow, LogService logService)
         {
-            _orderService = orderService;
-            _billingWindowService = billingWindowService;
+            _createViewModel = createViewModel;
+            _createWindow = createWindow;
+            _logService = logService;
         }
 
         public async Task ShowForTableAsync(Table table)
@@ -34,7 +35,7 @@ namespace ServeX.Services
                     throw new System.InvalidOperationException("The selected table is invalid.");
                 }
 
-                var viewModel = new OrderViewModel(_orderService, _billingWindowService, table.Id);
+                var viewModel = _createViewModel(table.Id);
                 await viewModel.LoadAsync();
 
                 if (viewModel.HasBlockingError)
@@ -49,11 +50,9 @@ namespace ServeX.Services
                     return;
                 }
 
-                var window = new OrderWindow
-                {
-                    Owner = Application.Current?.MainWindow,
-                    DataContext = viewModel
-                };
+                var window = _createWindow();
+                window.Owner = System.Windows.Application.Current?.MainWindow;
+                window.DataContext = viewModel;
 
                 window.ShowDialog();
             }
