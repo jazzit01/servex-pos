@@ -7,7 +7,7 @@ namespace ServeX.Services
     public class LogService
     {
         private static readonly object SyncRoot = new object();
-        private static readonly string LogFilePath = Path.Combine(AppContext.BaseDirectory, "logs.txt");
+        public static string LogFilePath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ServeX", "Logs", "servex.log");
 
         public void LogInfo(string message)
         {
@@ -41,12 +41,13 @@ namespace ServeX.Services
 
                 lock (SyncRoot)
                 {
+                    Directory.CreateDirectory(Path.GetDirectoryName(LogFilePath));
                     File.AppendAllText(LogFilePath, line, Encoding.UTF8);
                 }
             }
-            catch
+            catch (Exception exception)
             {
-                // Logging must never break the app.
+                System.Diagnostics.Trace.TraceError("ServeX log write failed: {0}", exception);
             }
         }
     }

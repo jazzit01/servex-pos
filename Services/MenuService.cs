@@ -9,11 +9,18 @@ namespace ServeX.Services
 {
     public class MenuService
     {
-        private readonly LogService _logService = new LogService();
+        private readonly IDbContextFactory<ServeXDbContext> _contexts;
+        public MenuService(IDbContextFactory<ServeXDbContext> contexts, LogService logService)
+        {
+            _contexts = contexts;
+            _logService = logService;
+        }
+
+        private readonly LogService _logService;
 
         public async Task<List<MenuItem>> GetMenuItemsAsync()
         {
-            using (var context = new ServeXDbContext())
+            using (var context = _contexts.CreateDbContext())
             {
                 return await context.MenuItems
                     .AsNoTracking()
@@ -27,7 +34,7 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var entity = new MenuItem
                     {
@@ -54,12 +61,12 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var entity = await context.MenuItems.FirstOrDefaultAsync(item => item.Id == menuItem.Id);
                     if (entity == null)
                     {
-                        return;
+                        throw new System.InvalidOperationException("The menu item no longer exists. Refresh and try again.");
                     }
 
                     entity.Name = menuItem.Name;
@@ -82,12 +89,12 @@ namespace ServeX.Services
         {
             try
             {
-                using (var context = new ServeXDbContext())
+                using (var context = _contexts.CreateDbContext())
                 {
                     var entity = await context.MenuItems.FirstOrDefaultAsync(item => item.Id == id);
                     if (entity == null)
                     {
-                        return;
+                        throw new System.InvalidOperationException("The menu item no longer exists. Refresh and try again.");
                     }
 
                     context.MenuItems.Remove(entity);

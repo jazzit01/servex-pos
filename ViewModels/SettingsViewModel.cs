@@ -17,10 +17,11 @@ namespace ServeX.ViewModels
         private readonly ApplicationSettingsService _applicationSettingsService;
         private readonly DatabaseBackupService _databaseBackupService;
         private readonly SaveFileDialogService _saveFileDialogService;
-        private readonly Action<string> _onRestaurantNameSaved;
-        private readonly RelayCommand _saveSettingsCommand;
-        private readonly RelayCommand _backupDatabaseCommand;
-        private readonly LogService _logService = new LogService();
+        public event Action<string> RestaurantNameSaved;
+        private readonly ServeX.Infrastructure.Persistence.DatabaseLocation _location;
+        private readonly AsyncRelayCommand _saveSettingsCommand;
+        private readonly AsyncRelayCommand _backupDatabaseCommand;
+        private readonly LogService _logService;
         private bool _isBusy;
         private bool _isLoaded;
         private string _restaurantName = string.Empty;
@@ -34,23 +35,24 @@ namespace ServeX.ViewModels
             ApplicationSettingsService applicationSettingsService,
             DatabaseBackupService databaseBackupService,
             SaveFileDialogService saveFileDialogService,
-            Action<string> onRestaurantNameSaved = null)
+            ServeX.Infrastructure.Persistence.DatabaseLocation location, LogService logService)
         {
+            _logService = logService;
             _applicationSettingsService = applicationSettingsService ?? throw new ArgumentNullException(nameof(applicationSettingsService));
             _databaseBackupService = databaseBackupService ?? throw new ArgumentNullException(nameof(databaseBackupService));
             _saveFileDialogService = saveFileDialogService ?? throw new ArgumentNullException(nameof(saveFileDialogService));
-            _onRestaurantNameSaved = onRestaurantNameSaved;
-            _saveSettingsCommand = new RelayCommand(async _ => await SaveSettingsAsync(), _ => !IsBusy);
-            _backupDatabaseCommand = new RelayCommand(async _ => await BackupDatabaseAsync(), _ => !IsBusy);
+            _location = location;
+            _saveSettingsCommand = new AsyncRelayCommand(async _ => await SaveSettingsAsync(), _ => !IsBusy);
+            _backupDatabaseCommand = new AsyncRelayCommand(async _ => await BackupDatabaseAsync(), _ => !IsBusy);
         }
 
-        public string DatabasePath => ServeXDbContext.GetDatabaseFilePath();
+        public string DatabasePath => _location.FilePath;
 
         public string DatabaseFileName => Path.GetFileName(DatabasePath);
 
-        public RelayCommand SaveSettingsCommand => _saveSettingsCommand;
+        public AsyncRelayCommand SaveSettingsCommand => _saveSettingsCommand;
 
-        public RelayCommand BackupDatabaseCommand => _backupDatabaseCommand;
+        public AsyncRelayCommand BackupDatabaseCommand => _backupDatabaseCommand;
 
         public string RestaurantName
         {
@@ -197,7 +199,8 @@ namespace ServeX.ViewModels
             {
                 await ExecuteBusyActionAsync(async () =>
                 {
-                    var settings = await _applicationSettingsService.GetSettingsAsync();
+                    var settings = await _applicationSettingsService.GetSettingsAsync()
+                        ?? throw new InvalidOperationException("ServeX settings are missing. Setup must be completed first.");
                     ApplySettings(settings);
                     ClearStatus();
                     IsLoaded = true;
@@ -234,7 +237,7 @@ namespace ServeX.ViewModels
                     taxPercentage);
 
                 ApplySettings(updatedSettings);
-                _onRestaurantNameSaved?.Invoke(updatedSettings.RestaurantName);
+                RestaurantNameSaved?.Invoke(updatedSettings.RestaurantName);
                 SetStatus("Settings saved successfully.", false);
                 IsLoaded = true;
             }, "Settings could not be saved.");

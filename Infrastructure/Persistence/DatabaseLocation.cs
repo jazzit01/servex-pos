@@ -1,0 +1,56 @@
+using System;
+using System.IO;
+
+namespace ServeX.Infrastructure.Persistence
+{
+    // Resolve once at composition time so every service uses the same database.
+    public sealed class DatabaseLocation
+    {
+        public DatabaseLocation(string filePath) { FilePath = Path.GetFullPath(filePath); }
+        public string FilePath { get; }
+
+        public static DatabaseLocation Resolve(string executableDirectory, string localDataDirectory, string explicitPath = null)
+        {
+            var legacy = Path.GetFullPath(Path.Combine(executableDirectory, "Data", "servex.db"));
+            var directory = Path.Combine(localDataDirectory, "ServeX");
+            var pin = Path.Combine(directory, "database-location.txt");
+            var fresh = Path.GetFullPath(Path.Combine(directory, "Data", "servex.db"));
+
+            // An explicit path is an operator recovery/compatibility selection, never a request
+            // to create an empty replacement for a missing customer database.
+            if (!string.IsNullOrWhiteSpace(explicitPath))
+            {
+                if (!Path.IsPathFullyQualified(explicitPath) || !File.Exists(explicitPath))
+                    throw new InvalidOperationException("SERVEX_DATABASE_PATH must identify an existing database by absolute path.");
+                return new DatabaseLocation(explicitPath);
+            }
+
+            if (File.Exists(pin))
+            {
+                var selected = File.ReadAllText(pin).Trim();
+                if (!Path.IsPathFullyQualified(selected) || !File.Exists(selected))
+                    throw new InvalidOperationException("The previously selected ServeX database is missing. Restore its location or set SERVEX_DATABASE_PATH; no empty replacement was created.");
+                if (File.Exists(legacy) && !SamePath(selected, legacy))
+                    throw new InvalidOperationException("Multiple ServeX databases were found. Select the correct existing database with SERVEX_DATABASE_PATH before continuing.");
+                return new DatabaseLocation(selected);
+            }
+
+            if (File.Exists(legacy) && File.Exists(fresh) && !SamePath(legacy, fresh))
+                throw new InvalidOperationException("Both legacy and Local App Data databases exist. Select the correct database with SERVEX_DATABASE_PATH.");
+
+            var path = File.Exists(legacy) ? legacy : fresh;
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            Directory.CreateDirectory(directory);
+            // Reserve the fresh file before pinning it. A failed first migration can safely retry.
+            if (!File.Exists(path))
+                using (new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None)) { }
+            using (var writer = new StreamWriter(new FileStream(pin, FileMode.CreateNew, FileAccess.Write, FileShare.None)))
+                writer.Write(path);
+            return new DatabaseLocation(path);
+        }
+
+        private static bool SamePath(string first, string second) => string.Equals(
+            Path.GetFullPath(first), Path.GetFullPath(second),
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+    }
+}

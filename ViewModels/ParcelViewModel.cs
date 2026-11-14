@@ -13,6 +13,7 @@ namespace ServeX.ViewModels
     [SupportedOSPlatform("windows")]
     public class ParcelViewModel : ViewModelBase
     {
+        private readonly LogService _logService;
         private readonly OrderService _orderService;
         private readonly BillingWindowService _billingWindowService;
         private bool _isBusy;
@@ -23,8 +24,9 @@ namespace ServeX.ViewModels
         private bool _isStatusError;
         private decimal _taxPercentage = 5m;
 
-        public ParcelViewModel(OrderService orderService, BillingWindowService billingWindowService)
+        public ParcelViewModel(OrderService orderService, BillingWindowService billingWindowService, LogService logService)
         {
+            _logService = logService;
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
             _billingWindowService = billingWindowService ?? throw new ArgumentNullException(nameof(billingWindowService));
 
@@ -38,8 +40,8 @@ namespace ServeX.ViewModels
             IncreaseQuantityCommand = new RelayCommand(item => IncreaseQuantity(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             DecreaseQuantityCommand = new RelayCommand(item => DecreaseQuantity(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             RemoveItemCommand = new RelayCommand(item => RemoveItem(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
-            SaveOrderCommand = new RelayCommand(async _ => await SaveOrderAsync(), _ => CanSaveOrder);
-            GenerateBillCommand = new RelayCommand(async _ => await GenerateBillAsync(), _ => CanGenerateBill);
+            SaveOrderCommand = new AsyncRelayCommand(async _ => await SaveOrderAsync(), _ => CanSaveOrder);
+            GenerateBillCommand = new AsyncRelayCommand(async _ => await GenerateBillAsync(), _ => CanGenerateBill);
             NewParcelCommand = new RelayCommand(_ => ResetDraft(true), _ => !IsBusy);
         }
 
@@ -59,9 +61,9 @@ namespace ServeX.ViewModels
 
         public RelayCommand RemoveItemCommand { get; }
 
-        public RelayCommand SaveOrderCommand { get; }
+        public AsyncRelayCommand SaveOrderCommand { get; }
 
-        public RelayCommand GenerateBillCommand { get; }
+        public AsyncRelayCommand GenerateBillCommand { get; }
 
         public RelayCommand NewParcelCommand { get; }
 
@@ -320,12 +322,14 @@ namespace ServeX.ViewModels
             {
                 await action();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                _logService.LogError(fallbackMessage, exception);
                 SetStatus(fallbackMessage, true);
             }
             finally

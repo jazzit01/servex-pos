@@ -13,7 +13,7 @@ namespace ServeX.ViewModels
     [SupportedOSPlatform("windows")]
     public class OrderViewModel : ViewModelBase
     {
-        private readonly LogService _logService = new LogService();
+        private readonly LogService _logService;
         private readonly OrderService _orderService;
         private readonly BillingWindowService _billingWindowService;
         private readonly int _tableId;
@@ -27,8 +27,9 @@ namespace ServeX.ViewModels
         private bool _isStatusError;
         private decimal _taxPercentage = 5m;
 
-        public OrderViewModel(OrderService orderService, BillingWindowService billingWindowService, int tableId)
+        public OrderViewModel(OrderService orderService, BillingWindowService billingWindowService, int tableId, LogService logService)
         {
+            _logService = logService;
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
             _billingWindowService = billingWindowService ?? throw new ArgumentNullException(nameof(billingWindowService));
             _tableId = tableId;
@@ -43,8 +44,8 @@ namespace ServeX.ViewModels
             IncreaseQuantityCommand = new RelayCommand(item => IncreaseQuantity(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             DecreaseQuantityCommand = new RelayCommand(item => DecreaseQuantity(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             RemoveItemCommand = new RelayCommand(item => RemoveItem(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
-            SaveOrderCommand = new RelayCommand(async _ => await SaveOrderAsync(), _ => CanSaveOrder);
-            GenerateBillCommand = new RelayCommand(async _ => await GenerateBillAsync(), _ => CanGenerateBill);
+            SaveOrderCommand = new AsyncRelayCommand(async _ => await SaveOrderAsync(), _ => CanSaveOrder);
+            GenerateBillCommand = new AsyncRelayCommand(async _ => await GenerateBillAsync(), _ => CanGenerateBill);
         }
 
         public ObservableCollection<string> Categories { get; }
@@ -63,9 +64,9 @@ namespace ServeX.ViewModels
 
         public RelayCommand RemoveItemCommand { get; }
 
-        public RelayCommand SaveOrderCommand { get; }
+        public AsyncRelayCommand SaveOrderCommand { get; }
 
-        public RelayCommand GenerateBillCommand { get; }
+        public AsyncRelayCommand GenerateBillCommand { get; }
 
         public bool IsBusy
         {
@@ -326,8 +327,8 @@ namespace ServeX.ViewModels
             await ExecuteBusyActionAsync(async () =>
             {
                 await _billingWindowService.ShowAsync(order.Id);
-                await LoadAsync();
             }, "The billing screen could not be opened.");
+            await LoadAsync();
         }
 
         private void ApplyCategoryFilter()

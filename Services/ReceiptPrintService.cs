@@ -8,7 +8,8 @@ namespace ServeX.Services
     [SupportedOSPlatform("windows")]
     public class ReceiptPrintService
     {
-        private readonly LogService _logService = new LogService();
+        private readonly LogService _logService;
+        public ReceiptPrintService(LogService logService) { _logService = logService; }
 
         public void PrintReceipt(ReceiptData receipt)
         {
@@ -19,7 +20,7 @@ namespace ServeX.Services
                     throw new InvalidOperationException("There is no receipt data to print.");
                 }
 
-                var printDocument = new PrintDocument();
+                using var printDocument = new PrintDocument();
                 printDocument.DocumentName = string.Format("ServeX Bill #{0}", receipt.OrderId);
                 printDocument.DefaultPageSettings.Margins = new Margins(12, 12, 12, 12);
                 printDocument.DefaultPageSettings.PaperSize = new PaperSize("Receipt80mm", 314, 1200);
