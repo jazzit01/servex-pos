@@ -18,6 +18,7 @@ namespace ServeX
     public partial class App : System.Windows.Application
     {
         private ServiceProvider _services;
+        private ServeX.ViewModels.MainViewModel _mainViewModel;
         private LogService _logService = new LogService();
         private Mutex _instanceMutex;
         private bool _ownsMutex;
@@ -84,16 +85,18 @@ namespace ServeX
                     {
                         var settings = await settingsService.GetSettingsAsync()
                             ?? throw new InvalidOperationException("ServeX settings could not be loaded after login.");
-                        var mainViewModel = factory.CreateMain(settings, user);
-                        await mainViewModel.LoadAsync();
+                        _mainViewModel = factory.CreateMain(settings, user);
+                        await _mainViewModel.LoadAsync();
                         var mainWindow = _services.GetRequiredService<MainWindow>();
-                        mainWindow.DataContext = mainViewModel;
+                        mainWindow.DataContext = _mainViewModel;
                         MainWindow = mainWindow;
                         mainWindow.Show();
                         authWindow?.Close();
                     }
                     catch (Exception exception)
                     {
+                        _mainViewModel?.Dispose();
+                        _mainViewModel = null;
                         _logService.LogError("Opening authenticated workspace failed", exception);
                         throw;
                     }
@@ -134,6 +137,7 @@ namespace ServeX
             DispatcherUnhandledException -= OnDispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException -= OnDomainUnhandledException;
             TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
+            _mainViewModel?.Dispose();
             _services?.Dispose();
             if (_ownsMutex) _instanceMutex.ReleaseMutex();
             _instanceMutex?.Dispose();

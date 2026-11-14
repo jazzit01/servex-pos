@@ -9,7 +9,7 @@ using ServeX.Services;
 namespace ServeX.ViewModels
 {
     [SupportedOSPlatform("windows")]
-    public class MainViewModel : ViewModelBase
+    public class MainViewModel : ViewModelBase, System.IDisposable
     {
         private int _menuItemsCount;
         private int _tableCount;
@@ -24,6 +24,10 @@ namespace ServeX.ViewModels
         private readonly string _currentUsername;
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
+        private readonly System.EventHandler _workspaceChanged;
+        private readonly System.ComponentModel.PropertyChangedEventHandler _navigationChanged;
+        private bool _refreshing;
+        private bool _refreshAgain;
 
         public MainViewModel(AppSetting settings, User currentUser, DashboardViewModel dashboard,
             MenuViewModel menu, TablesViewModel tables, ParcelViewModel parcel, SettingsViewModel settingsViewModel,
@@ -41,11 +45,12 @@ namespace ServeX.ViewModels
             Settings = settingsViewModel;
             Dashboard.RefreshWorkspace = RefreshFromDashboardActionAsync;
             Settings.RestaurantNameSaved += UpdateRestaurantName;
-            Menu.MenuItemsChanged += async (sender, args) => await RefreshAfterChangeAsync();
-            Tables.TablesChanged += async (sender, args) => await RefreshAfterChangeAsync();
+            _workspaceChanged = async (sender, args) => await RefreshAfterChangeAsync();
+            Menu.MenuItemsChanged += _workspaceChanged;
+            Tables.TablesChanged += _workspaceChanged;
             _navigateCommand = new AsyncRelayCommand(NavigateToAsync);
             _goBackCommand = new RelayCommand(_ => _navigation.GoBack(), _ => CanGoBack);
-            _navigation.PropertyChanged += (sender, args) =>
+            _navigationChanged = (sender, args) =>
             {
                 if (args.PropertyName != nameof(WorkspaceNavigation.Current)) return;
                 OnPropertyChanged(nameof(SelectedDestination));
@@ -56,6 +61,7 @@ namespace ServeX.ViewModels
                 OnPropertyChanged(nameof(CanGoBack));
                 _goBackCommand.RaiseCanExecuteChanged();
             };
+            _navigation.PropertyChanged += _navigationChanged;
         }
 
         public string Title => string.Format("{0} - ServeX", _restaurantName);
@@ -255,12 +261,26 @@ namespace ServeX.ViewModels
 
         private async Task RefreshAfterChangeAsync()
         {
-            try { await RefreshWorkspaceAsync(); }
+            if (_refreshing) { _refreshAgain = true; return; }
+            _refreshing = true;
+            try
+            {
+                do
+                {
+                    _refreshAgain = false;
+                    // The originating workspace already refreshed its own data. Preserve editors
+                    // and settings drafts; update only dependent overview/parcel data here.
+                    await Dashboard.LoadAsync();
+                    await Parcel.LoadAsync();
+                    await LoadSummaryAsync();
+                } while (_refreshAgain);
+            }
             catch (System.Exception exception)
             {
                 _logService.LogError("Workspace refresh failed", exception);
                 SetStatus("Changes were saved, but the workspace could not be refreshed. Please try again.", true);
             }
+            finally { _refreshing = false; }
         }
 
         private async Task RefreshWorkspaceAsync()
@@ -332,6 +352,15 @@ namespace ServeX.ViewModels
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
             }
+        }
+
+        public void Dispose()
+        {
+            _navigation.PropertyChanged -= _navigationChanged;
+            Menu.MenuItemsChanged -= _workspaceChanged;
+            Tables.TablesChanged -= _workspaceChanged;
+            Settings.RestaurantNameSaved -= UpdateRestaurantName;
+            Dashboard.RefreshWorkspace = () => Task.CompletedTask;
         }
 
         private void SetStatus(string message, bool isError)

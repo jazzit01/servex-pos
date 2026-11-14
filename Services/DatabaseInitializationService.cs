@@ -19,18 +19,37 @@ namespace ServeX.Services
         {
             using var context = _contexts.CreateDbContext();
             var pending = (await context.Database.GetPendingMigrationsAsync()).ToArray();
-            if (pending.Length == 0) return;
+
             var file = context.Database.GetDbConnection().DataSource;
-            // Back up any nonempty existing SQLite database before forward migrations.
-            if (File.Exists(file) && new FileInfo(file).Length > 0)
+            bool backedUp = false;
+            if (pending.Length > 0 && File.Exists(file) && new FileInfo(file).Length > 0)
             {
-                var destination = Path.Combine(Path.GetDirectoryName(file), "Backups",
-                    "before-migration-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N") + ".db");
-                await _backup.BackupAsync(destination);
-                _log.LogInfo("Pre-migration backup created at " + destination);
+                await BackupBeforeChangeAsync(file);
+                backedUp = true;
             }
             await context.Database.MigrateAsync();
-            _log.LogInfo("Applied forward database migrations: " + string.Join(", ", pending));
+            if (pending.Length > 0)
+                _log.LogInfo("Applied forward database migrations: " + string.Join(", ", pending));
+
+            // The historic AddTableAreaSupport migration used an empty string default.
+            // EF cannot materialize that value as TableArea. Repair only that legacy default,
+            // preserving every table ID, status and relationship, with a backup first.
+            await context.Database.OpenConnectionAsync();
+            using var command = context.Database.GetDbConnection().CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM Tables WHERE Area = '';";
+            if (Convert.ToInt64(await command.ExecuteScalarAsync()) > 0)
+            {
+                if (!backedUp) await BackupBeforeChangeAsync(file);
+                await context.Database.ExecuteSqlRawAsync("UPDATE Tables SET Area = 'Indoor' WHERE Area = '';");
+                _log.LogInfo("Repaired empty legacy table areas to Indoor.");
+            }
+        }
+        private async Task BackupBeforeChangeAsync(string file)
+        {
+            var destination = Path.Combine(Path.GetDirectoryName(file), "Backups",
+                "before-migration-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N") + ".db");
+            await _backup.BackupAsync(destination);
+            _log.LogInfo("Pre-initialization backup created at " + destination);
         }
     }
 }
