@@ -4,7 +4,8 @@ ServeX is an existing restaurant/hotel Windows point-of-sale application built w
 .NET 8, WPF/XAML, MVVM, EF Core 8 and SQLite. It includes setup/login, dashboard,
 menu management, indoor/outdoor tables, table orders, parcel orders, billing,
 receipt printing, settings and database backups. Phase 1 preserves these workflows
-and the existing database schema; it does not redesign the UI.
+and the existing database schema. Phase 2 applies a consistent Segoe UI, teal and
+navy interface on that foundation without changing financial or persistence rules.
 
 ## Development
 
@@ -96,8 +97,25 @@ All test databases and logs use unique temporary directories. The portable targe
 links the actual platform-neutral production source and migration files. The
 Windows target references the application assembly and also tests full composition,
 auth ViewModel factories, cached workspaces and selected/back navigation. The
-Windows CI workflow is configured in `.github/workflows/phase-1-validation.yml`.
+Windows CI workflow is configured in `.github/workflows/windows-validation.yml`.
 See [actual results and the required Windows acceptance checklist](docs/validation.md).
+
+## Phase 2 UI status
+
+All major screens now share a dark sidebar/light workspace, reusable form/grid and
+feedback styles, shared order/parcel components and clear checkout presentation.
+Read-only dashboard metrics reflect persisted data. Search filters drafts safely;
+delete/new-parcel confirmations protect accidental actions.
+
+```sh
+python3 scripts/validate_ui.py
+```
+
+Phase 2 is **implemented, pending verification**, not complete. The Linux Release
+cross-build and 42 portable tests pass; Windows-only resource/layout tests and
+interactive DPI/workflow/printer acceptance have not run. See the
+[Phase 2 report and acceptance checklist](docs/phase-2-ui-ux.md) for the screen/file
+inventory, actual commands/results and remaining gates. No Phase 3/4 work is included.
 
 ## Known limitations and Phase 1 status
 
@@ -117,6 +135,7 @@ See [actual results and the required Windows acceptance checklist](docs/validati
   pre-existing difference between line-price rounding and aggregate order rounding.
 - Logs and automatic backups need operator retention/storage monitoring.
 
-Phase 1 code is implemented on `modernization/phase-1-foundation`. Completion and
-Phase 2 rollout remain gated on supported Windows execution and manual acceptance.
+Phase 1 code is implemented on `modernization/phase-1-foundation`. The current UI
+branch, `modernization/phase-2-ui-ux`, starts at that implemented baseline (`f013ba5`).
+Both phases retain the supported Windows execution and manual acceptance gates.
 See the [audit](docs/phase-1-audit.md) and [implementation report](docs/phase-1-report.md).
