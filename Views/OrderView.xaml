@@ -12,7 +12,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <HeaderedContentControl Header="{Binding TableNumber}" Content="{Binding TableStatus, StringFormat=Table service · {0}}" Style="{StaticResource PageHeaderStyle}"/>
+                    <HeaderedContentControl Header="{Binding TableNumber}" Content="{Binding TableStatus}" ContentStringFormat="Table service · {0}" Style="{StaticResource PageHeaderStyle}"/>
                 </StackPanel>
             </Grid>
         </StackPanel>

@@ -403,8 +403,8 @@
             <Setter.Value>
                 <ControlTemplate TargetType="HeaderedContentControl">
                     <StackPanel>
-                        <TextBlock Text="{TemplateBinding Header}" Style="{StaticResource PrimaryHeadingTextStyle}"/>
-                        <TextBlock Text="{TemplateBinding Content}" Margin="0,6,0,0" Style="{StaticResource SectionSubtitleTextStyle}"/>
+                        <TextBlock Text="{Binding Header, RelativeSource={RelativeSource TemplatedParent}}" Style="{StaticResource PrimaryHeadingTextStyle}"/>
+                        <ContentPresenter Content="{TemplateBinding Content}" ContentStringFormat="{TemplateBinding ContentStringFormat}" Margin="0,6,0,0" TextElement.Foreground="{StaticResource MutedTextBrush}" TextElement.FontSize="14"/>
                     </StackPanel>
                 </ControlTemplate>
             </Setter.Value>
@@ -417,9 +417,9 @@
                 <ControlTemplate TargetType="HeaderedContentControl">
                     <Border Padding="16" Style="{StaticResource SurfaceCardStyle}">
                         <StackPanel>
-                            <TextBlock Text="{TemplateBinding Header}" Style="{StaticResource SectionSubtitleTextStyle}"/>
-                            <TextBlock Text="{TemplateBinding Content}" Margin="0,8,0,4" FontSize="26" Style="{StaticResource FinancialTextStyle}"/>
-                            <TextBlock Text="{TemplateBinding Tag}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Header, RelativeSource={RelativeSource TemplatedParent}}" Style="{StaticResource SectionSubtitleTextStyle}"/>
+                            <ContentPresenter Content="{TemplateBinding Content}" ContentStringFormat="{TemplateBinding ContentStringFormat}" Margin="0,8,0,4"/>
+                            <TextBlock Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
                 </ControlTemplate>
@@ -433,8 +433,8 @@
                 <ControlTemplate TargetType="HeaderedContentControl">
                     <Border Padding="24" Style="{StaticResource SoftPanelStyle}">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
-                            <TextBlock Text="{TemplateBinding Header}" TextAlignment="Center" Style="{StaticResource SectionTitleTextStyle}"/>
-                            <TextBlock Text="{TemplateBinding Content}" Margin="0,8,0,0" TextAlignment="Center" Style="{StaticResource SectionSubtitleTextStyle}"/>
+                            <TextBlock Text="{Binding Header, RelativeSource={RelativeSource TemplatedParent}}" TextAlignment="Center" Style="{StaticResource SectionTitleTextStyle}"/>
+                            <TextBlock Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" Margin="0,8,0,0" TextAlignment="Center" Style="{StaticResource SectionSubtitleTextStyle}"/>
                         </StackPanel>
                     </Border>
                 </ControlTemplate>
@@ -513,7 +513,11 @@
                 <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
                 <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
             </Trigger>
-        </Style.Triggers>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                </Trigger>
+            </Style.Triggers>
     </Style>
     <Style x:Key="BusyIndicatorStyle" TargetType="ProgressBar">
         <Setter Property="Height" Value="3"/>
