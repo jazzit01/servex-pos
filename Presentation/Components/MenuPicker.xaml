@@ -1,25 +1,62 @@
-<UserControl x:Class="ServeX.Presentation.Components.MenuPicker" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-<Border Style="{StaticResource SurfaceCardStyle}" Padding="16"><Grid>
- <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
- <TextBlock Text="Menu" Style="{StaticResource SectionTitleTextStyle}" />
- <TextBox Grid.Row="1" Margin="0,12,0,12" Style="{StaticResource SearchTextBoxStyle}" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Search menu items by name or category" ToolTip="Search by name or category" />
- <ScrollViewer Grid.Row="2" MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,8">
-  <ListBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" Style="{StaticResource ChipListBoxStyle}" ItemContainerStyle="{StaticResource ChipListBoxItemStyle}" AutomationProperties.Name="Menu categories">
-   <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ListBox.ItemsPanel>
-  </ListBox>
- </ScrollViewer>
- <Grid Grid.Row="3"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
- <ItemsControl ItemsSource="{Binding FilteredMenuItems}"><ItemsControl.ItemTemplate><DataTemplate>
-  <Border Padding="12" Margin="0,0,0,8" Style="{StaticResource SoftPanelStyle}"><Grid>
-   <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-   <StackPanel Margin="0,0,12,0"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" />
-    <TextBlock Text="{Binding Category}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,6" />
-    <TextBlock Text="{Binding Price, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" />
-    <TextBlock FontSize="12"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="Unavailable" /><Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding IsAvailable}" Value="True"><Setter Property="Text" Value="Available" /><Setter Property="Foreground" Value="{StaticResource SuccessBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
-   </StackPanel>
-   <Button Grid.Column="1" Content="Add" Command="{Binding DataContext.AddItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" IsEnabled="{Binding IsAvailable}" Style="{StaticResource PrimaryActionButtonStyle}" VerticalAlignment="Center" AutomationProperties.Name="{Binding Name, StringFormat=Add {0}}" />
-  </Grid></Border>
- </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
- <HeaderedContentControl Header="No matching items" Content="Try another search or choose a different category. Add menu items from Menu management if the catalog is empty." Style="{StaticResource EmptyStateStyle}" Visibility="{Binding IsMenuEmpty, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Center" />
- </Grid></Grid></Border>
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ServeX.Presentation.Components.MenuPicker">
+    <Border Style="{StaticResource SurfaceCardStyle}" Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Find menu items" Style="{StaticResource SectionTitleTextStyle}"/>
+            <TextBox Grid.Row="1" Margin="0,12,0,12" Style="{StaticResource SearchTextBoxStyle}" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Search menu items by name or category" ToolTip="Search by name or category"/>
+            <ScrollViewer Grid.Row="2" MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,8">
+                <ListBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" Style="{StaticResource ChipListBoxStyle}" ItemContainerStyle="{StaticResource ChipListBoxItemStyle}" AutomationProperties.Name="Menu categories">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                </ListBox>
+            </ScrollViewer>
+            <Grid Grid.Row="3">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding FilteredMenuItems}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="12" Margin="0,0,0,8" Style="{StaticResource SoftPanelStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,12,0">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/>
+                                            <TextBlock Text="{Binding Category}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,6"/>
+                                            <TextBlock Text="{Binding Price, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}"/>
+                                            <TextBlock FontSize="12">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="Unavailable"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsAvailable}" Value="True">
+                                                                <Setter Property="Text" Value="Available"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Content="Add" Command="{Binding DataContext.AddItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" IsEnabled="{Binding IsAvailable}" Style="{StaticResource PrimaryActionButtonStyle}" VerticalAlignment="Center" AutomationProperties.Name="{Binding Name, StringFormat=Add {0}}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <HeaderedContentControl Header="No matching items" Content="Try another search or choose a different category. Add menu items from Menu management if the catalog is empty." Style="{StaticResource EmptyStateStyle}" Visibility="{Binding IsMenuEmpty, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Center"/>
+            </Grid>
+        </Grid>
+    </Border>
 </UserControl>

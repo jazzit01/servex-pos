@@ -1,9 +1,30 @@
-<UserControl x:Class="ServeX.Views.OrderView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:components="clr-namespace:ServeX.Presentation.Components">
-<Grid Margin="20"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
- <StackPanel><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
- <StackPanel><HeaderedContentControl Header="{Binding TableNumber}" Content="{Binding TableStatus, StringFormat=Table service · {0}}" Style="{StaticResource PageHeaderStyle}" /></StackPanel>
- </Grid></StackPanel>
- <ContentControl Grid.Row="1" Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}" />
- <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="16" /><ColumnDefinition Width="370" /></Grid.ColumnDefinitions><components:MenuPicker /><components:OrderSummary Grid.Column="2" /></Grid>
- </Grid>
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:components="clr-namespace:ServeX.Presentation.Components" x:Class="ServeX.Views.OrderView">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <HeaderedContentControl Header="{Binding TableNumber}" Content="{Binding TableStatus, StringFormat=Table service · {0}}" Style="{StaticResource PageHeaderStyle}"/>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+        <ContentControl Grid.Row="1" Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="370"/>
+            </Grid.ColumnDefinitions>
+            <components:MenuPicker/>
+            <components:OrderSummary Grid.Column="2"/>
+        </Grid>
+    </Grid>
 </UserControl>

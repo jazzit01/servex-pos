@@ -1,30 +1,81 @@
-<UserControl x:Class="ServeX.Views.MenuView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" >
-<Grid Margin="20"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
- <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}" />
- <WrapPanel Grid.Row="1" Margin="0,0,0,16">
-  <TextBox Width="270" Margin="0,0,8,8" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SearchTextBoxStyle}" AutomationProperties.Name="Search menu by name or category" ToolTip="Search by item name or category" />
-  <Button Content="Clear search" Command="{Binding ClearSearchCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8" /><Button Content="Add menu item" Command="{Binding BeginAddCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,0,8" />
- </WrapPanel>
- <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
- <Border Padding="12" Style="{StaticResource SurfaceCardStyle}"><Grid>
- <DataGrid ItemsSource="{Binding FilteredMenuItems}" Style="{StaticResource OperationalGridStyle}" AutomationProperties.Name="Menu catalog"><DataGrid.Columns>
-  <DataGridTextColumn Header="Item" Binding="{Binding Name}" Width="*" MinWidth="130" />
-  <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="125" />
-  <DataGridTextColumn Header="Price" Binding="{Binding Price, StringFormat=Rs. {0:N2}}" Width="130" ElementStyle="{StaticResource FinancialTextStyle}" />
-  <DataGridTemplateColumn Header="Availability" Width="110"><DataGridTemplateColumn.CellTemplate><DataTemplate>
-   <TextBlock><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="Unavailable" /><Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding IsAvailable}" Value="True"><Setter Property="Text" Value="Available" /><Setter Property="Foreground" Value="{StaticResource SuccessBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
-  </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-  <DataGridTemplateColumn Header="Actions" Width="160"><DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel Orientation="Horizontal">
-   <Button Content="Edit" Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}" Padding="10,8" Margin="0,0,6,0" />
-   <Button Content="Delete" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource DangerActionButtonStyle}" Padding="10,8" />
-  </StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
- </DataGrid.Columns></DataGrid>
- <HeaderedContentControl Header="{Binding EmptyStateTitle}" Content="{Binding EmptyStateSubtitle}" Style="{StaticResource EmptyStateStyle}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
- </Grid></Border><Border Grid.Column="1" Width="280" Margin="16,0,0,0" Padding="16" Style="{StaticResource SurfaceCardStyle}" Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
- <HeaderedContentControl Header="{Binding EditorTitle}" Content="Manage pricing and ordering availability." Style="{StaticResource PageHeaderStyle}" />
- <TextBlock Text="Item name" Style="{StaticResource FieldLabelStyle}" /><TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Item name" Text="{Binding EditorName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"  /><TextBlock Text="Category" Style="{StaticResource FieldLabelStyle}" /><TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Category" Text="{Binding EditorCategory, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"  /><TextBlock Text="Price (Rs.)" Style="{StaticResource FieldLabelStyle}" /><TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Price (Rs.)" Text="{Binding EditorPrice, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"  />
- <CheckBox Content="Available for ordering" IsChecked="{Binding EditorIsAvailable}" MinHeight="44" Margin="0,12,0,0" AutomationProperties.Name="Item availability" />
- <WrapPanel Margin="0,16,0,0"><Button Content="Save item" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,8,8" /><Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,0,8" /></WrapPanel>
- </StackPanel></ScrollViewer></Border>
- </Grid></Grid>
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ServeX.Views.MenuView">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
+        <WrapPanel Grid.Row="1" Margin="0,0,0,16">
+            <TextBox Width="270" Margin="0,0,8,8" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SearchTextBoxStyle}" AutomationProperties.Name="Search menu by name or category" ToolTip="Search by item name or category"/>
+            <Button Content="Clear search" Command="{Binding ClearSearchCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
+            <Button Content="Add menu item" Command="{Binding BeginAddCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,0,8"/>
+        </WrapPanel>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Border Padding="12" Style="{StaticResource SurfaceCardStyle}">
+                <Grid>
+                    <DataGrid ItemsSource="{Binding FilteredMenuItems}" Style="{StaticResource OperationalGridStyle}" AutomationProperties.Name="Menu catalog">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Item" Binding="{Binding Name}" Width="*" MinWidth="130"/>
+                            <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="125"/>
+                            <DataGridTextColumn Header="Price" Binding="{Binding Price, StringFormat=Rs. {0:N2}}" Width="130" ElementStyle="{StaticResource FinancialTextStyle}"/>
+                            <DataGridTemplateColumn Header="Availability" Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock>
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="Unavailable"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAvailable}" Value="True">
+                                                            <Setter Property="Text" Value="Available"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Actions" Width="160">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="Edit" Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}" Padding="10,8" Margin="0,0,6,0"/>
+                                            <Button Content="Delete" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource DangerActionButtonStyle}" Padding="10,8"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <HeaderedContentControl Header="{Binding EmptyStateTitle}" Content="{Binding EmptyStateSubtitle}" Style="{StaticResource EmptyStateStyle}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}"/>
+                </Grid>
+            </Border>
+            <Border Grid.Column="1" Width="280" Margin="16,0,0,0" Padding="16" Style="{StaticResource SurfaceCardStyle}" Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <HeaderedContentControl Header="{Binding EditorTitle}" Content="Manage pricing and ordering availability." Style="{StaticResource PageHeaderStyle}"/>
+                        <TextBlock Text="Item name" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Item name" Text="{Binding EditorName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <TextBlock Text="Category" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Category" Text="{Binding EditorCategory, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <TextBlock Text="Price (Rs.)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Price (Rs.)" Text="{Binding EditorPrice, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <CheckBox Content="Available for ordering" IsChecked="{Binding EditorIsAvailable}" MinHeight="44" Margin="0,12,0,0" AutomationProperties.Name="Item availability"/>
+                        <WrapPanel Margin="0,16,0,0">
+                            <Button Content="Save item" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,8,8"/>
+                            <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,0,8"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
 </UserControl>

@@ -13,6 +13,7 @@ namespace ServeX.ViewModels
     [SupportedOSPlatform("windows")]
     public class TablesViewModel : ViewModelBase, IDataErrorInfo
     {
+        private readonly DialogService _dialogs;
         private readonly LogService _logService;
         private readonly TableService _tableService;
         private readonly OrderWindowService _orderWindowService;
@@ -40,8 +41,9 @@ namespace ServeX.ViewModels
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
-        public TablesViewModel(TableService tableService, OrderWindowService orderWindowService, LogService logService)
+        public TablesViewModel(TableService tableService, OrderWindowService orderWindowService, LogService logService, DialogService dialogs)
         {
+            _dialogs = dialogs;
             _logService = logService;
             _tableService = tableService ?? throw new ArgumentNullException(nameof(tableService));
             _orderWindowService = orderWindowService ?? throw new ArgumentNullException(nameof(orderWindowService));
@@ -404,6 +406,8 @@ namespace ServeX.ViewModels
             {
                 return;
             }
+
+            if (!_dialogs.Confirm("Delete table", "Delete this table? This cannot be undone. Records linked to order history will be protected.")) return;
 
             await ExecuteBusyActionAsync(async () =>
             {

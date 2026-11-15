@@ -1,46 +1,126 @@
-<UserControl x:Class="ServeX.Views.TablesView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:models="clr-namespace:ServeX.Models">
-<Grid Margin="20"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
- <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}" />
- <WrapPanel Grid.Row="1"><Button Content="Indoor" Command="{Binding ShowIndoorTablesCommand}" Margin="0,0,8,8"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource SegmentedTabButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding IsIndoorFilterSelected}" Value="True"><Setter Property="Background" Value="{StaticResource PrimaryBrush}" /><Setter Property="Foreground" Value="White" /></DataTrigger></Style.Triggers></Style></Button.Style></Button><Button Content="Outdoor" Command="{Binding ShowOutdoorTablesCommand}" Margin="0,0,8,8"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource SegmentedTabButtonStyle}"><Style.Triggers><DataTrigger Binding="{Binding IsOutdoorFilterSelected}" Value="True"><Setter Property="Background" Value="{StaticResource PrimaryBrush}" /><Setter Property="Foreground" Value="White" /></DataTrigger></Style.Triggers></Style></Button.Style></Button><Button Content="Add table" Command="{Binding BeginAddCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="8,0,0,8" />
- <TextBlock Text="{Binding VisibleTablesCount, Mode=OneWay, StringFormat=Tables: {0}}" Margin="20,12,12,8" />
- <TextBlock Text="{Binding AvailableCount, Mode=OneWay, StringFormat=Available: {0}}" Margin="0,12,12,8" Foreground="{StaticResource SuccessBrush}" />
- <TextBlock Text="{Binding OccupiedCount, Mode=OneWay, StringFormat=Occupied: {0}}" Margin="0,12,12,8" Foreground="{StaticResource DangerBrush}" />
- <TextBlock Text="{Binding ReservedCount, Mode=OneWay, StringFormat=Reserved: {0}}" Margin="0,12,0,8" Foreground="{StaticResource WarningBrush}" /></WrapPanel>
- <Grid Grid.Row="2" Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="280" /></Grid.ColumnDefinitions>
- <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,16,0"><StackPanel>
-  <HeaderedContentControl Header="{Binding FloorLayoutTitle}" Content="{Binding FloorLayoutSubtitle}" Style="{StaticResource PageHeaderStyle}" />
-  <ItemsControl ItemsSource="{Binding VisibleTables}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border Width="176" Margin="0,0,12,12" Padding="12">
- <Border.Style><Style TargetType="Border" BasedOn="{StaticResource SurfaceCardStyle}">
- <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}" />
- <Style.Triggers>
-  <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TableStatus.Occupied}"><Setter Property="Background" Value="{StaticResource DangerSoftBrush}" /></DataTrigger>
-  <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TableStatus.Reserved}"><Setter Property="Background" Value="{StaticResource WarningSoftBrush}" /></DataTrigger>
-  <DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" /><Setter Property="BorderThickness" Value="2" /></DataTrigger>
- </Style.Triggers></Style></Border.Style>
- <StackPanel>
-  <Button Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource GhostActionButtonStyle}" AutomationProperties.Name="{Binding Heading}">
-   <StackPanel><TextBlock Text="{Binding TableNumber}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" /><TextBlock Text="{Binding StatusLabel}" HorizontalAlignment="Center" /></StackPanel>
-  </Button>
-  <TextBlock Text="{Binding CustomerDisplayName}" Margin="0,10,0,2" />
-  <TextBlock Text="{Binding ServiceCaption}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
-  <Button Content="Open order" Margin="0,12,0,0" Command="{Binding DataContext.OpenFloorOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}" />
- </StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
-  <HeaderedContentControl Header="No tables in this area" Content="Add a table or switch between Indoor and Outdoor to continue." Style="{StaticResource EmptyStateStyle}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
- </StackPanel></ScrollViewer>
- <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
- <Border Padding="16" Style="{StaticResource SurfaceCardStyle}"><StackPanel>
- <HeaderedContentControl Header="{Binding SelectedTableHeading}" Content="{Binding SelectedTableStatusDescription}" Style="{StaticResource PageHeaderStyle}" />
- <TextBlock Text="{Binding SelectedTableAreaLabel}" Foreground="{StaticResource MutedTextBrush}" />
- <TextBlock Text="{Binding SelectedGuestLabel}" FontWeight="SemiBold" Margin="0,8,0,0" />
- <TextBlock Text="{Binding SelectedServiceCaption}" Margin="0,4,0,16" Foreground="{StaticResource MutedTextBrush}" />
- <Button Content="Open selected order" Command="{Binding OpenSelectedOrderCommand}" Style="{StaticResource PrimaryActionButtonStyle}"  />
- <WrapPanel Margin="0,8,0,0"><Button Content="Edit" Command="{Binding EditSelectedCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,0" /><Button Content="Delete" Command="{Binding DeleteSelectedCommand}" Style="{StaticResource DangerActionButtonStyle}"  /></WrapPanel>
- </StackPanel></Border><Border Style="{StaticResource SoftPanelStyle}" Padding="16" Margin="0,16,0,0" Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}"><StackPanel>
- <TextBlock Text="{Binding EditorTitle}" Style="{StaticResource SectionTitleTextStyle}" />
- <TextBlock Text="Table number" Style="{StaticResource FieldLabelStyle}" /><TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Table number" Text="{Binding EditorTableNumber, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"  />
- <TextBlock Text="Area" Style="{StaticResource FieldLabelStyle}" /><ComboBox ItemsSource="{Binding AvailableAreas}" SelectedItem="{Binding EditorArea}" Style="{StaticResource FormComboBoxStyle}" AutomationProperties.Name="Table area" />
- <TextBlock Text="Status" Style="{StaticResource FieldLabelStyle}" /><ComboBox ItemsSource="{Binding AvailableStatuses}" SelectedItem="{Binding EditorStatus}" Style="{StaticResource FormComboBoxStyle}" AutomationProperties.Name="Table status" />
- <WrapPanel Margin="0,16,0,0"><Button Content="Save table" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,8,8" /><Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,0,8" /></WrapPanel>
- </StackPanel></Border>
- </StackPanel></ScrollViewer></Grid></Grid>
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:models="clr-namespace:ServeX.Models" x:Class="ServeX.Views.TablesView">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
+        <WrapPanel Grid.Row="1">
+            <Button Content="Indoor" Command="{Binding ShowIndoorTablesCommand}" Margin="0,0,8,8">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource SegmentedTabButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsIndoorFilterSelected}" Value="True">
+                                <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Outdoor" Command="{Binding ShowOutdoorTablesCommand}" Margin="0,0,8,8">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource SegmentedTabButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsOutdoorFilterSelected}" Value="True">
+                                <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Add table" Command="{Binding BeginAddCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="8,0,0,8"/>
+            <TextBlock Text="{Binding VisibleTablesCount, Mode=OneWay, StringFormat=Tables: {0}}" Margin="20,12,12,8"/>
+            <TextBlock Text="{Binding AvailableCount, Mode=OneWay, StringFormat=Available: {0}}" Margin="0,12,12,8" Foreground="{StaticResource SuccessBrush}"/>
+            <TextBlock Text="{Binding OccupiedCount, Mode=OneWay, StringFormat=Occupied: {0}}" Margin="0,12,12,8" Foreground="{StaticResource DangerBrush}"/>
+            <TextBlock Text="{Binding ReservedCount, Mode=OneWay, StringFormat=Reserved: {0}}" Margin="0,12,0,8" Foreground="{StaticResource WarningBrush}"/>
+        </WrapPanel>
+        <Grid Grid.Row="2" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="280"/>
+            </Grid.ColumnDefinitions>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,16,0">
+                <StackPanel>
+                    <HeaderedContentControl Header="{Binding FloorLayoutTitle}" Content="{Binding FloorLayoutSubtitle}" Style="{StaticResource PageHeaderStyle}"/>
+                    <ItemsControl ItemsSource="{Binding VisibleTables}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Width="176" Margin="0,0,12,12" Padding="12">
+                                    <Border.Style>
+                                        <Style TargetType="Border" BasedOn="{StaticResource SurfaceCardStyle}">
+                                            <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TableStatus.Occupied}">
+                                                    <Setter Property="Background" Value="{StaticResource DangerSoftBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TableStatus.Reserved}">
+                                                    <Setter Property="Background" Value="{StaticResource WarningSoftBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel>
+                                        <Button Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource GhostActionButtonStyle}" AutomationProperties.Name="{Binding Heading}">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding TableNumber}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{Binding StatusLabel}" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <TextBlock Text="{Binding CustomerDisplayName}" Margin="0,10,0,2"/>
+                                        <TextBlock Text="{Binding ServiceCaption}" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
+                                        <Button Content="Open order" Margin="0,12,0,0" Command="{Binding DataContext.OpenFloorOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <HeaderedContentControl Header="No tables in this area" Content="Add a table or switch between Indoor and Outdoor to continue." Style="{StaticResource EmptyStateStyle}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}"/>
+                </StackPanel>
+            </ScrollViewer>
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <Border Padding="16" Style="{StaticResource SurfaceCardStyle}">
+                        <StackPanel>
+                            <HeaderedContentControl Header="{Binding SelectedTableHeading}" Content="{Binding SelectedTableStatusDescription}" Style="{StaticResource PageHeaderStyle}"/>
+                            <TextBlock Text="{Binding SelectedTableAreaLabel}" Foreground="{StaticResource MutedTextBrush}"/>
+                            <TextBlock Text="{Binding SelectedGuestLabel}" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                            <TextBlock Text="{Binding SelectedServiceCaption}" Margin="0,4,0,16" Foreground="{StaticResource MutedTextBrush}"/>
+                            <Button Content="Open selected order" Command="{Binding OpenSelectedOrderCommand}" Style="{StaticResource PrimaryActionButtonStyle}"/>
+                            <WrapPanel Margin="0,8,0,0">
+                                <Button Content="Edit" Command="{Binding EditSelectedCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,0"/>
+                                <Button Content="Delete" Command="{Binding DeleteSelectedCommand}" Style="{StaticResource DangerActionButtonStyle}"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SoftPanelStyle}" Padding="16" Margin="0,16,0,0" Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding EditorTitle}" Style="{StaticResource SectionTitleTextStyle}"/>
+                            <TextBlock Text="Table number" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Table number" Text="{Binding EditorTableNumber, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                            <TextBlock Text="Area" Style="{StaticResource FieldLabelStyle}"/>
+                            <ComboBox ItemsSource="{Binding AvailableAreas}" SelectedItem="{Binding EditorArea}" Style="{StaticResource FormComboBoxStyle}" AutomationProperties.Name="Table area"/>
+                            <TextBlock Text="Status" Style="{StaticResource FieldLabelStyle}"/>
+                            <ComboBox ItemsSource="{Binding AvailableStatuses}" SelectedItem="{Binding EditorStatus}" Style="{StaticResource FormComboBoxStyle}" AutomationProperties.Name="Table status"/>
+                            <WrapPanel Margin="0,16,0,0">
+                                <Button Content="Save table" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,8,8"/>
+                                <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,0,8"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
 </UserControl>

@@ -1,22 +1,79 @@
-<UserControl x:Class="ServeX.Views.BillingView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" >
-<Grid Margin="20"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
- <HeaderedContentControl Header="{Binding WindowTitle}" Content="{Binding TableNumber, StringFormat=Order reference: {0}}" Style="{StaticResource PageHeaderStyle}" />
- <ContentControl Grid.Row="1" Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}" />
- <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="350" /></Grid.ColumnDefinitions>
- <Border Padding="16" Style="{StaticResource SurfaceCardStyle}"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
- <TextBlock Text="Itemized bill" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,16" />
- <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" Style="{StaticResource OperationalGridStyle}" AutomationProperties.Name="Bill items"><DataGrid.Columns>
-  <DataGridTextColumn Header="Item" Binding="{Binding Name}" Width="*" MinWidth="140" />
-  <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="65" />
-  <DataGridTextColumn Header="Unit price" Binding="{Binding UnitPrice, StringFormat=Rs. {0:N2}}" Width="120" ElementStyle="{StaticResource FinancialTextStyle}" />
-  <DataGridTextColumn Header="Line total" Binding="{Binding LineTotal, StringFormat=Rs. {0:N2}}" Width="135" ElementStyle="{StaticResource FinancialTextStyle}" />
- </DataGrid.Columns></DataGrid>
- </Grid></Border><ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="16,0,0,0"><Border Padding="20" Style="{StaticResource SurfaceCardStyle}"><StackPanel>
- <TextBlock Text="Payment summary" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,16" /><Grid Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="Subtotal" Margin="0,0,12,0" /><TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" /></Grid><Grid Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding TaxLabel}" Margin="0,0,12,0" /><TextBlock Grid.Column="1" Text="{Binding Tax, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" /></Grid><Grid Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="Discount" Margin="0,0,12,0" /><TextBlock Grid.Column="1" Text="{Binding Discount, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" /></Grid><Border Background="{StaticResource PrimarySoftBrush}" CornerRadius="8" Padding="16" Margin="0,4,0,8"><StackPanel><TextBlock Text="Final payable amount" Foreground="{StaticResource PrimaryBrush}" /><TextBlock Text="{Binding FinalTotal, StringFormat=Rs. {0:N2}}" FontSize="30" Margin="0,6,0,0" Style="{StaticResource FinancialTextStyle}" /></StackPanel></Border><TextBlock Text="Discount (Rs.)" Style="{StaticResource FieldLabelStyle}" /><TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Discount (Rs.)" Text="{Binding DiscountInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"  /><TextBlock Text="Payment method" Style="{StaticResource FieldLabelStyle}" />
- <ComboBox ItemsSource="{Binding PaymentOptions}" SelectedItem="{Binding SelectedPaymentMethod}" Style="{StaticResource FormComboBoxStyle}" AutomationProperties.Name="Payment method" />
- <TextBlock Text="Records Cash, Card or UPI received externally. ServeX does not process an online payment." FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,16" />
- <Button Content="Confirm payment" Command="{Binding ConfirmPaymentCommand}" Style="{StaticResource PrimaryActionButtonStyle}" MinHeight="48" />
- <Button Content="Print receipt" Command="{Binding PrintReceiptCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0" />
- <TextBlock Text="Confirm once payment has been received. Receipt printing is available after confirmation." FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="0,12,0,0" />
- </StackPanel></Border></ScrollViewer></Grid></Grid>
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ServeX.Views.BillingView">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <HeaderedContentControl Header="{Binding WindowTitle}" Content="{Binding TableNumber, StringFormat=Order reference: {0}}" Style="{StaticResource PageHeaderStyle}"/>
+        <ContentControl Grid.Row="1" Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="350"/>
+            </Grid.ColumnDefinitions>
+            <Border Padding="16" Style="{StaticResource SurfaceCardStyle}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Itemized bill" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,16"/>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" Style="{StaticResource OperationalGridStyle}" AutomationProperties.Name="Bill items">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Item" Binding="{Binding Name}" Width="*" MinWidth="140"/>
+                            <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="65"/>
+                            <DataGridTextColumn Header="Unit price" Binding="{Binding UnitPrice, StringFormat=Rs. {0:N2}}" Width="120" ElementStyle="{StaticResource FinancialTextStyle}"/>
+                            <DataGridTextColumn Header="Line total" Binding="{Binding LineTotal, StringFormat=Rs. {0:N2}}" Width="135" ElementStyle="{StaticResource FinancialTextStyle}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="16,0,0,0">
+                <Border Padding="20" Style="{StaticResource SurfaceCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Payment summary" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,16"/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="2*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Subtotal" Margin="0,0,12,0"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="2*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding TaxLabel}" Margin="0,0,12,0"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Tax, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="2*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Discount" Margin="0,0,12,0"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Discount, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}"/>
+                        </Grid>
+                        <Border Background="{StaticResource PrimarySoftBrush}" CornerRadius="8" Padding="16" Margin="0,4,0,8">
+                            <StackPanel>
+                                <TextBlock Text="Final payable amount" Foreground="{StaticResource PrimaryBrush}"/>
+                                <TextBlock Text="{Binding FinalTotal, StringFormat=Rs. {0:N2}}" FontSize="30" Margin="0,6,0,0" Style="{StaticResource FinancialTextStyle}"/>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Discount (Rs.)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Discount (Rs.)" Text="{Binding DiscountInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <TextBlock Text="Payment method" Style="{StaticResource FieldLabelStyle}"/>
+                        <ComboBox ItemsSource="{Binding PaymentOptions}" SelectedItem="{Binding SelectedPaymentMethod}" Style="{StaticResource FormComboBoxStyle}" AutomationProperties.Name="Payment method"/>
+                        <TextBlock Text="Records Cash, Card or UPI received externally. ServeX does not process an online payment." FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,16"/>
+                        <Button Content="Confirm payment" Command="{Binding ConfirmPaymentCommand}" Style="{StaticResource PrimaryActionButtonStyle}" MinHeight="48"/>
+                        <Button Content="Print receipt" Command="{Binding PrintReceiptCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
+                        <TextBlock Text="Confirm once payment has been received. Receipt printing is available after confirmation." FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="0,12,0,0"/>
+                    </StackPanel>
+                </Border>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
 </UserControl>
