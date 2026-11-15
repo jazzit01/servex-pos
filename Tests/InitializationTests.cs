@@ -126,7 +126,14 @@ public class InitializationTests
         var original = System.Text.Encoding.UTF8.GetBytes("This is not a SQLite database");
         await File.WriteAllBytesAsync(db.Location.FilePath, original);
         await Assert.ThrowsAnyAsync<Exception>(db.Initialize);
-        Assert.Equal(original, await File.ReadAllBytesAsync(db.Location.FilePath));
+        // A disposed SQLite context may return its handle to the pool. On Windows,
+        // inspect the bytes while sharing that existing read/write handle rather
+        // than requesting File.ReadAllBytesAsync's incompatible read-only sharing.
+        using var file = new FileStream(db.Location.FilePath, FileMode.Open, FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete);
+        using var contents = new MemoryStream();
+        await file.CopyToAsync(contents);
+        Assert.Equal(original, contents.ToArray());
     }
     [Fact]
     public async Task FailedPreMigrationBackupStopsUpgradeAndPreservesOldDatabase()
