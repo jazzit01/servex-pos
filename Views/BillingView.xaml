@@ -5,7 +5,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <HeaderedContentControl Header="{Binding WindowTitle}" Content="{Binding TableNumber, StringFormat=Order reference: {0}}" Style="{StaticResource PageHeaderStyle}"/>
+        <HeaderedContentControl Header="{Binding WindowTitle}" Content="{Binding TableNumber}" ContentStringFormat="Order reference: {0}" Style="{StaticResource PageHeaderStyle}"/>
         <ContentControl Grid.Row="1" Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>

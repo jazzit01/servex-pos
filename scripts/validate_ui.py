@@ -37,6 +37,14 @@ for path, text in texts.items():
         if reference not in keys:
             errors.append(f'{path.name}: unresolved resource {reference}')
 
+baseline_design = subprocess.check_output(['git', 'show', 'f013ba5:Styles/DesignSystem.xaml'], cwd=ROOT, text=True)
+legacy_keys = set(re.findall(r'x:Key="([^"]+)"', baseline_design))
+if legacy_keys - keys:
+    errors.append('Missing legacy design resources: ' + ', '.join(sorted(legacy_keys - keys)))
+for path, text in texts.items():
+    if re.search(r'<HeaderedContentControl[^>]+Content="\{Binding[^\"]+StringFormat=', text):
+        errors.append(f'{path.name}: use ContentStringFormat for content-control formatting')
+
 # Compare all action-command names from the actual Phase 1 baseline. Shared components
 # intentionally move order commands out of the two wrapper views.
 shared = ''.join(p.read_text() for p in (ROOT / 'Presentation/Components').glob('*.xaml'))

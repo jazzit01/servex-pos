@@ -3,10 +3,10 @@
         <StackPanel Margin="20">
             <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
             <UniformGrid Columns="4">
-                <HeaderedContentControl Margin="0,0,12,12" Header="Today's sales" Content="{Binding TodayRevenue, StringFormat=Rs. {0:N2}}" Tag="Confirmed payments today" Style="{StaticResource MetricCardStyle}"/>
-                <HeaderedContentControl Margin="0,0,12,12" Header="Active orders" Content="{Binding ActiveOrders}" Tag="Open, preparing or served" Style="{StaticResource MetricCardStyle}"/>
-                <HeaderedContentControl Margin="0,0,12,12" Header="Occupied tables" Content="{Binding OccupiedTables}" Tag="Currently occupied" Style="{StaticResource MetricCardStyle}"/>
-                <HeaderedContentControl Margin="0,0,12,12" Header="Available tables" Content="{Binding AvailableTables}" Tag="Ready for service" Style="{StaticResource MetricCardStyle}"/>
+                <HeaderedContentControl Margin="0,0,12,12" Header="Today's sales" Tag="Confirmed payments today" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding TodayRevenue, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
+                <HeaderedContentControl Margin="0,0,12,12" Header="Active orders" Tag="Open, preparing or served" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding ActiveOrders}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
+                <HeaderedContentControl Margin="0,0,12,12" Header="Occupied tables" Tag="Currently occupied" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding OccupiedTables}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
+                <HeaderedContentControl Margin="0,0,12,12" Header="Available tables" Tag="Ready for service" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding AvailableTables}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
             </UniformGrid>
             <Border Padding="16" Margin="0,4,0,16" Style="{StaticResource SurfaceCardStyle}">
                 <StackPanel>
