@@ -4,9 +4,9 @@
         xmlns:views="clr-namespace:ServeX.Views"
         Title="{Binding WindowTitle}"
         Width="1280"
-        Height="820"
+        Height="760"
         MinWidth="1100"
-        MinHeight="700"
+        MinHeight="680"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         Style="{StaticResource ShellWindowStyle}">

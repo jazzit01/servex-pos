@@ -1,0 +1,24 @@
+<UserControl x:Class="ServeX.Presentation.Components.OrderSummary" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Border Padding="16" Style="{StaticResource SurfaceCardStyle}"><Grid>
+ <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+ <TextBlock Text="Current order" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,12" />
+ <Grid Grid.Row="1"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+ <ItemsControl ItemsSource="{Binding OrderItems}"><ItemsControl.ItemTemplate><DataTemplate>
+  <Border Padding="0,12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1"><StackPanel>
+   <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+   <TextBlock Text="{Binding Category}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,4,0,4" />
+   <TextBlock Text="{Binding LineTotal, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" />
+   <WrapPanel Margin="0,8,0,0">
+    <Button Content="−" Command="{Binding DataContext.DecreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource IconButtonStyle}" AutomationProperties.Name="{Binding Name, StringFormat=Decrease quantity of {0}}" ToolTip="Decrease quantity" />
+    <TextBlock Text="{Binding Quantity}" MinWidth="40" TextAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" Margin="4,0" />
+    <Button Content="+" Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource IconButtonStyle}" AutomationProperties.Name="{Binding Name, StringFormat=Increase quantity of {0}}" ToolTip="Increase quantity" />
+    <Button Content="Remove" Margin="8,0,0,0" Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource DangerActionButtonStyle}" AutomationProperties.Name="{Binding Name, StringFormat=Remove {0}}" />
+   </WrapPanel>
+  </StackPanel></Border>
+ </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+ <HeaderedContentControl Header="Your order is empty" Content="Choose a menu item to begin." Style="{StaticResource EmptyStateStyle}" Visibility="{Binding IsEmptyOrder, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Center" />
+ </Grid>
+ <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,16,0,0" Margin="0,12,0,0"><StackPanel>
+<Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="Subtotal" VerticalAlignment="Center" FontWeight="Normal" /><TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" FontSize="16" /></Grid><Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="{Binding TaxLabel}" VerticalAlignment="Center" FontWeight="Normal" /><TextBlock Grid.Column="1" Text="{Binding Tax, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" FontSize="16" /></Grid><Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="Total" VerticalAlignment="Center" FontWeight="Bold" /><TextBlock Grid.Column="1" Text="{Binding Total, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" FontSize="24" /></Grid><WrapPanel Margin="0,8,0,0"><Button Content="Save order" Command="{Binding SaveOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8" /><Button Content="Generate bill" Command="{Binding GenerateBillCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,0,8" /></WrapPanel>
+ </StackPanel></Border></Grid></Border>
+</UserControl>

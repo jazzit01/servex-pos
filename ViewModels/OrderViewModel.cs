@@ -17,6 +17,14 @@ namespace ServeX.ViewModels
         private readonly OrderService _orderService;
         private readonly BillingWindowService _billingWindowService;
         private readonly int _tableId;
+        private string _searchText = string.Empty;
+        public string SearchText
+        {
+            get => _searchText;
+            set { if (SetProperty(ref _searchText, value)) ApplyCategoryFilter(); }
+        }
+        public bool IsMenuEmpty => FilteredMenuItems.Count == 0;
+
         private bool _isBusy;
         private bool _hasBlockingError;
         private int? _orderId;
@@ -334,15 +342,13 @@ namespace ServeX.ViewModels
         private void ApplyCategoryFilter()
         {
             FilteredMenuItems.Clear();
-
-            var items = SelectedCategory == "All"
-                ? MenuItems
-                : new ObservableCollection<MenuItem>(MenuItems.Where(item => item.Category == SelectedCategory));
-
-            foreach (var item in items)
-            {
+            var query = (SearchText ?? string.Empty).Trim();
+            foreach (var item in MenuItems.Where(item =>
+                (SelectedCategory == "All" || item.Category == SelectedCategory) &&
+                (query.Length == 0 || (item.Name ?? string.Empty).Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
+                 (item.Category ?? string.Empty).Contains(query, StringComparison.CurrentCultureIgnoreCase))))
                 FilteredMenuItems.Add(item);
-            }
+            OnPropertyChanged(nameof(IsMenuEmpty));
         }
 
         private OrderLineItemViewModel CreateLineItem(int menuItemId, string name, string category, decimal unitPrice, int quantity)
