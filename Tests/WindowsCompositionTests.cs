@@ -96,6 +96,7 @@ public class WindowsCompositionTests
             {
                 var app = new ServeX.App();
                 app.InitializeComponent(); // Resources only; never Run/OnStartup or production initialization.
+                app.ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
                 var views = new (System.Windows.FrameworkElement, object)[]
                 {
                     (new ServeX.Views.DashboardView(), main.Dashboard),
@@ -125,6 +126,7 @@ public class WindowsCompositionTests
             }
             catch (Exception exception) { failure = exception; }
         });
+        thread.IsBackground = true;
         thread.SetApartmentState(System.Threading.ApartmentState.STA);
         thread.Start();
         Assert.True(thread.Join(TimeSpan.FromSeconds(30)), "WPF resource/layout smoke test timed out.");
