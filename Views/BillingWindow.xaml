@@ -4,7 +4,7 @@
         xmlns:views="clr-namespace:ServeX.Views"
         Title="{Binding WindowTitle}"
         Width="1180"
-        Height="780"
+        Height="760"
         MinWidth="1000"
         MinHeight="680"
         WindowStartupLocation="CenterOwner"
