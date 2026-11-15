@@ -33,6 +33,10 @@ namespace ServeX.Services
                 var snapshot = new DashboardSnapshot
                 {
                     TodayRevenue = todayBillTotals.DefaultIfEmpty(0m).Sum(),
+                    OccupiedTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Occupied),
+                    AvailableTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Available),
+                    ActiveOrders = await context.Orders.CountAsync(order => order.Status == OrderStatus.Open ||
+                        order.Status == OrderStatus.Preparing || order.Status == OrderStatus.Served),
 
                     ActiveTables = await context.Tables
                         .AsNoTracking()
