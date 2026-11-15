@@ -13,6 +13,7 @@ namespace ServeX.ViewModels
 {
     public class MenuViewModel : ViewModelBase, IDataErrorInfo
     {
+        private readonly DialogService _dialogs;
         private readonly LogService _logService;
         private readonly MenuService _menuService;
         private readonly RelayCommand _beginAddCommand;
@@ -32,8 +33,9 @@ namespace ServeX.ViewModels
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
-        public MenuViewModel(MenuService menuService, LogService logService)
+        public MenuViewModel(MenuService menuService, LogService logService, DialogService dialogs)
         {
+            _dialogs = dialogs;
             _logService = logService;
             _menuService = menuService ?? throw new ArgumentNullException(nameof(menuService));
             MenuItems = new ObservableCollection<MenuItem>();
@@ -313,6 +315,8 @@ namespace ServeX.ViewModels
             {
                 return;
             }
+
+            if (!_dialogs.Confirm("Delete menu item", "Delete this menu item? This cannot be undone. Records linked to order history will be protected.")) return;
 
             await ExecuteBusyActionAsync(async () =>
             {

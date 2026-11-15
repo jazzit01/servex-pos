@@ -1,22 +1,47 @@
-<UserControl x:Class="ServeX.Views.SettingsView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" >
-<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="20">
- <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}" />
- <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="16" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
- <Border Padding="20" Style="{StaticResource SurfaceCardStyle}"><StackPanel>
- <HeaderedContentControl Header="Restaurant profile" Content="Update the details used throughout daily service." Style="{StaticResource PageHeaderStyle}" />
- <TextBlock Text="Restaurant name" Style="{StaticResource FieldLabelStyle}" /><TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Restaurant name" Text="{Binding RestaurantName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"  /><TextBlock Text="Phone" Style="{StaticResource FieldLabelStyle}" /><TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Phone" Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"  /><TextBlock Text="Tax percentage" Style="{StaticResource FieldLabelStyle}" /><TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Tax percentage" Text="{Binding TaxPercentageInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"  />
- <TextBlock Text="Tax changes apply to subsequent calculations. Review the configured percentage before saving." Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,8,0,0" />
- <TextBlock Text="License key" Style="{StaticResource FieldLabelStyle}" /><TextBox Text="{Binding LicenseKey, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Configured license key" />
- <Button Content="Save settings" Command="{Binding SaveSettingsCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,20,0,0" />
- </StackPanel></Border>
- <StackPanel Grid.Column="2"><Border Padding="20" Style="{StaticResource SurfaceCardStyle}"><StackPanel>
- <HeaderedContentControl Header="Database protection" Content="Create a separate, verified copy of your restaurant data." Style="{StaticResource PageHeaderStyle}" />
- <TextBlock Text="Active database" Style="{StaticResource FieldLabelStyle}" />
- <TextBlock Text="{Binding DatabaseFileName}" FontWeight="SemiBold" Margin="0,0,0,8" />
- <TextBox Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Active database path" />
- <TextBlock Text="Choose a new filename for every backup. Existing files are never overwritten. Keep a protected copy on a separate drive." Foreground="{StaticResource MutedTextBrush}" Margin="0,16,0,16" />
- <Button Content="Back up database" Command="{Binding BackupDatabaseCommand}" Style="{StaticResource PrimaryActionButtonStyle}"  />
- </StackPanel></Border>
- <Border Padding="20" Style="{StaticResource SoftPanelStyle}" Margin="0,16,0,0"><StackPanel><TextBlock Text="Recovery and storage" Style="{StaticResource SectionTitleTextStyle}" /><TextBlock Text="Restore only while ServeX is closed, to a new file. Keep the original database and confirm the restored records before taking new orders." Margin="0,12,0,0" Foreground="{StaticResource MutedTextBrush}" /></StackPanel></Border>
- </StackPanel></Grid></StackPanel></ScrollViewer>
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ServeX.Views.SettingsView">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="20">
+            <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Padding="20" Style="{StaticResource SurfaceCardStyle}">
+                    <StackPanel>
+                        <HeaderedContentControl Header="Restaurant profile" Content="Update the details used throughout daily service." Style="{StaticResource PageHeaderStyle}"/>
+                        <TextBlock Text="Restaurant name" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Restaurant name" Text="{Binding RestaurantName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <TextBlock Text="Phone" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Phone" Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <TextBlock Text="Tax percentage" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Tax percentage" Text="{Binding TaxPercentageInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <TextBlock Text="Tax changes apply to subsequent calculations. Review the configured percentage before saving." Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,8,0,0"/>
+                        <TextBlock Text="License key" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding LicenseKey, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Configured license key"/>
+                        <Button Content="Save settings" Command="{Binding SaveSettingsCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,20,0,0"/>
+                    </StackPanel>
+                </Border>
+                <StackPanel Grid.Column="2">
+                    <Border Padding="20" Style="{StaticResource SurfaceCardStyle}">
+                        <StackPanel>
+                            <HeaderedContentControl Header="Database protection" Content="Create a separate, verified copy of your restaurant data." Style="{StaticResource PageHeaderStyle}"/>
+                            <TextBlock Text="Active database" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBlock Text="{Binding DatabaseFileName}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Active database path"/>
+                            <TextBlock Text="Choose a new filename for every backup. Existing files are never overwritten. Keep a protected copy on a separate drive." Foreground="{StaticResource MutedTextBrush}" Margin="0,16,0,16"/>
+                            <Button Content="Back up database" Command="{Binding BackupDatabaseCommand}" Style="{StaticResource PrimaryActionButtonStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Padding="20" Style="{StaticResource SoftPanelStyle}" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Recovery and storage" Style="{StaticResource SectionTitleTextStyle}"/>
+                            <TextBlock Text="Restore only while ServeX is closed, to a new file. Keep the original database and confirm the restored records before taking new orders." Margin="0,12,0,0" Foreground="{StaticResource MutedTextBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

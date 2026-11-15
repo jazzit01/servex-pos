@@ -13,6 +13,7 @@ namespace ServeX.ViewModels
     [SupportedOSPlatform("windows")]
     public class ParcelViewModel : ViewModelBase
     {
+        private readonly DialogService _dialogs;
         private readonly LogService _logService;
         private readonly OrderService _orderService;
         private readonly BillingWindowService _billingWindowService;
@@ -32,8 +33,9 @@ namespace ServeX.ViewModels
         private bool _isStatusError;
         private decimal _taxPercentage = 5m;
 
-        public ParcelViewModel(OrderService orderService, BillingWindowService billingWindowService, LogService logService)
+        public ParcelViewModel(OrderService orderService, BillingWindowService billingWindowService, LogService logService, DialogService dialogs)
         {
+            _dialogs = dialogs;
             _logService = logService;
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
             _billingWindowService = billingWindowService ?? throw new ArgumentNullException(nameof(billingWindowService));
@@ -50,7 +52,7 @@ namespace ServeX.ViewModels
             RemoveItemCommand = new RelayCommand(item => RemoveItem(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             SaveOrderCommand = new AsyncRelayCommand(async _ => await SaveOrderAsync(), _ => CanSaveOrder);
             GenerateBillCommand = new AsyncRelayCommand(async _ => await GenerateBillAsync(), _ => CanGenerateBill);
-            NewParcelCommand = new RelayCommand(_ => ResetDraft(true), _ => !IsBusy);
+            NewParcelCommand = new RelayCommand(_ => StartNewParcel(), _ => !IsBusy);
         }
 
         public ObservableCollection<string> Categories { get; }
@@ -434,6 +436,12 @@ namespace ServeX.ViewModels
             }, "The parcel order could not be saved.");
 
             return savedOrder;
+        }
+
+        private void StartNewParcel()
+        {
+            if (OrderItems.Count > 0 && !_dialogs.Confirm("Start a new parcel", "Clear this draft and start a new parcel? Previously saved orders remain unchanged.")) return;
+            ResetDraft(true);
         }
 
         private void ResetDraft(bool showMessage)

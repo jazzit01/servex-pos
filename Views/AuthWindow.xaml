@@ -1,14 +1,37 @@
-<Window x:Class="ServeX.Views.AuthWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- xmlns:viewModels="clr-namespace:ServeX.ViewModels" xmlns:views="clr-namespace:ServeX.Views"
- Title="{Binding WindowTitle}" Width="1180" Height="760" MinWidth="1100" MinHeight="680" WindowStartupLocation="CenterScreen" Style="{StaticResource ShellWindowStyle}">
- <Window.Resources><DataTemplate DataType="{x:Type viewModels:SetupViewModel}"><views:SetupView /></DataTemplate><DataTemplate DataType="{x:Type viewModels:LoginViewModel}"><views:LoginView /></DataTemplate></Window.Resources>
- <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="320" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
- <Border Background="{StaticResource SidebarBrush}" Padding="32"><Grid>
- <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
- <StackPanel><TextBlock Text="ServeX" FontSize="32" FontWeight="Bold" Foreground="{StaticResource SidebarTextBrush}" /><TextBlock Text="POINT OF SALE" Foreground="{StaticResource SidebarMutedBrush}" FontSize="12" Margin="0,8,0,0" /></StackPanel>
- <StackPanel Grid.Row="1" VerticalAlignment="Center"><TextBlock Text="{Binding PanelTitle}" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource SidebarTextBrush}" /><TextBlock Text="{Binding PanelSubtitle}" Foreground="{StaticResource SidebarMutedBrush}" Margin="0,16,0,0" /></StackPanel>
- <TextBlock Grid.Row="2" Text="Service. Orders. Checkout." Foreground="{StaticResource SidebarMutedBrush}" />
- </Grid></Border>
- <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalContentAlignment="Center">
- <ContentControl Content="{Binding CurrentViewModel}" Margin="32" HorizontalContentAlignment="Stretch" />
- </ScrollViewer></Grid></Window>
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:viewModels="clr-namespace:ServeX.ViewModels" xmlns:views="clr-namespace:ServeX.Views" x:Class="ServeX.Views.AuthWindow" MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}" MaxWidth="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Width}" Title="{Binding WindowTitle}" Width="1180" Height="760" MinWidth="1100" MinHeight="680" WindowStartupLocation="CenterScreen" Style="{StaticResource ShellWindowStyle}">
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type viewModels:SetupViewModel}">
+            <views:SetupView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
+            <views:LoginView/>
+        </DataTemplate>
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Border Background="{StaticResource SidebarBrush}" Padding="32">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <StackPanel>
+                    <TextBlock Text="ServeX" FontSize="32" FontWeight="Bold" Foreground="{StaticResource SidebarTextBrush}"/>
+                    <TextBlock Text="POINT OF SALE" Foreground="{StaticResource SidebarMutedBrush}" FontSize="12" Margin="0,8,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding PanelTitle}" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource SidebarTextBrush}"/>
+                    <TextBlock Text="{Binding PanelSubtitle}" Foreground="{StaticResource SidebarMutedBrush}" Margin="0,16,0,0"/>
+                </StackPanel>
+                <TextBlock Grid.Row="2" Text="Service. Orders. Checkout." Foreground="{StaticResource SidebarMutedBrush}"/>
+            </Grid>
+        </Border>
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalContentAlignment="Center">
+            <ContentControl Content="{Binding CurrentViewModel}" Margin="32" HorizontalContentAlignment="Stretch"/>
+        </ScrollViewer>
+    </Grid>
+</Window>
