@@ -20,6 +20,9 @@ namespace ServeX.ViewModels
         private bool _isBusy;
         private decimal _todayRevenue;
         private int _activeTables;
+        private int _occupiedTables;
+        private int _availableTables;
+        private int _activeOrders;
         private int _totalOrdersToday;
         private int _parcelOrdersCount;
         private string _statusMessage = string.Empty;
@@ -74,6 +77,10 @@ namespace ServeX.ViewModels
             get => _activeTables;
             private set => SetProperty(ref _activeTables, value);
         }
+
+        public int OccupiedTables { get => _occupiedTables; private set => SetProperty(ref _occupiedTables, value); }
+        public int AvailableTables { get => _availableTables; private set => SetProperty(ref _availableTables, value); }
+        public int ActiveOrders { get => _activeOrders; private set => SetProperty(ref _activeOrders, value); }
 
         public int TotalOrdersToday
         {
@@ -191,6 +198,9 @@ namespace ServeX.ViewModels
             var snapshot = await _dashboardService.GetSnapshotAsync();
             TodayRevenue = snapshot.TodayRevenue;
             ActiveTables = snapshot.ActiveTables;
+            OccupiedTables = snapshot.OccupiedTables;
+            AvailableTables = snapshot.AvailableTables;
+            ActiveOrders = snapshot.ActiveOrders;
             TotalOrdersToday = snapshot.TotalOrdersToday;
             ParcelOrdersCount = snapshot.ParcelOrdersCount;
 
