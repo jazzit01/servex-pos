@@ -33,7 +33,45 @@
             <ColumnDefinition x:Name="SidebarColumn" Width="208"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <Border Background="{StaticResource SidebarBrush}" Padding="10,16,10,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.ColumnSpan="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1" Padding="10,10,18,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="ToggleSidebarButton" Click="ToggleSidebar" Width="44" Height="44" Padding="0" Margin="0,0,14,0"
+                        VerticalAlignment="Center" ToolTip="Collapse sidebar" AutomationProperties.Name="Collapse sidebar"
+                        Style="{StaticResource SecondaryActionButtonStyle}">
+                    <Path Data="M 0,0 L 20,0 M 0,6 L 20,6 M 0,12 L 20,12"
+                          Stroke="{StaticResource SidebarTextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                </Button>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                    <TextBlock Text="{Binding CurrentSectionTitle}" FontSize="22" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding CurrentSectionSubtitle}" Margin="0,4,0,0" Style="{StaticResource SectionSubtitleTextStyle}"/>
+                </StackPanel>
+                <Button Grid.Column="2" Content="{Binding BackButtonLabel}" Command="{Binding GoBackCommand}"
+                        Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,14,0" VerticalAlignment="Center"
+                        Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVisibility}}"/>
+                <Border Grid.Column="3" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource SidebarHoverBrush}"
+                        BorderThickness="1" CornerRadius="8" Padding="12,5" VerticalAlignment="Center">
+                    <StackPanel HorizontalAlignment="Right" MinWidth="118">
+                        <TextBlock x:Name="HeaderDate" TextAlignment="Right" FontSize="12"
+                                   Foreground="{StaticResource SidebarMutedBrush}" AutomationProperties.Name="Local date"/>
+                        <TextBlock x:Name="HeaderClock" TextAlignment="Right" FontSize="23" FontWeight="SemiBold"
+                                   Typography.NumeralAlignment="Tabular" Foreground="{StaticResource SidebarTextBrush}"
+                                   AutomationProperties.Name="Local time"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+        <Border Grid.Row="1" Background="{StaticResource SidebarBrush}" Padding="10,16,10,12">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -41,12 +79,6 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <StackPanel Margin="0,0,0,12">
-                    <Button x:Name="ToggleSidebarButton" Click="ToggleSidebar" Width="44" Height="44" Padding="0"
-                            HorizontalAlignment="Left" ToolTip="Collapse sidebar" AutomationProperties.Name="Collapse sidebar"
-                            Style="{StaticResource SecondaryActionButtonStyle}">
-                        <Path Data="M 0,0 L 20,0 M 0,6 L 20,6 M 0,12 L 20,12"
-                              Stroke="{StaticResource SidebarTextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                    </Button>
                     <StackPanel x:Name="SidebarBrand" Margin="8,8,0,0">
                     <TextBlock Text="ServeX" FontSize="26" FontWeight="Bold" Foreground="{StaticResource SidebarTextBrush}"/>
                     </StackPanel>
@@ -162,33 +194,13 @@
                 </Border>
             </Grid>
         </Border>
-        <Grid Grid.Column="1">
+        <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="20,16">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="{Binding CurrentSectionTitle}" FontSize="22" FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding CurrentSectionSubtitle}" Margin="0,4,16,0" Style="{StaticResource SectionSubtitleTextStyle}"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock x:Name="HeaderClock" VerticalAlignment="Center" Margin="0,0,14,0"
-                                   FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}"
-                                   AutomationProperties.Name="Local date and time"/>
-                        <Button Content="{Binding BackButtonLabel}" Command="{Binding GoBackCommand}" Style="{StaticResource SecondaryActionButtonStyle}"
-                                Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVisibility}}"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-            <ContentControl Grid.Row="1" Margin="20,12,20,0" Content="{Binding}" ContentTemplate="{StaticResource StatusMessageTemplate}"/>
-            <ContentControl Grid.Row="2" Content="{Binding CurrentWorkspace}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+            <ContentControl Grid.Row="0" Margin="20,12,20,0" Content="{Binding}" ContentTemplate="{StaticResource StatusMessageTemplate}"/>
+            <ContentControl Grid.Row="1" Content="{Binding CurrentWorkspace}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
         </Grid>
     </Grid>
 </Window>
