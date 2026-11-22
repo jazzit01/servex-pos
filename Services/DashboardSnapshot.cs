@@ -15,6 +15,8 @@ namespace ServeX.Services
 
         public int ParcelOrdersCount { get; set; }
 
+        public IList<HistoryRow> OpenOrders { get; set; } = new List<HistoryRow>();
+
         public IList<DashboardRecentOrder> RecentOrders { get; set; } = new List<DashboardRecentOrder>();
     }
 }

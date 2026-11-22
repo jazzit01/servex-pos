@@ -14,10 +14,16 @@ namespace ServeX.Services
     public class DatabaseBackupService
     {
         private readonly DatabaseLocation _location;
-        public DatabaseBackupService(DatabaseLocation location) { _location = location; }
+        private readonly OperatorSession _session;
+        public DatabaseBackupService(DatabaseLocation location, OperatorSession session)
+        {
+            _location = location;
+            _session = session;
+        }
 
         public async Task<string> BackupAsync(string destinationFilePath)
         {
+            _session.RequireManager();
             if (string.IsNullOrWhiteSpace(destinationFilePath))
                 throw new ArgumentException("A backup file path is required.", nameof(destinationFilePath));
             var sourcePath = _location.FilePath;
@@ -68,6 +74,7 @@ namespace ServeX.Services
 
         public async Task StageRestoreAsync(string backupPath)
         {
+            _session.RequireManager();
             if (string.Equals(Path.GetFullPath(backupPath), _location.FilePath, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Choose a backup file instead of the active database.");
 

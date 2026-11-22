@@ -11,6 +11,61 @@ namespace ServeX.Tests;
 
 public class StartupAndCommandTests
 {
+    private sealed class TestClock : TimeProvider
+    {
+        public DateTimeOffset Now { get; set; } = DateTimeOffset.UnixEpoch;
+        public override DateTimeOffset GetUtcNow() => Now;
+    }
+
+    [Fact]
+    public async Task CashierCanLogInButCannotManageStaffMenuOrBackups()
+    {
+        using var db = new TestDatabase();
+        await db.Initialize();
+        var access = db.Services.GetRequiredService<ApplicationAccessService>();
+        var session = db.Services.GetRequiredService<OperatorSession>();
+        session.ActiveUser = new User { Role = UserRole.Admin };
+        await access.SaveInitialSetupAsync(new InitialSetupRequest
+        {
+            RestaurantName = "Role test", Address = "Address", Phone = "123",
+            AdminUsername = "admin", AdminPassword = "test-password"
+        });
+        await access.CreateStaffAsync("cashier", "cashier-password", UserRole.Cashier);
+        session.ActiveUser = await access.ValidateLoginAsync("cashier", "cashier-password");
+        Assert.Equal(UserRole.Cashier, session.ActiveUser.Role);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => access.CreateStaffAsync("new", "new-password", UserRole.Admin));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => db.Services.GetRequiredService<MenuService>()
+            .AddMenuItemAsync(new MenuItem { Name = "Test", Price = 1, Category = "Food" }));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => db.Services.GetRequiredService<DatabaseBackupService>()
+            .BackupAsync(Path.Combine(db.DirectoryPath, "denied.db")));
+    }
+
+    [Fact]
+    public async Task RepeatedFailuresTemporarilyLockLoginAndPasswordChangeRequiresTheCurrentPassword()
+    {
+        using var db = new TestDatabase();
+        await db.Initialize();
+        var clock = new TestClock();
+        var contexts = db.Services.GetRequiredService<IDbContextFactory<ServeXDbContext>>();
+        var access = new ApplicationAccessService(contexts, db.Services.GetRequiredService<LogService>(), clock);
+        await access.SaveInitialSetupAsync(new InitialSetupRequest
+        {
+            RestaurantName = "Test Restaurant", Address = "Test address", Phone = "123",
+            AdminUsername = "Admin", AdminPassword = "existing-password"
+        });
+
+        for (var attempt = 0; attempt < 5; attempt++)
+            Assert.Null(await access.ValidateLoginAsync("admin", "wrong-password"));
+        Assert.Null(await access.ValidateLoginAsync("ADMIN", "existing-password"));
+        clock.Now = clock.Now.AddSeconds(16);
+        var user = await access.ValidateLoginAsync("ADMIN", "existing-password");
+        Assert.NotNull(user);
+        Assert.False(await access.ChangePasswordAsync(user.Id, "incorrect", "updated-password"));
+        Assert.True(await access.ChangePasswordAsync(user.Id, "existing-password", "updated-password"));
+        Assert.Null(await access.ValidateLoginAsync("admin", "existing-password"));
+        Assert.NotNull(await access.ValidateLoginAsync("admin", "updated-password"));
+    }
+
     [Fact]
     public async Task StartupUsesSetupOnlyWithoutSettingsAndLoginAfterSetup()
     {

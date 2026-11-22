@@ -39,50 +39,50 @@ Orders can be created and billed, but several states and controls the data model
 - [x] **P1 – Cancel order.** Saved table and parcel orders have a confirmed Cancel action. Cancellation keeps history, releases the table, and prevents billing.
 - [x] **P1 – Set "Paid" after payment.** New payments use Paid. Legacy Billed records with a payment timestamp still display as Paid in the dashboard.
 - [x] **P1 – Block billing of cancelled or already-paid orders.** The service rejects cancelled orders and orders already marked billed or paid.
-- [ ] **P1 – Release the table after a closed bill.** The table goes straight to Available. `TableStatus.Cleaning` is never set, so add a "mark clean" step if you want it.
-- [ ] **P2 – Kitchen flow.** `Preparing` and `Served` are never set. Add a send-to-kitchen action, a kitchen ticket print, and a mark-served control, or delete the unused statuses.
-- [ ] **P2 – Merge items instead of overwriting.** Saving a table or parcel order deletes all items and re-adds them. Two terminals saving at once will overwrite each other. Add a row version or lock the order while it is open.
-- [ ] **P2 – Read prices from the menu on save.** `OrderSaveItem.Price` comes from the screen. Re-read the price from the database when the order is saved.
-- [ ] **P2 – Discount options.** Only a flat amount is supported. Add percentage discounts and a reason field, with a manager check above a limit.
-- [ ] **P2 – Payment details.** Card and UPI record only the method. Add an optional reference number, and split payment across methods if needed.
-- [ ] **P2 – Table transfer and bill split.** Moving an order to another table, merging two tables and splitting a bill are not available.
+- [x] **P1 – Release the table after a closed bill.** A paid table becomes Cleaning. The floor marks it available again when staff choose Mark clean.
+- [x] **P2 – Kitchen flow.** Saved table, room and parcel orders can send new items to the kitchen and be marked served.
+- [x] **P2 – Merge items instead of overwriting.** The app preserves matching lines and uses a revision check to reject stale table and parcel edits.
+- [x] **P2 – Read prices from the menu on save.** Saves use catalog prices and reject new unavailable items. Existing archived lines retain their historical prices.
+- [x] **P2 – Discount options.** Checkout supports amount and percentage discounts with a reason. Discounts above 20% require the signed-in administrator’s password.
+- [x] **P2 – Payment details.** Checkout records optional Card and UPI references and splits a bill across two payment allocations.
+- [x] **P2 – Table transfer and bill split.** A saved order can move to another table or merge into its open order. Checkout splits the amount between two payments.
 
 ## Tables, Menu and Rooms
 
 Table and menu screens work for adding and editing, but deletes are unsafe or unhelpful, and Rooms have no screen at all.
 
 - [x] **Block deleting a table that has an open order.** The service refuses deletion for any table with order history.
-- [ ] **P1 – Archive menu items instead of failing to delete.** Items that were ever ordered cannot be deleted (foreign key is `Restrict`), and staff only see a generic error. Add an archived flag, hide archived items from ordering, and keep them in old bills.
+- [x] **P1 – Archive menu items instead of failing to delete.** Archived items disappear from the catalog and order picker and remain readable in historical orders.
 - [x] **P1 – Menu validation.** Add and edit reject duplicate names within a category and prices that round to zero or less.
-- [ ] **P1 – Reserved tables.** `Reserved` can only be set by hand in the edit panel. Add a reserve and release action on the floor view, and block new orders on a reserved table unless confirmed.
-- [ ] **P2 – Rooms.** The model, seed rows and header count exist, but there is no Rooms screen, no room orders, and the dashboard prints "Room #id". Either build them (screen, room status, room orders, billing to room) or remove the model, seed rows and count.
-- [ ] **P2 – Category management.** Categories are free text on each item. Add a category list so spelling stays consistent.
-- [ ] **P2 – Clean up `TableService.UpdateTableAsync`.** It repeats the same normalisation several times and has an unreachable early return. Collapse it into one validation step.
+- [x] **P1 – Reserved tables.** Reserve and release are floor actions. Starting an order on a reservation requires confirmation.
+- [x] **P2 – Rooms.** Rooms have a workspace for numbers, status and room orders. Billing and receipts use the room number.
+- [x] **P2 – Category management.** The menu editor offers existing categories and uses their saved spelling for case-insensitive matches.
+- [x] **P2 – Clean up `TableService.UpdateTableAsync`.** Table updates apply the shared validation and normalization once.
 
 ## Users, Settings and Login
 
 There is one admin account and no way to leave the session, change a password or add staff.
 
-- [ ] **P1 – Logout / switch user.** The sidebar shows who is signed in but has no sign-out button. Add one that returns to the login screen without restarting.
-- [ ] **P1 – Change password.** Add it to Settings, asking for the current password first.
-- [ ] **P1 – Manage users and roles.** Add staff accounts with at least Admin and Cashier roles. Limit Settings, Menu edits, deletes, discounts and backup to Admin.
-- [ ] **P1 – Login hardening.** Add a short lockout or delay after repeated failures, and make the username check case-insensitive in the database rather than with `ToLower()` in the query.
+- [x] **P1 – Logout / switch user.** Sign out returns to the login window within the same process.
+- [x] **P1 – Change password.** Settings verifies the current password and confirms the new one before saving.
+- [x] **P1 – Manage users and roles.** Administrators can add Admin or Cashier accounts. Management, deletion, discounts and manual backups have role checks.
+- [x] **P1 – Login hardening.** SQLite uses a case-insensitive username match. Five consecutive failures pause sign-in for 15 seconds.
 - [x] **P1 – Edit all restaurant details.** Settings saves name, address, phone, and tax. The inactive license feature was removed.
-- [ ] **P2 – Tax settings.** One flat percentage applies to everything. Add a tax label (GST, VAT), an optional tax number for receipts, and a way to mark items as tax-exempt.
-- [ ] **P2 – Warn when tax changes.** Open orders are re-priced at the new rate when billed. Show a note, or lock the rate on the order when it is first saved.
-- [ ] **P2 – Currency and locale.** Amounts are shown with `N2` and no currency symbol. Add a currency setting and apply it everywhere, including receipts.
+- [x] **P2 – Tax settings.** Settings offer a tax label and registration number, and the menu supports tax-exempt items.
+- [x] **P2 – Warn when tax changes.** Settings explains that saved open orders use the current tax rate when billed.
+- [x] **P2 – Currency and locale.** Settings select a currency and locale. Money is formatted in the workspace, reports and receipts.
 
 ## Receipts and printing
 
 Printing works through the Windows print dialog path, but the receipt does not carry the restaurant's own details.
 
 - [x] **P1 – Use the real restaurant header.** Receipts use the saved restaurant name, address, and phone.
-- [ ] **P1 – Show tax rate and currency.** Print the tax percentage next to the tax line and use the configured currency symbol.
-- [ ] **P1 – Reprint a past bill.** Receipts can only be printed from the billing screen right after payment. Add a reprint action from order history.
+- [x] **P1 – Show tax rate and currency.** Receipts show the recorded tax rate and currency for new bills. Legacy receipts show the saved tax amount with no inferred rate.
+- [x] **P1 – Reprint a past bill.** History opens orders in a read-only billing workspace and offers receipt reprints for payments.
 - [x] **P1 – Handle printer problems.** Ask staff to select a Windows printer and handle cancellation, unavailable printers, and offline printers. Physical printer acceptance remains open.
-- [ ] **P2 – Long item names and paper width.** Item names are drawn on one line at a fixed width. Wrap long names so they do not run off an 80 mm roll, and make width configurable for 58 mm printers.
-- [ ] **P2 – Kitchen ticket.** A separate printout of new items per order, with table and time, goes with the kitchen flow in the orders section.
-- [ ] **P2 – Print preview or PDF.** Offer an on-screen preview and a save-as-PDF option for testing without a printer.
+- [x] **P2 – Long item names and paper width.** Receipt text wraps within the selected 58 mm or 80 mm paper size.
+- [x] **P2 – Kitchen ticket.** Kitchen tickets print the location, time, and quantities added since the previous ticket.
+- [x] **P2 – Print preview or PDF.** Billing provides an on-screen receipt preview and PDF through the Windows print picker when Microsoft Print to PDF is installed.
 
 ## Backup, restore and data location
 
@@ -92,43 +92,45 @@ Backup and restore use SQLite’s native copy operation. Restore stages a verifi
 - [x] **P1 – Automatic backups.** Normal startup creates one backup per day in Local App Data and retains the seven most recent dated backups per database.
 - [x] **P1 – Backup location and result.** Settings remembers the last successful backup folder and shows the saved path and file size.
 - [x] **P1 – Migration safety.** Startup creates an integrity-checked backup before applying pending migrations to an existing database.
-- [ ] **P2 – Export data.** Export orders, bills and menu to CSV or Excel for the accountant.
+- [x] **P2 – Export data.** Settings exports separate orders, bills, and menu CSV files in one ZIP.
 
 ## Dashboard, history and reports
 
 The dashboard shows today's revenue, active tables, today's orders, parcel count and the last five orders. There is no way to look further back.
 
-- [ ] **P1 – Order history.** A screen listing all orders with search and filters (date range, type, status, payment method), opening any bill read-only, with reprint.
+- [x] **P1 – Order history.** History has date, order/reference, type, status and payment filters, plus read-only details and reprints.
 - [x] **P1 – Fix "Active tables".** Occupied and reserved tables have separate counts.
-- [ ] **P1 – Daily summary and end-of-day close.** Totals by payment method, tax collected, discounts given, cancelled orders, and a printable end-of-day report.
-- [ ] **P2 – Sales reports.** Revenue by day, week and month, best-selling items, and sales by category.
-- [ ] **P2 – Open orders list.** Show unpaid orders on the dashboard so none are left behind at closing.
-- [ ] **P2 – Time zones.** Times are stored in UTC and converted for display in some places and not others. Convert consistently everywhere dates are shown.
+- [x] **P1 – Daily summary and end-of-day close.** The sales summary shows payment breakdown, tax, discounts and cancellations and prints a single-day end-of-day report.
+- [x] **P2 – Sales reports.** Reports group payments by day, week or month and show best-selling items and category amounts.
+- [x] **P2 – Open orders list.** The dashboard lists unpaid active orders separately.
+- [x] **P2 – Time zones.** The dashboard and receipts display local time. Exports label timestamps as UTC.
 
 ## Packaging and release
 
 The project builds a Windows executable, but nothing yet turns it into something a restaurant can install and keep running.
 
-- [ ] **P1 – Installer.** Produce a per-user installer (MSIX or Inno Setup) that installs the app and creates a shortcut, with data kept in `%LocalAppData%\ServeX` so updates never touch it.
+- [ ] **P1 – Installer.** Per-user Inno Setup configuration and build script are ready. The native installer must still be compiled and tested on Windows, including installation, upgrade, and preservation of the Local App Data database.
 - [x] **P1 – Self-contained publish.** The Windows x64 publish profile includes the .NET desktop runtime. Launch on Windows is still part of acceptance testing.
 - [x] **P1 – Version number.** The project declares its version and Settings displays it.
-- [ ] **P1 – App icon and title.** The project file sets no application icon. Add one and use the restaurant name in window titles.
-- [ ] **P1 – First-run check.** On start, confirm the data folder is writable and a printer exists, and say clearly if not.
-- [ ] **P2 – Update path.** Decide how new versions reach the till (installer download or auto-update), and make sure the pre-migration backup runs on update.
-- [ ] **P2 – Support bundle.** A button that zips the log and a database copy so problems can be sent for diagnosis.
+- [x] **P1 – App icon and title.** The app embeds a ServeX icon and uses the restaurant name in sign-in and workspace titles.
+- [x] **P1 – First-run check.** Startup verifies database-folder write access and setup warns if there is no Windows printer.
+- [x] **P2 – Update path.** The Windows packaging guide documents installer-based updates and pre-migration backup.
+- [x] **P2 – Support bundle.** Settings creates a local ZIP with a verified database copy and available logs after confirmation.
 
 ## Repo hygiene, tests and code quality
 
 The repository holds 1,280 tracked files, most of them build output, and it has no tests.
 
-- [ ] **P0 – Add a `.gitignore` and untrack build output.** `bin/`, `obj/`, `.codex-build/`, `.dotnet/` and `.nuget/` are committed, including DLLs and the local `servex.db` (a live copy with its -wal and -shm files, plus `logs.txt`, is tracked under `bin/Debug`). Remove them from the index and ignore them. That database likely holds the admin password in plain text, so open it, change that password, and purge the files from git history.
+- [ ] **P0 – Remove historical local database and build files.** The active tree ignores and no longer tracks these files. The reviewed procedure covers credential rotation and published-history removal. Published history remains intact pending separate authorization.
 - [x] **P1 – Write the README.** It covers requirements, build, run, storage, backups, and publishing.
 - [x] **P1 – Add a test project.** Real SQLite tests cover initialization, login, orders, billing, and recoverability using isolated temporary databases.
 - [x] **P1 – Share one tax and rounding routine.** Order, billing, settings, and their previews use shared lookup and rounding code.
 - [x] **P1 – Share one database access pattern.** Services use an injected runtime context factory and logger.
-- [ ] **P1 – Turn on nullable reference types.** The models use `string` and navigation properties that can be null with no annotations. Enable them to catch null bugs at build time.
+- [x] **P1 – Turn on nullable reference types.** Nullable reference checking is enabled on entity models. Optional text and navigation properties are annotated.
 - [x] **P2 – Build in CI.** GitHub Actions is configured for Windows build and tests on pushes and pull requests.
 - [x] **P2 – Git history.** Project changes are tracked in descriptive commits.
+
+Installer source and a build helper are in `packaging/`. Installer compilation and clean/upgrade acceptance require Windows. The requested [Git history cleanup procedure](docs/history-cleanup-review.md) is ready for review. Published history has been preserved.
 
 ## Control-by-control test list
 
@@ -147,7 +149,7 @@ Every command bound in the screens is listed below with the result to expect. Ru
 - [ ] **Sidebar: Dashboard, Menu, Tables, Parcel, Settings:** each opens its own screen and the title and subtitle update.
 - [ ] **Back and Dashboard:** on an order or bill, Back returns to the previous screen. Dashboard is available in the sidebar. On top-level screens, Back to dashboard returns to the dashboard.
 - [ ] **Header counts:** Menu items, tables, rooms and orders change after adding or deleting.
-- [ ] **Logout:** *gap* – not available yet.
+- [ ] **Logout:** confirm signed-out users return to the login window.
 
 ### Dashboard
 
@@ -163,7 +165,7 @@ Every command bound in the screens is listed below with the result to expect. Ru
 - [ ] **Availability toggle:** an unavailable item shows disabled and cannot be added to a table or parcel order.
 - [ ] **Search and Clear search:** the list filters as you type; Clear restores it.
 - [ ] **Cancel:** closes the panel and discards changes.
-- [ ] **Delete an unused item:** it disappears. **Delete an ordered item:** a readable message appears and the item stays (*gap* – archive option).
+- [ ] **Archive an item:** it disappears from the menu and new orders but remains on existing bills.
 
 ### Tables
 
@@ -172,7 +174,7 @@ Every command bound in the screens is listed below with the result to expect. Ru
 - [ ] **Add table:** unique number required; a duplicate (any case) is refused; area and status are saved.
 - [ ] **Edit table / Edit selected:** both open the same panel with the table's values; saving updates the floor.
 - [ ] **Open order (floor card and selected panel):** opens the order workspace for that table; an occupied table loads its saved items.
-- [ ] **Delete table / Delete selected:** an empty table is removed; a table with an open order is refused (*gap*).
+- [ ] **Delete table / Delete selected:** an empty table is removed; a table with an open order is refused.
 - [ ] **Cancel:** closes the panel without saving.
 
 ### Table order workspace
@@ -197,7 +199,7 @@ Every command bound in the screens is listed below with the result to expect. Ru
 
 - [ ] **Discount:** negative is refused; above the bill total is refused; a valid amount reduces the total.
 - [ ] **Payment method (Cash, Card, UPI):** the selected method is saved and shown on the receipt.
-- [ ] **Confirm payment:** marks the order billed, frees the table, and blocks a second payment on the same order.
+- [ ] **Confirm payment:** marks the order paid, puts a dining table into Cleaning, and blocks a second payment on the same order.
 - [ ] **Print receipt:** disabled until payment is confirmed; prints the items, tax, discount, total and method.
 - [ ] **Going back without paying:** the order stays open and the table stays Occupied.
 
@@ -205,7 +207,7 @@ Every command bound in the screens is listed below with the result to expect. Ru
 
 - [ ] **Save settings:** empty name or phone is refused; tax outside 0–100 is refused; valid changes appear in the header and on the next bill.
 - [ ] **Backup database:** the save dialog opens, the file is created, and it opens as a valid database; choosing the live database path is refused.
-- [ ] **Restore, change password, address, license:** *gap* – not available yet.
+- [ ] **Restore, change password, and address:** verify the backup restart, current-password check, and updated address on receipts.
 
 ### Whole-app checks
 

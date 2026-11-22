@@ -15,9 +15,11 @@ namespace ServeX.ViewModels
     public class BillingViewModel : ViewModelBase, IDataErrorInfo
     {
         private readonly LogService _logService;
+        private readonly OperatorSession _session;
         private readonly BillingService _billingService;
         private readonly ReceiptPrintService _receiptPrintService;
         private readonly int _orderId;
+        private int _revision;
         private bool _isBusy;
         private string _tableNumber = string.Empty;
         private string _discountInput = "0";
@@ -25,12 +27,15 @@ namespace ServeX.ViewModels
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
         private bool _isBilled;
+        private string _paymentReference;
         private ReceiptData _receiptData;
         private decimal _taxPercentage = 5m;
+        private string _taxName = "Tax";
 
-        public BillingViewModel(BillingService billingService, ReceiptPrintService receiptPrintService, int orderId, LogService logService)
+        public BillingViewModel(BillingService billingService, ReceiptPrintService receiptPrintService, int orderId, LogService logService, OperatorSession session)
         {
             _logService = logService;
+            _session = session;
             _billingService = billingService ?? throw new ArgumentNullException(nameof(billingService));
             _receiptPrintService = receiptPrintService ?? throw new ArgumentNullException(nameof(receiptPrintService));
             _orderId = orderId;
@@ -44,12 +49,49 @@ namespace ServeX.ViewModels
             };
 
             ConfirmPaymentCommand = new AsyncRelayCommand(async _ => await ConfirmPaymentAsync(), _ => CanConfirmPayment);
+            PreviewReceiptCommand = new RelayCommand(_ => ToggleReceiptPreview(), _ => CanPrintReceipt);
             PrintReceiptCommand = new RelayCommand(_ => PrintReceipt(), _ => CanPrintReceipt);
         }
 
         public ObservableCollection<BillingLineItemViewModel> Items { get; }
 
         public ObservableCollection<PaymentMethod> PaymentOptions { get; }
+
+        public RelayCommand PreviewReceiptCommand { get; }
+
+        private string _receiptPreview = string.Empty;
+        public string ReceiptPreview
+        {
+            get => _receiptPreview;
+            private set
+            {
+                if (SetProperty(ref _receiptPreview, value)) OnPropertyChanged(nameof(ShowReceiptPreview));
+            }
+        }
+
+        public bool ShowReceiptPreview => !string.IsNullOrEmpty(ReceiptPreview);
+
+        private void ToggleReceiptPreview()
+        {
+            if (ShowReceiptPreview) { ReceiptPreview = string.Empty; return; }
+            var receipt = _receiptData;
+            var culture = ReceiptProfile.Culture(receipt.Locale);
+            var text = new System.Text.StringBuilder();
+            text.AppendLine(receipt.RestaurantName).AppendLine(receipt.RestaurantAddress).AppendLine(receipt.RestaurantPhone);
+            text.AppendLine($"Order #{receipt.OrderId} · {receipt.TableNumber}");
+            text.AppendLine($"{BusinessTime.ToLocalTime(receipt.PaidAt):g} · {receipt.PaymentMethod}");
+            foreach (var item in receipt.Items)
+                text.AppendLine($"{item.Quantity} × {item.Name}   {item.LineTotal.ToString("C2", culture)}");
+            text.AppendLine($"Subtotal: {receipt.Subtotal.ToString("C2", culture)}");
+            var tax = receipt.TaxRate.HasValue ? $"{receipt.TaxName} ({receipt.TaxRate:0.##}%)" : receipt.TaxName;
+            text.AppendLine($"{tax}: {receipt.Tax.ToString("C2", culture)}");
+            text.AppendLine($"Discount: {receipt.Discount.ToString("C2", culture)}");
+            if (!string.IsNullOrEmpty(receipt.DiscountReason)) text.AppendLine(receipt.DiscountReason);
+            foreach (var paid in receipt.Payments)
+                text.AppendLine($"{paid.Method}: {paid.Amount.ToString("C2", culture)} {paid.Reference}");
+            text.Append($"Total: {receipt.Total.ToString("C2", culture)}");
+            ReceiptPreview = text.ToString();
+        }
 
         public AsyncRelayCommand ConfirmPaymentCommand { get; }
 
@@ -64,6 +106,8 @@ namespace ServeX.ViewModels
             {
                 if (SetProperty(ref _isBusy, value))
                 {
+                    OnPropertyChanged(nameof(CanEditDiscount));
+                    OnPropertyChanged(nameof(CanEditPayment));
                     OnPropertyChanged(nameof(CanConfirmPayment));
                     OnPropertyChanged(nameof(CanPrintReceipt));
                     NotifyCommandStates();
@@ -86,6 +130,8 @@ namespace ServeX.ViewModels
                 {
                     OnPropertyChanged(nameof(Discount));
                     OnPropertyChanged(nameof(FinalTotal));
+                    OnPropertyChanged(nameof(CanEditDiscount));
+                    OnPropertyChanged(nameof(CanEditPayment));
                     OnPropertyChanged(nameof(CanConfirmPayment));
                     OnPropertyChanged(nameof(DiscountInput));
                     NotifyCommandStates();
@@ -132,6 +178,8 @@ namespace ServeX.ViewModels
             {
                 if (SetProperty(ref _isBilled, value))
                 {
+                    OnPropertyChanged(nameof(CanEditDiscount));
+                    OnPropertyChanged(nameof(CanEditPayment));
                     OnPropertyChanged(nameof(CanConfirmPayment));
                     OnPropertyChanged(nameof(CanPrintReceipt));
                     NotifyCommandStates();
@@ -139,7 +187,40 @@ namespace ServeX.ViewModels
             }
         }
 
-        public decimal Subtotal => OrderPricing.Round(Items.Sum(item => item.LineTotal));
+        public string PaymentReference
+        {
+            get => _paymentReference;
+            set => SetProperty(ref _paymentReference, value);
+        }
+
+        private bool _percentDiscount;
+        public bool PercentDiscount
+        {
+            get => _percentDiscount;
+            set
+            {
+                if (!SetProperty(ref _percentDiscount, value)) return;
+                OnPropertyChanged(nameof(Discount));
+                OnPropertyChanged(nameof(FinalTotal));
+                OnPropertyChanged("Item[]");
+                NotifyCommandStates();
+            }
+        }
+
+        public string DiscountReason { get; set; }
+        internal string ManagerPassword { get; set; }
+        public bool SplitPayment { get; set; }
+        public string FirstPaymentAmount { get; set; }
+        public PaymentMethod SecondPaymentMethod { get; set; } = PaymentMethod.Card;
+        public string SecondPaymentReference { get; set; }
+
+        public bool ReadOnly { get; set; }
+
+        public bool CanEditDiscount => CanEditPayment && _session.MayManage;
+
+        public bool CanEditPayment => !ReadOnly && !IsBilled && !IsBusy;
+
+        public decimal Subtotal => _receiptData?.Subtotal ?? OrderPricing.Round(Items.Sum(item => item.LineTotal));
 
         public decimal TaxPercentage
         {
@@ -155,17 +236,20 @@ namespace ServeX.ViewModels
             }
         }
 
-        public string TaxLabel => string.Format("Tax ({0:0.##}%)", TaxPercentage);
+        public string TaxLabel => _receiptData?.TaxRate is decimal rate ? $"{_receiptData.TaxName} ({rate:0.##}%)" :
+            _receiptData != null ? _receiptData.TaxName : $"{_taxName} ({TaxPercentage:0.##}%)";
 
-        public decimal Tax => OrderPricing.Tax(Subtotal, TaxPercentage);
+        public decimal Tax => _receiptData?.Tax ?? OrderPricing.Tax(Items.Where(item => !item.TaxExempt).Sum(item => item.LineTotal), TaxPercentage);
 
-        public decimal Discount => TryParseDiscount(DiscountInput, out var discount) ? OrderPricing.Round(discount) : 0m;
+        public decimal Discount => _receiptData?.Discount ?? (TryParseDiscount(DiscountInput, out var discount)
+            ? OrderPricing.Round(PercentDiscount ? (Subtotal + Tax) * discount / 100m : discount)
+            : 0m);
 
-        public decimal FinalTotal => Math.Max(0m, OrderPricing.Round(Subtotal + Tax - Discount));
+        public decimal FinalTotal => _receiptData?.Total ?? Math.Max(0m, OrderPricing.Round(Subtotal + Tax - Discount));
 
         public bool HasItems => Items.Count > 0;
 
-        public bool CanConfirmPayment => !IsBusy && !IsBilled && HasItems && string.IsNullOrEmpty(this[nameof(DiscountInput)]);
+        public bool CanConfirmPayment => CanEditPayment && HasItems && string.IsNullOrEmpty(this[nameof(DiscountInput)]);
 
         public bool CanPrintReceipt => !IsBusy && IsBilled && _receiptData != null;
 
@@ -181,13 +265,16 @@ namespace ServeX.ViewModels
                     throw new InvalidOperationException("The order could not be loaded for billing.");
                 }
 
-                TaxPercentage = await _billingService.GetTaxPercentageAsync();
-                TableNumber = orderData.Table?.TableNumber ?? "Parcel";
+                _revision = orderData.Order.Revision;
+                _taxName = orderData.Restaurant?.TaxName ?? "Tax";
+                TaxPercentage = orderData.Restaurant?.TaxPercentage ?? 5m;
+                TableNumber = orderData.Table?.TableNumber ?? orderData.RoomNumber ?? BillingService.GetParcelLabel(orderData.Order.CustomerName);
                 Items.Clear();
                 foreach (var item in orderData.Order.Items)
                 {
                     Items.Add(new BillingLineItemViewModel
                     {
+                        TaxExempt = item.TaxExempt,
                         Name = item.MenuItem?.Name ?? "Item",
                         Quantity = item.Quantity,
                         UnitPrice = item.Price,
@@ -209,6 +296,9 @@ namespace ServeX.ViewModels
                     SelectedPaymentMethod = orderData.Order.Bill.PaymentMethod.Value;
                 }
 
+                PaymentReference = orderData.Order.Bill?.PaymentReference;
+                DiscountReason = orderData.Order.Bill?.DiscountReason;
+                OnPropertyChanged(nameof(DiscountReason));
                 IsBilled = orderData.Order.Status is OrderStatus.Billed or OrderStatus.Paid || orderData.Order.Bill?.PaidAt != null;
                 _receiptData = IsBilled ? _billingService.CreateReceiptData(orderData) : null;
 
@@ -221,6 +311,7 @@ namespace ServeX.ViewModels
                     ClearStatus();
                 }
 
+                OnPropertyChanged(nameof(TaxLabel));
                 OnPropertyChanged(nameof(Subtotal));
                 OnPropertyChanged(nameof(Tax));
                 OnPropertyChanged(nameof(Discount));
@@ -251,7 +342,7 @@ namespace ServeX.ViewModels
                             return "Discount cannot be negative.";
                         }
 
-                        if (discount > Subtotal + Tax)
+                        if (discount > (PercentDiscount ? 100m : Subtotal + Tax))
                         {
                             return "Discount cannot exceed the bill total.";
                         }
@@ -278,15 +369,35 @@ namespace ServeX.ViewModels
                 return;
             }
 
+            var managerPassword = ManagerPassword;
+            ManagerPassword = null;
+            TryParseDiscount(DiscountInput, out var discount);
+            PaymentSplit split = null;
+            if (SplitPayment)
+            {
+                if (!TryParseDiscount(FirstPaymentAmount, out var first))
+                {
+                    SetStatus("Enter the amount received for the first payment.", true);
+                    return;
+                }
+                split = new PaymentSplit(first, SecondPaymentMethod, SecondPaymentReference);
+            }
+
             await ExecuteBusyActionAsync(async () =>
             {
-                var bill = await _billingService.ConfirmPaymentAsync(_orderId, Discount, SelectedPaymentMethod);
+                var options = new DiscountOptions(PercentDiscount, DiscountReason, managerPassword);
+                var bill = await _billingService.ConfirmPaymentAsync(_orderId, discount, SelectedPaymentMethod, PaymentReference, split, options, _revision);
                 var orderData = await _billingService.GetBillingOrderAsync(_orderId);
                 _receiptData = _billingService.CreateReceiptData(orderData);
+                PercentDiscount = false;
                 DiscountInput = bill.Discount.ToString("0.##", CultureInfo.InvariantCulture);
                 SelectedPaymentMethod = bill.PaymentMethod ?? SelectedPaymentMethod;
                 IsBilled = true;
-                SetStatus("Payment confirmed successfully. The table is now available.", false);
+                OnPropertyChanged(nameof(TaxLabel));
+                OnPropertyChanged(nameof(Subtotal));
+                OnPropertyChanged(nameof(Tax));
+                OnPropertyChanged(nameof(FinalTotal));
+                SetStatus("Payment confirmed.", false);
             }, "The payment could not be confirmed.");
         }
 
@@ -348,6 +459,7 @@ namespace ServeX.ViewModels
         {
             ConfirmPaymentCommand.RaiseCanExecuteChanged();
             PrintReceiptCommand.RaiseCanExecuteChanged();
+            PreviewReceiptCommand.RaiseCanExecuteChanged();
         }
 
         private void SetStatus(string message, bool isError)

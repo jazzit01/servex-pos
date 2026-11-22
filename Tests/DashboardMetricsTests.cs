@@ -32,7 +32,7 @@ public class DashboardMetricsTests
         Assert.Equal(0m, active.TodayRevenue);
         var bill = await db.Services.GetRequiredService<BillingService>().ConfirmPaymentAsync(order.Id, 0, ServeX.Models.PaymentMethod.Cash);
         var paid = await dashboard.GetSnapshotAsync();
-        Assert.Equal(1, paid.AvailableTables);
+        Assert.Equal(0, paid.AvailableTables);
         Assert.Equal(0, paid.OccupiedTables);
         Assert.Equal(0, paid.ActiveOrders);
         Assert.Equal(bill.Total, paid.TodayRevenue);

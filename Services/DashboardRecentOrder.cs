@@ -16,5 +16,7 @@ namespace ServeX.Services
         public decimal Total { get; set; }
 
         public DateTime CreatedAt { get; set; }
+
+        public DateTime CreatedAtLocal => BusinessTime.ToLocalTime(CreatedAt);
     }
 }

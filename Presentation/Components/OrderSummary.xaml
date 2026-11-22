@@ -16,7 +16,7 @@
                                     <StackPanel>
                                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
                                         <TextBlock Text="{Binding Category}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,4,0,4"/>
-                                        <TextBlock Text="{Binding LineTotal, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}"/>
+                                        <TextBlock Text="{Binding LineTotal, StringFormat=C2}" Style="{StaticResource FinancialTextStyle}"/>
                                         <WrapPanel Margin="0,8,0,0">
                                             <Button Content="−" Command="{Binding DataContext.DecreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource IconButtonStyle}" AutomationProperties.Name="{Binding Name, StringFormat=Decrease quantity of {0}}" ToolTip="Decrease quantity"/>
                                             <TextBlock Text="{Binding Quantity}" MinWidth="40" TextAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" Margin="4,0"/>
@@ -39,7 +39,7 @@
                             <ColumnDefinition Width="2*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Subtotal" VerticalAlignment="Center" FontWeight="Normal"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" FontSize="16"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat=C2}" Style="{StaticResource FinancialTextStyle}" FontSize="16"/>
                     </Grid>
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
@@ -47,7 +47,7 @@
                             <ColumnDefinition Width="2*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding TaxLabel}" VerticalAlignment="Center" FontWeight="Normal"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Tax, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" FontSize="16"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Tax, StringFormat=C2}" Style="{StaticResource FinancialTextStyle}" FontSize="16"/>
                     </Grid>
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
@@ -55,10 +55,12 @@
                             <ColumnDefinition Width="2*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Total" VerticalAlignment="Center" FontWeight="Bold"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Total, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}" FontSize="24"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Total, StringFormat=C2}" Style="{StaticResource FinancialTextStyle}" FontSize="24"/>
                     </Grid>
                     <WrapPanel Margin="0,8,0,0">
                         <Button Content="Save order" Command="{Binding SaveOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
+                        <Button Content="Send to kitchen" Command="{Binding SendKitchenCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
+                        <Button Content="Mark served" Command="{Binding MarkServedCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
                         <Button Content="Cancel order" Command="{Binding CancelOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
                         <Button Content="Generate bill" Command="{Binding GenerateBillCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,0,8"/>
                     </WrapPanel>

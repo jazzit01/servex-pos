@@ -10,9 +10,11 @@ namespace ServeX.Services
     public class DashboardService
     {
         private readonly IDbContextFactory<ServeXDbContext> _contexts;
-        public DashboardService(IDbContextFactory<ServeXDbContext> contexts, LogService logService)
+        private readonly OrderHistoryService _history;
+        public DashboardService(IDbContextFactory<ServeXDbContext> contexts, OrderHistoryService history)
         {
             _contexts = contexts;
+            _history = history;
         }
 
         public async Task<DashboardSnapshot> GetSnapshotAsync()
@@ -35,9 +37,6 @@ namespace ServeX.Services
                     TodayRevenue = todayBillTotals.DefaultIfEmpty(0m).Sum(),
                     OccupiedTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Occupied),
                     AvailableTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Available),
-                    ActiveOrders = await context.Orders.CountAsync(order => order.Status == OrderStatus.Open ||
-                        order.Status == OrderStatus.Preparing || order.Status == OrderStatus.Served),
-
                     ReservedTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Reserved),
 
                     TotalOrdersToday = await context.Orders
@@ -81,6 +80,8 @@ namespace ServeX.Services
                     ReferenceLabel = GetReferenceLabel(order, tableMap)
                 }).ToList();
 
+                snapshot.OpenOrders = await _history.GetOrdersAsync(startLocal, startLocal, unpaidOnly: true);
+                snapshot.ActiveOrders = snapshot.OpenOrders.Count;
                 return snapshot;
             }
         }

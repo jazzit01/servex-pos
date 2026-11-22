@@ -34,6 +34,6 @@ namespace ServeX.ViewModels
 
         public string ServiceCaption => HasActiveOrder
             ? "Active service"
-            : "Ready for service";
+            : Status == TableStatus.Cleaning ? "Needs cleaning" : "Ready for service";
     }
 }

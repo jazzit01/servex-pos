@@ -52,7 +52,7 @@ namespace ServeX
                 var location = demo
                     ? new DatabaseLocation(Path.Combine(local, "ServeX", "Demo", "servex-demo.db"))
                     : DatabaseLocation.Resolve(AppContext.BaseDirectory, local, Environment.GetEnvironmentVariable("SERVEX_DATABASE_PATH"));
-                Directory.CreateDirectory(Path.GetDirectoryName(location.FilePath));
+                CheckDataDirectory(location.FilePath);
                 _services = CompositionRoot.Build(location);
                 _logService = _services.GetRequiredService<LogService>();
                 _logService.LogInfo("Starting ServeX; database: " + location.FilePath + (demo ? " (explicit demo)" : ""));
@@ -98,37 +98,10 @@ namespace ServeX
                 }
 
                 var access = _services.GetRequiredService<ApplicationAccessService>();
-                var settingsService = _services.GetRequiredService<ApplicationSettingsService>();
-                var factory = _services.GetRequiredService<PresentationFactory>();
                 var flow = await access.GetStartupFlowAsync();
-                AuthWindow authWindow = null;
-                var authViewModel = factory.CreateAuth(async user =>
-                {
-                    try
-                    {
-                        var settings = await settingsService.GetSettingsAsync()
-                            ?? throw new InvalidOperationException("ServeX settings could not be loaded after login.");
-                        _mainViewModel = factory.CreateMain(settings, user);
-                        await _mainViewModel.LoadAsync();
-                        var mainWindow = _services.GetRequiredService<MainWindow>();
-                        mainWindow.DataContext = _mainViewModel;
-                        MainWindow = mainWindow;
-                        mainWindow.Show();
-                        authWindow?.Close();
-                    }
-                    catch (Exception exception)
-                    {
-                        _mainViewModel?.Dispose();
-                        _mainViewModel = null;
-                        _logService.LogError("Opening authenticated workspace failed", exception);
-                        throw;
-                    }
-                });
-                await authViewModel.InitializeAsync(flow);
-                authWindow = _services.GetRequiredService<AuthWindow>();
-                authWindow.DataContext = authViewModel;
-                MainWindow = authWindow;
-                authWindow.Show();
+                if (flow == StartupFlow.Setup && !demo)
+                    WarnIfNoPrinter();
+                await ShowAuthenticationAsync(flow);
                 ShutdownMode = ShutdownMode.OnMainWindowClose;
             }
             catch (Exception exception)
@@ -138,6 +111,80 @@ namespace ServeX
                     "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown(-1);
             }
+        }
+
+        private async Task SignOutAsync()
+        {
+            var previousWindow = MainWindow;
+            await ShowAuthenticationAsync(StartupFlow.Login);
+            _mainViewModel?.Dispose();
+            _mainViewModel = null;
+            _services.GetRequiredService<OperatorSession>().ActiveUser = null;
+            _services.GetRequiredService<ServeX.Presentation.Navigation.WorkspaceNavigation>().GoBack();
+            previousWindow.Close();
+        }
+
+        private async Task ShowAuthenticationAsync(StartupFlow flow)
+        {
+            var settingsService = _services.GetRequiredService<ApplicationSettingsService>();
+            var factory = _services.GetRequiredService<PresentationFactory>();
+            AuthWindow authWindow = null;
+            var authViewModel = factory.CreateAuth(async user =>
+            {
+                try
+                {
+                    var settings = await settingsService.GetSettingsAsync()
+                        ?? throw new InvalidOperationException("ServeX settings could not be loaded after login.");
+                    _services.GetRequiredService<OperatorSession>().ActiveUser = user;
+                    _mainViewModel = factory.CreateMain(settings, user);
+                    _mainViewModel.SignOut = SignOutAsync;
+                    await _mainViewModel.LoadAsync();
+                    var mainWindow = _services.GetRequiredService<MainWindow>();
+                    mainWindow.DataContext = _mainViewModel;
+                    MainWindow = mainWindow;
+                    mainWindow.Show();
+                    authWindow?.Close();
+                }
+                catch (Exception exception)
+                {
+                    _mainViewModel?.Dispose();
+                    _mainViewModel = null;
+                    _services.GetRequiredService<OperatorSession>().ActiveUser = null;
+                    _logService.LogError("Opening authenticated workspace failed", exception);
+                    throw;
+                }
+            });
+            await authViewModel.InitializeAsync(flow);
+            authWindow = _services.GetRequiredService<AuthWindow>();
+            authWindow.DataContext = authViewModel;
+            MainWindow = authWindow;
+            authWindow.Show();
+        }
+
+        private static void CheckDataDirectory(string databasePath)
+        {
+            var directory = Path.GetDirectoryName(databasePath);
+            Directory.CreateDirectory(directory);
+            var probe = Path.Combine(directory, $".servex-write-test-{Guid.NewGuid():N}.tmp");
+            using var stream = new FileStream(probe, FileMode.CreateNew, FileAccess.Write,
+                FileShare.None, bufferSize: 4096, FileOptions.DeleteOnClose);
+            stream.WriteByte(0);
+            stream.Flush(flushToDisk: true);
+        }
+
+        private void WarnIfNoPrinter()
+        {
+            try
+            {
+                if (System.Drawing.Printing.PrinterSettings.InstalledPrinters.Count > 0) return;
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError("Could not check Windows printers during setup", exception);
+            }
+
+            MessageBox.Show("ServeX could not find an available Windows printer. You can finish setup and add a receipt printer later.",
+                "Receipt printer", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         internal void RestartAfterRestore()

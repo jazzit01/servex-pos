@@ -47,6 +47,20 @@ namespace ServeX.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TaxName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TaxNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ReceiptWidth")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.ToTable("Settings", (string)null);
@@ -68,6 +82,15 @@ namespace ServeX.Migrations
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PaymentBreakdown")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DiscountReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PaymentReference")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("PaymentMethod")
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
@@ -82,6 +105,18 @@ namespace ServeX.Migrations
 
                     b.Property<decimal>("Total")
                         .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("RecordedTaxRate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RecordedTaxName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RecordedTaxNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RecordedLocale")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -103,6 +138,9 @@ namespace ServeX.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("INTEGER");
 
@@ -115,6 +153,9 @@ namespace ServeX.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("TaxExempt")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.ToTable("MenuItems");
@@ -126,6 +167,9 @@ namespace ServeX.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -134,6 +178,9 @@ namespace ServeX.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int>("ReferenceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Revision")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Status")
@@ -167,7 +214,13 @@ namespace ServeX.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("KitchenSentQuantity")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("TaxExempt")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -245,6 +298,9 @@ namespace ServeX.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Username")
                         .IsRequired()

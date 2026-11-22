@@ -10,9 +10,11 @@ namespace ServeX.Services
     public class TableService
     {
         private readonly IDbContextFactory<ServeXDbContext> _contexts;
-        public TableService(IDbContextFactory<ServeXDbContext> contexts, LogService logService)
+        private readonly OperatorSession _session;
+        public TableService(IDbContextFactory<ServeXDbContext> contexts, LogService logService, OperatorSession session)
         {
             _contexts = contexts;
+            _session = session;
             _logService = logService;
         }
 
@@ -54,7 +56,8 @@ namespace ServeX.Services
                             order.Type == OrderType.Table &&
                             order.Status != OrderStatus.Billed &&
                             order.Status != OrderStatus.Paid &&
-                            order.Status != OrderStatus.Cancelled)
+                            order.Status != OrderStatus.Cancelled &&
+                            order.Status != OrderStatus.Merged)
                         .OrderByDescending(order => order.CreatedAt)
                         .Select(order => new
                         {
@@ -92,7 +95,7 @@ namespace ServeX.Services
             {
                 using (var context = _contexts.CreateDbContext())
                 {
-                    var normalizedTableNumber = NormalizeTableNumber(table?.TableNumber);
+                    var normalizedTableNumber = NormalizeTableNumber(table.TableNumber);
                     await EnsureUniqueTableNumberAsync(context, normalizedTableNumber);
 
                     var entity = new Table
@@ -126,8 +129,8 @@ namespace ServeX.Services
                         throw new System.InvalidOperationException("The selected table could not be loaded.");
                     }
 
-                    var normalizedTableNumber = NormalizeTableNumber(table?.TableNumber);
-                    await EnsureUniqueTableNumberAsync(context, normalizedTableNumber, table?.Id);
+                    var normalizedTableNumber = NormalizeTableNumber(table.TableNumber);
+                    await EnsureUniqueTableNumberAsync(context, normalizedTableNumber, table.Id);
 
                     var entity = await context.Tables.FirstOrDefaultAsync(item => item.Id == table.Id);
                     if (entity == null)
@@ -135,54 +138,9 @@ namespace ServeX.Services
                         throw new System.InvalidOperationException("The selected table could not be found.");
                     }
 
-                    if (table.Status == TableStatus.Cleaning)
-                    {
-                        table.Status = TableStatus.Available;
-                    }
-
-                    if (table.Area == 0)
-                    {
-                        table.Area = TableArea.Indoor;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(normalizedTableNumber))
-                    {
-                        throw new System.InvalidOperationException("Table number is required.");
-                    }
-
-                    if (!System.Enum.IsDefined(typeof(TableArea), table.Area))
-                    {
-                        table.Area = TableArea.Indoor;
-                    }
-
-                    if (!System.Enum.IsDefined(typeof(TableStatus), table.Status) || table.Status == TableStatus.Cleaning)
-                    {
-                        table.Status = TableStatus.Available;
-                    }
-
-                    if (!System.Enum.IsDefined(typeof(TableArea), entity.Area))
-                    {
-                        entity.Area = TableArea.Indoor;
-                    }
-
-                    if (!System.Enum.IsDefined(typeof(TableStatus), entity.Status) || entity.Status == TableStatus.Cleaning)
-                    {
-                        entity.Status = TableStatus.Available;
-                    }
-
-                    if (entity.Id <= 0)
-                    {
-                        throw new System.InvalidOperationException("The selected table is invalid.");
-                    }
-
-                    if (entity.TableNumber == null)
-                    {
-                        return;
-                    }
-
                     entity.TableNumber = normalizedTableNumber;
                     entity.Area = NormalizeArea(table.Area);
-                    entity.Status = NormalizeStatus(table.Status);
+                    if (entity.Status != TableStatus.Cleaning) entity.Status = NormalizeStatus(table.Status);
 
                     await context.SaveChangesAsync();
                     _logService.LogInfo(string.Format("Table updated: {0}", entity.TableNumber));
@@ -195,8 +153,28 @@ namespace ServeX.Services
             }
         }
 
+        public async Task ChangeFloorStatusAsync(int tableId, TableStatus expected, TableStatus next)
+        {
+            if ((expected, next) is not ((TableStatus.Available, TableStatus.Reserved) or
+                (TableStatus.Reserved, TableStatus.Available) or (TableStatus.Cleaning, TableStatus.Available)))
+                throw new System.InvalidOperationException("That table status change is not allowed.");
+
+            using var context = _contexts.CreateDbContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
+            var table = await context.Tables.FindAsync(tableId);
+            if (table == null || table.Status != expected || await context.Orders.AnyAsync(order =>
+                order.Type == OrderType.Table && order.ReferenceId == tableId &&
+                (order.Status == OrderStatus.Open || order.Status == OrderStatus.Preparing || order.Status == OrderStatus.Served)))
+                throw new System.InvalidOperationException("The floor has changed. Refresh the table before trying again.");
+
+            table.Status = next;
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+
         public async Task DeleteTableAsync(int id)
         {
+            _session.RequireManager();
             try
             {
                 using (var context = _contexts.CreateDbContext())
@@ -264,7 +242,7 @@ namespace ServeX.Services
 
         private static TableStatus NormalizeStatus(TableStatus status)
         {
-            if (!System.Enum.IsDefined(typeof(TableStatus), status) || status == TableStatus.Cleaning)
+            if (!System.Enum.IsDefined(typeof(TableStatus), status))
             {
                 return TableStatus.Available;
             }

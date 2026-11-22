@@ -96,7 +96,8 @@ dotnet publish ServeX.csproj -c Release -r win-x64 -p:PublishProfile=WindowsX64 
 ```
 
 Copy the entire output folder to a Windows x64 PC and run `ServeX.exe`. The
-output includes the .NET desktop runtime. An installer is tracked separately.
+output includes the .NET desktop runtime. The per-user Inno Setup configuration,
+build script, and upgrade procedure are in the [packaging guide](packaging/README.md).
 
 ## Tests and verification
 
@@ -118,40 +119,37 @@ auth ViewModel factories, cached workspaces and selected/back navigation. The
 Windows CI workflow is configured in `.github/workflows/windows-validation.yml`.
 See [actual results and the required Windows acceptance checklist](docs/validation.md).
 
-## Phase 2 UI status
+## Day-to-day workflows
 
-All major screens now share a dark sidebar/light workspace, reusable form/grid and
-feedback styles, shared order/parcel components and clear checkout presentation.
-Read-only dashboard metrics reflect persisted data. Search filters drafts safely;
-delete/new-parcel confirmations protect accidental actions.
+- The dining floor supports reservations, order transfers and merges, and a
+  **Mark clean** step after payment. Room service and parcel orders use the same
+  billing and kitchen actions. Kitchen tickets include quantities added since
+  the last ticket.
+- Billing records external payments. Staff can enter Card or UPI references,
+  split a bill between two payments, and preview or print a receipt. To save a
+  PDF, select Microsoft Print to PDF in the Windows print picker if installed.
+- **History and sales** includes filtered order history, paid receipt reprints,
+  unpaid-order visibility on the dashboard, and printable daily and sales reports.
+- Administrators can add Cashier and Admin accounts in Settings. Cashiers can
+  record standard payments but cannot edit the menu, apply discounts, delete
+  tables, or manage backups. Discounts above 20% require administrator confirmation.
+- Settings controls currency and locale, tax details, and 58/80 mm receipt width.
+  It also provides CSV exports and a separately confirmed support bundle. Share
+  support bundles only with trusted recipients because they contain a database
+  copy and logs.
 
-```sh
-python3 scripts/validate_ui.py
-```
+## Release verification
 
-Phase 2 is **implemented, pending verification**, not complete. The Linux Release
-cross-build and 42 portable tests pass; Windows-only resource/layout tests and
-interactive DPI/workflow/printer acceptance have not run. See the
-[Phase 2 report and acceptance checklist](docs/phase-2-ui-ux.md) for the screen/file
-inventory, actual commands/results and remaining gates. No Phase 3/4 work is included.
+The checklist records the implementation status and the Windows control-by-control
+acceptance cases. Windows interactive authentication, navigation, DPI, printing,
+and installer upgrade tests require a Windows machine. Portable tests cover SQLite
+migrations, orders, billing, authentication, backups, and reports.
 
-## Known limitations and Phase 1 status
+Startup upgrades legacy passwords to salted PBKDF2 hashes. Restrict access to
+pre-upgrade database backups because they may contain the original credentials.
+Use a single Windows account and a local database per installation. Stale revisions
+are rejected when orders are edited or paid, but a network-shared SQLite database
+and multi-session deployment are outside the supported configuration.
 
-- Windows interactive authentication, bindings, dialogs, all POS workflows and
-  physical receipt printing require the documented manual acceptance pass.
-- Startup converts legacy passwords to salted PBKDF2 hashes. Pre-upgrade backups may contain the original credentials, so restrict access to those backups. The app does not ask for a license key.
-- Only one process per Windows session is guarded. Shared-database/multi-session
-  or multi-terminal concurrency is unsupported; payment concurrency is not solved
-  by this phase. Use a single Windows account/session per installation.
-- Restore is an offline operation; there is no new destructive restore UI.
-- There is no cross-user automatic legacy discovery. When changing Windows user
-  profiles or moving the executable, explicitly identify the existing DB first.
-- Existing tax/discount rounding formulas and receipt format are unchanged. Catalog
-  prices use two decimals; arbitrary higher-precision service inputs can expose a
-  pre-existing difference between line-price rounding and aggregate order rounding.
-- Logs and automatic backups need operator retention/storage monitoring.
-
-Phase 1 code is implemented on `modernization/phase-1-foundation`. The current UI
-branch, `modernization/phase-2-ui-ux`, starts at that implemented baseline (`f013ba5`).
-Both phases retain the supported Windows execution and manual acceptance gates.
-See the [audit](docs/phase-1-audit.md) and [implementation report](docs/phase-1-report.md).
+See the [completion checklist](ServeX%20POS%20%E2%80%93%20Completion%20Checklist.md)
+and the [history cleanup review](docs/history-cleanup-review.md).

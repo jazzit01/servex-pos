@@ -15,6 +15,7 @@ namespace ServeX.ViewModels
     {
         private readonly DialogService _dialogs;
         private readonly LogService _logService;
+        private readonly KitchenWorkspaceService _kitchen;
         private readonly OrderService _orderService;
         private readonly BillingWorkspaceService _billingWorkspaceService;
         private string _searchText = string.Empty;
@@ -27,16 +28,18 @@ namespace ServeX.ViewModels
 
         private bool _isBusy;
         private int? _orderId;
+        private int _revision;
         private string _customerName = string.Empty;
         private string _selectedCategory = "All";
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
         private decimal _taxPercentage = 5m;
 
-        public ParcelViewModel(OrderService orderService, BillingWorkspaceService billingWorkspaceService, LogService logService, DialogService dialogs)
+        public ParcelViewModel(OrderService orderService, BillingWorkspaceService billingWorkspaceService, LogService logService, DialogService dialogs, KitchenWorkspaceService kitchen)
         {
             _dialogs = dialogs;
             _logService = logService;
+            _kitchen = kitchen;
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
             _billingWorkspaceService = billingWorkspaceService ?? throw new ArgumentNullException(nameof(billingWorkspaceService));
 
@@ -51,6 +54,8 @@ namespace ServeX.ViewModels
             DecreaseQuantityCommand = new RelayCommand(item => DecreaseQuantity(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             RemoveItemCommand = new RelayCommand(item => RemoveItem(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             SaveOrderCommand = new AsyncRelayCommand(async _ => await SaveOrderAsync(), _ => CanSaveOrder);
+            SendKitchenCommand = new AsyncRelayCommand(_ => SendKitchenAsync(), _ => !IsBusy && _orderId.HasValue);
+            MarkServedCommand = new AsyncRelayCommand(_ => MarkServedAsync(), _ => !IsBusy && _orderId.HasValue);
             CancelOrderCommand = new AsyncRelayCommand(_ => CancelOrderAsync(), _ => !IsBusy && _orderId.HasValue);
             GenerateBillCommand = new AsyncRelayCommand(async _ => await GenerateBillAsync(), _ => CanGenerateBill);
             NewParcelCommand = new RelayCommand(_ => StartNewParcel(), _ => !IsBusy);
@@ -73,6 +78,9 @@ namespace ServeX.ViewModels
         public RelayCommand RemoveItemCommand { get; }
 
         public AsyncRelayCommand SaveOrderCommand { get; }
+
+        public AsyncRelayCommand SendKitchenCommand { get; }
+        public AsyncRelayCommand MarkServedCommand { get; }
 
         public AsyncRelayCommand CancelOrderCommand { get; }
 
@@ -164,7 +172,7 @@ namespace ServeX.ViewModels
 
         public string TaxLabel => string.Format("Tax ({0:0.##}%)", TaxPercentage);
 
-        public decimal Tax => OrderPricing.Tax(Subtotal, TaxPercentage);
+        public decimal Tax => OrderPricing.Tax(OrderItems.Where(item => !item.TaxExempt).Sum(item => item.LineTotal), TaxPercentage);
 
         public decimal Total => Subtotal + Tax;
 
@@ -224,7 +232,7 @@ namespace ServeX.ViewModels
             }
             else
             {
-                OrderItems.Add(CreateLineItem(menuItem.Id, menuItem.Name, menuItem.Category, menuItem.Price, 1));
+                OrderItems.Add(CreateLineItem(menuItem.Id, menuItem.Name, menuItem.Category, menuItem.Price, 1, menuItem.TaxExempt));
             }
 
             ClearStatus();
@@ -269,6 +277,19 @@ namespace ServeX.ViewModels
             OrderItems.Remove(item);
             NotifyTotalsChanged();
         }
+
+        private Task SendKitchenAsync() => ExecuteBusyActionAsync(async () =>
+        {
+            var result = await _kitchen.SendAsync(_orderId.Value, _revision);
+            _revision = result.Revision;
+            SetStatus(result.Message, false);
+        }, "Could not finish sending the ticket. If it printed, check with the kitchen before retrying.");
+
+        private Task MarkServedAsync() => ExecuteBusyActionAsync(async () =>
+        {
+            _revision = await _kitchen.MarkServedAsync(_orderId.Value, _revision);
+            SetStatus("Order marked served.", false);
+        }, "Could not mark the order served. Send new items to the kitchen first.");
 
         private async Task CancelOrderAsync()
         {
@@ -322,11 +343,12 @@ namespace ServeX.ViewModels
             OnPropertyChanged(nameof(IsMenuEmpty));
         }
 
-        private OrderLineItemViewModel CreateLineItem(int menuItemId, string name, string category, decimal unitPrice, int quantity)
+        private OrderLineItemViewModel CreateLineItem(int menuItemId, string name, string category, decimal unitPrice, int quantity, bool taxExempt)
         {
             return new OrderLineItemViewModel
             {
                 MenuItemId = menuItemId,
+                TaxExempt = taxExempt,
                 Name = name,
                 Category = category,
                 UnitPrice = unitPrice,
@@ -384,6 +406,8 @@ namespace ServeX.ViewModels
             SaveOrderCommand.RaiseCanExecuteChanged();
             GenerateBillCommand.RaiseCanExecuteChanged();
             CancelOrderCommand.RaiseCanExecuteChanged();
+            SendKitchenCommand.RaiseCanExecuteChanged();
+            MarkServedCommand.RaiseCanExecuteChanged();
             NewParcelCommand.RaiseCanExecuteChanged();
         }
 
@@ -443,8 +467,18 @@ namespace ServeX.ViewModels
             Order savedOrder = null;
             await ExecuteBusyActionAsync(async () =>
             {
-                savedOrder = await _orderService.SaveParcelOrderAsync(_orderId, CustomerNameDisplay, items);
+                savedOrder = await _orderService.SaveParcelOrderAsync(_orderId, CustomerNameDisplay, items, _revision);
                 _orderId = savedOrder.Id;
+                _revision = savedOrder.Revision;
+                foreach (var savedItem in savedOrder.Items)
+                {
+                    var matching = OrderItems.Where(item => item.MenuItemId == savedItem.MenuItemId).ToArray();
+                    foreach (var duplicate in matching.Skip(1)) OrderItems.Remove(duplicate);
+                    matching[0].TaxExempt = savedItem.TaxExempt;
+                    matching[0].UnitPrice = savedItem.Price;
+                    matching[0].Quantity = savedItem.Quantity;
+                }
+                NotifyTotalsChanged();
                 CustomerName = savedOrder.CustomerName;
 
                 if (showSuccessMessage)
@@ -465,6 +499,7 @@ namespace ServeX.ViewModels
         private void ResetDraft(bool showMessage)
         {
             _orderId = null;
+            _revision = 0;
             CustomerName = string.Empty;
             OrderItems.Clear();
             NotifyTotalsChanged();
