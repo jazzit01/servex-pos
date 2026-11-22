@@ -37,7 +37,7 @@ for path, text in texts.items():
         if reference not in keys:
             errors.append(f'{path.name}: unresolved resource {reference}')
 
-baseline_design = subprocess.check_output(['git', 'show', 'f013ba5:Styles/DesignSystem.xaml'], cwd=ROOT, text=True)
+baseline_design = subprocess.check_output(['git', 'show', '24a981628429969dbecff5aeaae91255bcdb4561:Styles/DesignSystem.xaml'], cwd=ROOT, text=True)
 legacy_keys = set(re.findall(r'x:Key="([^"]+)"', baseline_design))
 if legacy_keys - keys:
     errors.append('Missing legacy design resources: ' + ', '.join(sorted(legacy_keys - keys)))
@@ -49,12 +49,12 @@ for path, text in texts.items():
 # intentionally move order commands out of the two wrapper views.
 shared = ''.join(p.read_text() for p in (ROOT / 'Presentation/Components').glob('*.xaml'))
 baseline_views = set(subprocess.check_output(
-    ['git', 'ls-tree', '-r', '--name-only', 'f013ba5', '--', 'Views'], cwd=ROOT, text=True).splitlines())
+    ['git', 'ls-tree', '-r', '--name-only', '24a981628429969dbecff5aeaae91255bcdb4561', '--', 'Views'], cwd=ROOT, text=True).splitlines())
 for path in (ROOT / 'Views').glob('*.xaml'):
     relative = f'Views/{path.name}'
     if relative not in baseline_views:
         continue
-    previous = subprocess.check_output(['git', 'show', f'f013ba5:{relative}'], cwd=ROOT, text=True)
+    previous = subprocess.check_output(['git', 'show', f'24a981628429969dbecff5aeaae91255bcdb4561:{relative}'], cwd=ROOT, text=True)
     previous_commands = set(re.findall(r'\{Binding (?:DataContext\.)?(\w+Command)', previous))
     current_commands = set(re.findall(r'\{Binding (?:DataContext\.)?(\w+Command)', path.read_text() + shared))
     for command in previous_commands - current_commands:
@@ -70,7 +70,7 @@ protected = ['Models', 'Migrations', 'Data', 'Services/BillingService.cs', 'Serv
              'Services/ReceiptPrintService.cs', 'Services/ApplicationAccessService.cs',
              'Services/LicenseService.cs', 'Services/DatabaseBackupService.cs',
              'Infrastructure/Persistence']
-changed = subprocess.check_output(['git', 'diff', '--name-only', 'f013ba5', 'e4f5bf1', '--', *protected], cwd=ROOT, text=True)
+changed = subprocess.check_output(['git', 'diff', '--name-only', '24a981628429969dbecff5aeaae91255bcdb4561', '8ab85f761e26142d72c2ecb3fedb705c82a431af', '--', *protected], cwd=ROOT, text=True)
 if changed.strip():
     errors.append('Protected Phase 1 files changed: ' + changed.strip())
 tracked_local_data = subprocess.check_output(
