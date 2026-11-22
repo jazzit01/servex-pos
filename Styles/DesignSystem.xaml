@@ -411,15 +411,18 @@
         </Setter>
     </Style>
     <Style x:Key="MetricCardStyle" TargetType="HeaderedContentControl">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrushWarm}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         <Setter Property="Focusable" Value="False"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="HeaderedContentControl">
-                    <Border Padding="16" Style="{StaticResource SurfaceCardStyle}">
+                    <Border Padding="16" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" Style="{StaticResource SurfaceCardStyle}">
                         <StackPanel>
-                            <TextBlock Text="{Binding Header, RelativeSource={RelativeSource TemplatedParent}}" Style="{StaticResource SectionSubtitleTextStyle}"/>
+                            <TextBlock Text="{Binding Header, RelativeSource={RelativeSource TemplatedParent}}" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{TemplateBinding Foreground}"/>
                             <ContentPresenter Content="{TemplateBinding Content}" ContentStringFormat="{TemplateBinding ContentStringFormat}" Margin="0,8,0,4"/>
-                            <TextBlock Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" FontSize="12" Foreground="{TemplateBinding Foreground}" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
                 </ControlTemplate>

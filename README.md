@@ -121,6 +121,12 @@ See [actual results and the required Windows acceptance checklist](docs/validati
 
 ## Day-to-day workflows
 
+First-run setup adds five indoor tables, five outdoor tables, and three available
+rooms. An administrator can use **Tables → Add starter layout** to fill empty
+areas on an existing installation. Menu categories include starter suggestions
+and any custom categories already saved.
+
+
 - The dining floor supports reservations, order transfers and merges, and a
   **Mark clean** step after payment. Room service and parcel orders use the same
   billing and kitchen actions. Kitchen tickets include quantities added since

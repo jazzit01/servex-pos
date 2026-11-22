@@ -39,6 +39,7 @@
             </StackPanel>
         </Grid>
         <TextBlock Text="Keep your administrator credentials secure. You will sign in after setup is saved." Foreground="{StaticResource MutedTextBrush}" Margin="0,16,0,20"/>
+        <TextBlock Text="Setup adds five indoor tables, five outdoor tables, and three available rooms to an empty layout." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,12"/>
         <Button Content="Save setup and continue" Command="{Binding SaveSetupCommand}" Style="{StaticResource PrimaryActionButtonStyle}" IsDefault="True" MinHeight="48"/>
     </StackPanel>
 </UserControl>

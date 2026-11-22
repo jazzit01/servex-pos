@@ -94,6 +94,7 @@ namespace ServeX.Services
                             IsPasswordHashed = true
                         });
 
+                        await StarterLayout.AddToEmptyAreasAsync(context);
                         await context.SaveChangesAsync();
                         await transaction.CommitAsync();
                     }

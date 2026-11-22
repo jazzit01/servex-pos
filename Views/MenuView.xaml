@@ -72,6 +72,7 @@
                         <CheckBox Content="Tax-exempt" IsChecked="{Binding EditorTaxExempt}" MinHeight="34" AutomationProperties.Name="Tax-exempt menu item"/>
                         <WrapPanel Margin="0,16,0,0">
                             <Button Content="Save item" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,8,8"/>
+                            <Button Content="Save &amp; add another" Command="{Binding SaveAndAddAnotherCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
                             <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,0,8"/>
                         </WrapPanel>
                     </StackPanel>

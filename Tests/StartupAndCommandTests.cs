@@ -18,6 +18,41 @@ public class StartupAndCommandTests
     }
 
     [Fact]
+    public async Task FreshSetupAddsStarterAreasAndDoesNotCreateSampleSalesOrMenuItems()
+    {
+        using var db = new TestDatabase();
+        await db.Initialize();
+        var access = db.Services.GetRequiredService<ApplicationAccessService>();
+        await access.SaveInitialSetupAsync(new InitialSetupRequest
+        {
+            RestaurantName = "Test Restaurant", Address = "Address", Phone = "123",
+            AdminUsername = "admin", AdminPassword = "test-password"
+        });
+        using var context = db.Context();
+        Assert.Equal(5, await context.Tables.CountAsync(table => table.Area == TableArea.Indoor));
+        Assert.Equal(5, await context.Tables.CountAsync(table => table.Area == TableArea.Outdoor));
+        Assert.Equal(3, await context.Rooms.CountAsync());
+        Assert.Empty(await context.MenuItems.ToListAsync());
+        Assert.Empty(await context.Orders.ToListAsync());
+        Assert.Equal(0, await db.Services.GetRequiredService<TableService>().AddStarterLayoutAsync());
+    }
+
+    [Fact]
+    public async Task ExistingLayoutFillsOnlyEmptyAreasAndKeepsExistingNumbers()
+    {
+        using var db = new TestDatabase();
+        await db.Initialize();
+        var tables = db.Services.GetRequiredService<TableService>();
+        await tables.AddTableAsync(new Table { TableNumber = "OUT-1", Area = TableArea.Indoor });
+        Assert.Equal(8, await tables.AddStarterLayoutAsync());
+        Assert.Equal(0, await tables.AddStarterLayoutAsync());
+        var all = await tables.GetTablesAsync();
+        Assert.Equal("OUT-1", Assert.Single(all, table => table.Area == TableArea.Indoor).TableNumber);
+        Assert.Equal(5, all.Count(table => table.Area == TableArea.Outdoor));
+        Assert.Contains(all, table => table.TableNumber == "OUT-6");
+    }
+
+    [Fact]
     public async Task CashierCanLogInButCannotManageStaffMenuOrBackups()
     {
         using var db = new TestDatabase();
