@@ -47,47 +47,71 @@ namespace ServeX.Services
                     throw new ReceiptPrinterException("Windows cannot access the selected printer. Select another printer.");
                 printDocument.DocumentName = string.Format("ServeX Bill #{0}", receipt.OrderId);
                 printDocument.DefaultPageSettings.Margins = new Margins(12, 12, 12, 12);
-                printDocument.DefaultPageSettings.PaperSize = new PaperSize("Receipt80mm", 314, 1200);
+                var widthMm = receipt.PaperWidth == 58 ? 58 : 80;
+                var width = (int)Math.Round(widthMm / 25.4 * 100);
+                printDocument.DefaultPageSettings.PaperSize = new PaperSize($"Receipt{widthMm}mm", width, 1200);
+                var culture = ReceiptProfile.Culture(receipt.Locale);
+                string Money(decimal amount) => amount.ToString("C2", culture);
 
-                printDocument.PrintPage += (sender, args) =>
+                using var headerFont = new Font("Segoe UI", 12, FontStyle.Bold);
+                using var bodyFont = new Font("Segoe UI", 9);
+                using var footerFont = new Font("Segoe UI", 9, FontStyle.Bold);
+                var lines = new System.Collections.Generic.List<(string Text, Font Font, StringAlignment Alignment)>();
+                void Line(string text, Font font = null, StringAlignment alignment = StringAlignment.Near)
                 {
-                    using (var headerFont = new Font("Consolas", 12, FontStyle.Bold))
-                    using (var bodyFont = new Font("Consolas", 9, FontStyle.Regular))
-                    using (var footerFont = new Font("Consolas", 9, FontStyle.Bold))
+                    if (!string.IsNullOrWhiteSpace(text)) lines.Add((text, font ?? bodyFont, alignment));
+                }
+                void Rule() => lines.Add((null, bodyFont, StringAlignment.Near));
+
+                Line(receipt.RestaurantName ?? "ServeX", headerFont, StringAlignment.Center);
+                Line(receipt.RestaurantAddress, alignment: StringAlignment.Center);
+                Line(receipt.RestaurantPhone, alignment: StringAlignment.Center);
+                if (!string.IsNullOrWhiteSpace(receipt.TaxNumber))
+                    Line($"{receipt.TaxName} number: {receipt.TaxNumber}", alignment: StringAlignment.Center);
+                Line(BusinessTime.ToLocalTime(receipt.PaidAt).ToString("g", culture), alignment: StringAlignment.Center);
+                Rule();
+                Line($"Order #{receipt.OrderId} · {receipt.TableNumber}");
+                foreach (var payment in receipt.Payments)
+                {
+                    Line($"{payment.Method}: {Money(payment.Amount)}");
+                    if (!string.IsNullOrWhiteSpace(payment.Reference)) Line("Reference: " + payment.Reference);
+                }
+                Rule();
+                foreach (var item in receipt.Items)
+                {
+                    Line(item.Name);
+                    Line($"{item.Quantity} × {Money(item.UnitPrice)}   {Money(item.LineTotal)}");
+                }
+                Rule();
+                Line($"Subtotal   {Money(receipt.Subtotal)}");
+                var taxLabel = receipt.TaxRate.HasValue ? $"{receipt.TaxName} ({receipt.TaxRate:0.##}%)" : receipt.TaxName;
+                Line($"{taxLabel}   {Money(receipt.Tax)}");
+                Line($"Discount   {Money(receipt.Discount)}");
+                Line(receipt.DiscountReason);
+                Rule();
+                Line($"TOTAL   {Money(receipt.Total)}", footerFont);
+                Rule();
+                Line("Thank you for dining with us", alignment: StringAlignment.Center);
+
+                var nextLine = 0;
+                printDocument.PrintPage += (_, args) =>
+                {
+                    var y = 0f;
+                    var contentWidth = Math.Max(1, Math.Min(width - 24, args.MarginBounds.Width));
+                    args.Graphics.TranslateTransform(args.MarginBounds.Left, args.MarginBounds.Top);
+                    if (nextLine > 0) DrawWrapped(args.Graphics, $"Order #{receipt.OrderId} (continued)", bodyFont, ref y, contentWidth, StringAlignment.Near);
+
+                    var firstLine = nextLine;
+                    while (nextLine < lines.Count)
                     {
-                        var y = 10f;
-                        DrawCentered(args.Graphics, receipt.RestaurantName ?? "ServeX", headerFont, ref y);
-                        if (!string.IsNullOrWhiteSpace(receipt.RestaurantAddress))
-                            DrawCentered(args.Graphics, receipt.RestaurantAddress, bodyFont, ref y);
-                        if (!string.IsNullOrWhiteSpace(receipt.RestaurantPhone))
-                            DrawCentered(args.Graphics, receipt.RestaurantPhone, bodyFont, ref y);
-                        DrawCentered(args.Graphics, receipt.PaidAt.ToLocalTime().ToString("dd MMM yyyy hh:mm tt"), bodyFont, ref y);
-                        y += 6f;
-
-                        DrawLine(args.Graphics, ref y);
-                        DrawText(args.Graphics, string.Format("Order: #{0}", receipt.OrderId), bodyFont, ref y);
-                        DrawText(args.Graphics, string.Format("Table: {0}", receipt.TableNumber), bodyFont, ref y);
-                        DrawText(args.Graphics, string.Format("Payment: {0}", receipt.PaymentMethod), bodyFont, ref y);
-                        DrawLine(args.Graphics, ref y);
-
-                        foreach (var item in receipt.Items)
-                        {
-                            DrawText(args.Graphics, item.Name, bodyFont, ref y);
-                            DrawText(args.Graphics, string.Format("{0} x {1:N2}   {2:N2}", item.Quantity, item.UnitPrice, item.LineTotal), bodyFont, ref y);
-                            y += 3f;
-                        }
-
-                        DrawLine(args.Graphics, ref y);
-                        DrawText(args.Graphics, string.Format("Subtotal   {0:N2}", receipt.Subtotal), bodyFont, ref y);
-                        DrawText(args.Graphics, string.Format("Tax        {0:N2}", receipt.Tax), bodyFont, ref y);
-                        DrawText(args.Graphics, string.Format("Discount   {0:N2}", receipt.Discount), bodyFont, ref y);
-                        DrawLine(args.Graphics, ref y);
-                        DrawText(args.Graphics, string.Format("TOTAL      {0:N2}", receipt.Total), footerFont, ref y);
-                        DrawLine(args.Graphics, ref y);
-                        DrawCentered(args.Graphics, "Thank you for dining with us", bodyFont, ref y);
-                        DrawCentered(args.Graphics, "Powered by ServeX", bodyFont, ref y);
+                        var line = lines[nextLine];
+                        var height = line.Text == null ? 10f : args.Graphics.MeasureString(line.Text, line.Font, contentWidth).Height;
+                        if (nextLine > firstLine && y + height > args.MarginBounds.Height) break;
+                        if (line.Text == null) DrawLine(args.Graphics, ref y, contentWidth);
+                        else DrawWrapped(args.Graphics, line.Text, line.Font, ref y, contentWidth, line.Alignment);
+                        nextLine++;
                     }
-                    args.HasMorePages = false;
+                    args.HasMorePages = nextLine < lines.Count;
                 };
 
                 printDocument.Print();
@@ -105,26 +129,18 @@ namespace ServeX.Services
             }
         }
 
-        private static void DrawText(Graphics graphics, string text, Font font, ref float y)
+        private static void DrawWrapped(Graphics graphics, string text, Font font, ref float y, int width, StringAlignment alignment)
         {
-            graphics.DrawString(text, font, Brushes.Black, 0, y);
-            y += graphics.MeasureString(text, font).Height;
-        }
-
-        private static void DrawCentered(Graphics graphics, string text, Font font, ref float y)
-        {
-            const int width = 290;
-            using var format = new StringFormat { Alignment = StringAlignment.Center };
+            using var format = new StringFormat { Alignment = alignment };
             var size = graphics.MeasureString(text, font, width, format);
-            graphics.DrawString(text, font, Brushes.Black, new RectangleF(0, y, width, size.Height), format);
+            graphics.DrawString(text, font, Brushes.Black, new RectangleF(0, y, width, size.Height + 1), format);
             y += size.Height;
         }
 
-        private static void DrawLine(Graphics graphics, ref float y)
+        private static void DrawLine(Graphics graphics, ref float y, int width)
         {
-            const string separator = "--------------------------------";
-            graphics.DrawString(separator, SystemFonts.DefaultFont, Brushes.Black, 0, y);
-            y += graphics.MeasureString(separator, SystemFonts.DefaultFont).Height;
+            graphics.DrawLine(Pens.Black, 0, y + 4, width, y + 4);
+            y += 10;
         }
     }
 }

@@ -18,7 +18,7 @@ public class InitializationTests
         await db.Initialize();
         await db.Initialize();
         using var context = db.Context();
-        Assert.Equal(6, (await context.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(9, (await context.Database.GetAppliedMigrationsAsync()).Count());
         Assert.Empty(await context.MenuItems.ToListAsync());
         Assert.Empty(await context.Tables.ToListAsync());
         Assert.Empty(await context.Rooms.ToListAsync());
@@ -94,7 +94,7 @@ public class InitializationTests
         Assert.Equal(TableArea.Indoor, table.Area);
         Assert.Equal(TableStatus.Occupied, table.Status);
         Assert.Equal("Original Table", table.TableNumber);
-        Assert.Equal(6, (await check.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(9, (await check.Database.GetAppliedMigrationsAsync()).Count());
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class InitializationTests
         await Assert.ThrowsAnyAsync<IOException>(db.Initialize);
         using var check = db.Context();
         Assert.Single(await check.Database.GetAppliedMigrationsAsync());
-        Assert.Equal("Original", (await check.MenuItems.SingleAsync()).Name);
+        Assert.Equal("Original", await check.MenuItems.Select(item => item.Name).SingleAsync());
     }
 
     [Fact]

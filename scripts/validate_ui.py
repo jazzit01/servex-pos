@@ -48,8 +48,13 @@ for path, text in texts.items():
 # Compare all action-command names from the actual Phase 1 baseline. Shared components
 # intentionally move order commands out of the two wrapper views.
 shared = ''.join(p.read_text() for p in (ROOT / 'Presentation/Components').glob('*.xaml'))
+baseline_views = set(subprocess.check_output(
+    ['git', 'ls-tree', '-r', '--name-only', 'f013ba5', '--', 'Views'], cwd=ROOT, text=True).splitlines())
 for path in (ROOT / 'Views').glob('*.xaml'):
-    previous = subprocess.check_output(['git', 'show', f'f013ba5:Views/{path.name}'], cwd=ROOT, text=True)
+    relative = f'Views/{path.name}'
+    if relative not in baseline_views:
+        continue
+    previous = subprocess.check_output(['git', 'show', f'f013ba5:{relative}'], cwd=ROOT, text=True)
     previous_commands = set(re.findall(r'\{Binding (?:DataContext\.)?(\w+Command)', previous))
     current_commands = set(re.findall(r'\{Binding (?:DataContext\.)?(\w+Command)', path.read_text() + shared))
     for command in previous_commands - current_commands:

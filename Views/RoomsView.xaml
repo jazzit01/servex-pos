@@ -1,0 +1,28 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ServeX.Views.RoomsView">
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="310"/>
+        </Grid.ColumnDefinitions>
+        <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}" Style="{StaticResource OperationalGridStyle}"
+                  IsReadOnly="True" AutomationProperties.Name="Rooms" Margin="0,0,16,0">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Room number" Binding="{Binding RoomNumber}" Width="*"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Border Grid.Column="1" Style="{StaticResource SurfaceCardStyle}" Padding="16" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>
+                <TextBlock Text="Room number" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox Text="{Binding Number, UpdateSourceTrigger=PropertyChanged}" MaxLength="20" Style="{StaticResource FormTextBoxStyle}"/>
+                <TextBlock Text="Status" Style="{StaticResource FieldLabelStyle}"/>
+                <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status}" Style="{StaticResource FormComboBoxStyle}"/>
+                <Button Content="Save room" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,12,0,0"/>
+                <Button Content="New room" Command="{Binding NewCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
+                <Button Content="Open room order" Command="{Binding OpenOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

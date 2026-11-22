@@ -11,6 +11,28 @@ namespace ServeX.Tests;
 public class StorageBackupTests
 {
     [Fact]
+    public async Task ExportAndSupportBundleContainTheExpectedFiles()
+    {
+        using var db = new TestDatabase();
+        await db.SeedCustomerAsync();
+        var archive = db.Services.GetRequiredService<BusinessArchiveService>();
+        var csv = Path.Combine(db.DirectoryPath, "export.zip");
+        await archive.ExportCsvAsync(csv);
+        using (var file = System.IO.Compression.ZipFile.OpenRead(csv))
+        {
+            Assert.NotNull(file.GetEntry("orders.csv"));
+            Assert.NotNull(file.GetEntry("bills.csv"));
+            using var reader = new StreamReader(file.GetEntry("menu.csv").Open());
+            Assert.Contains("Customer Item", await reader.ReadToEndAsync());
+        }
+        var bundle = Path.Combine(db.DirectoryPath, "support.zip");
+        await archive.CreateSupportBundleAsync(bundle);
+        using var support = System.IO.Compression.ZipFile.OpenRead(bundle);
+        Assert.NotNull(support.GetEntry("servex.db"));
+        Assert.NotNull(support.GetEntry("servex.log"));
+    }
+
+    [Fact]
     public void FreshStorageUsesWritableLocalDirectoryAndPinsSelection()
     {
         using var db = new TestDatabase();

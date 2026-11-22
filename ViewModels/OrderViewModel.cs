@@ -14,10 +14,13 @@ namespace ServeX.ViewModels
     public class OrderViewModel : ViewModelBase
     {
         private readonly LogService _logService;
+        private readonly KitchenWorkspaceService _kitchen;
+        private readonly TableService _tables;
         private readonly DialogService _dialogs;
         private readonly OrderService _orderService;
         private readonly BillingWorkspaceService _billingWorkspaceService;
         private readonly int _tableId;
+        private readonly OrderType _locationType;
         private string _searchText = string.Empty;
         public string SearchText
         {
@@ -29,6 +32,7 @@ namespace ServeX.ViewModels
         private bool _isBusy;
         private bool _hasBlockingError;
         private int? _orderId;
+        private int _revision;
         private (int MenuItemId, int Quantity)[] _savedItems = Array.Empty<(int, int)>();
         private string _tableNumber = string.Empty;
         private TableStatus _tableStatus = TableStatus.Available;
@@ -37,13 +41,16 @@ namespace ServeX.ViewModels
         private bool _isStatusError;
         private decimal _taxPercentage = 5m;
 
-        public OrderViewModel(OrderService orderService, BillingWorkspaceService billingWorkspaceService, int tableId, LogService logService, DialogService dialogs)
+        public OrderViewModel(OrderService orderService, BillingWorkspaceService billingWorkspaceService, int tableId, LogService logService, DialogService dialogs, KitchenWorkspaceService kitchen, TableService tables, OrderType locationType = OrderType.Table)
         {
             _logService = logService;
+            _kitchen = kitchen;
+            _tables = tables;
             _dialogs = dialogs;
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
             _billingWorkspaceService = billingWorkspaceService ?? throw new ArgumentNullException(nameof(billingWorkspaceService));
             _tableId = tableId;
+            _locationType = locationType;
 
             Categories = new ObservableCollection<string>();
             MenuItems = new ObservableCollection<MenuItem>();
@@ -56,6 +63,9 @@ namespace ServeX.ViewModels
             DecreaseQuantityCommand = new RelayCommand(item => DecreaseQuantity(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             RemoveItemCommand = new RelayCommand(item => RemoveItem(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             SaveOrderCommand = new AsyncRelayCommand(async _ => await SaveOrderAsync(), _ => CanSaveOrder);
+            TransferCommand = new AsyncRelayCommand(_ => TransferAsync(), _ => !IsBusy && CanTransfer && _orderId.HasValue);
+            SendKitchenCommand = new AsyncRelayCommand(_ => SendKitchenAsync(), _ => !IsBusy && _orderId.HasValue);
+            MarkServedCommand = new AsyncRelayCommand(_ => MarkServedAsync(), _ => !IsBusy && _orderId.HasValue);
             CancelOrderCommand = new AsyncRelayCommand(_ => CancelOrderAsync(), _ => !IsBusy && _orderId.HasValue);
             GenerateBillCommand = new AsyncRelayCommand(async _ => await GenerateBillAsync(), _ => CanGenerateBill);
         }
@@ -78,6 +88,14 @@ namespace ServeX.ViewModels
 
         public AsyncRelayCommand SaveOrderCommand { get; }
 
+        public bool CanTransfer => _locationType == OrderType.Table;
+        public System.Collections.Generic.IReadOnlyList<Table> TransferTargets { get; private set; } = Array.Empty<Table>();
+        public Table TransferTarget { get; set; }
+        public AsyncRelayCommand TransferCommand { get; }
+
+        public AsyncRelayCommand SendKitchenCommand { get; }
+        public AsyncRelayCommand MarkServedCommand { get; }
+
         public AsyncRelayCommand CancelOrderCommand { get; }
 
         public AsyncRelayCommand GenerateBillCommand { get; }
@@ -95,7 +113,9 @@ namespace ServeX.ViewModels
             }
         }
 
-        public string WindowTitle => string.Format("Order - {0}", TableNumber);
+        public string WindowTitle => $"Order - {TableNumber}";
+
+        public string LocationKind => _locationType == OrderType.Room ? "Room" : "Table";
 
         public string TableNumber
         {
@@ -168,6 +188,8 @@ namespace ServeX.ViewModels
 
         public decimal Subtotal => OrderPricing.Round(OrderItems.Sum(item => item.LineTotal));
 
+        internal bool AllowReservedTable { get; set; }
+
         public decimal TaxPercentage
         {
             get => _taxPercentage;
@@ -183,7 +205,7 @@ namespace ServeX.ViewModels
 
         public string TaxLabel => string.Format("Tax ({0:0.##}%)", TaxPercentage);
 
-        public decimal Tax => OrderPricing.Tax(Subtotal, TaxPercentage);
+        public decimal Tax => OrderPricing.Tax(OrderItems.Where(item => !item.TaxExempt).Sum(item => item.LineTotal), TaxPercentage);
 
         public decimal Total => Subtotal + Tax;
 
@@ -193,7 +215,7 @@ namespace ServeX.ViewModels
 
             await ExecuteBusyActionAsync(async () =>
             {
-                var table = await _orderService.GetTableAsync(_tableId);
+                var table = await _orderService.GetOrderLocationAsync(_tableId, _locationType);
                 if (table == null)
                 {
                     throw new InvalidOperationException("The selected table could not be loaded.");
@@ -201,6 +223,12 @@ namespace ServeX.ViewModels
 
                 TableNumber = table.TableNumber;
                 TableStatus = table.Status;
+                if (CanTransfer)
+                {
+                    TransferTargets = (await _tables.GetTablesAsync()).Where(target => target.Id != _tableId &&
+                        target.Status is TableStatus.Available or TableStatus.Occupied).ToList();
+                    OnPropertyChanged(nameof(TransferTargets));
+                }
                 TaxPercentage = await _orderService.GetTaxPercentageAsync();
 
                 var menuItems = await _orderService.GetMenuItemsAsync() ?? new System.Collections.Generic.List<MenuItem>();
@@ -232,9 +260,10 @@ namespace ServeX.ViewModels
                     ApplyCategoryFilter();
                 }
 
-                var order = await _orderService.GetActiveOrderForTableAsync(_tableId);
+                var order = await _orderService.GetActiveOrderForTableAsync(_tableId, _locationType);
                 OrderItems.Clear();
                 _orderId = order?.Id;
+                _revision = order?.Revision ?? 0;
 
                 if (order != null)
                 {
@@ -284,7 +313,7 @@ namespace ServeX.ViewModels
             }
             else
             {
-                var newItem = CreateLineItem(menuItem.Id, menuItem.Name, menuItem.Category, menuItem.Price, 1);
+                var newItem = CreateLineItem(menuItem.Id, menuItem.Name, menuItem.Category, menuItem.Price, 1, menuItem.TaxExempt);
                 OrderItems.Add(newItem);
             }
 
@@ -331,6 +360,49 @@ namespace ServeX.ViewModels
             NotifyTotalsChanged();
         }
 
+        private async Task TransferAsync()
+        {
+            var destination = TransferTarget;
+            if (destination == null)
+            {
+                SetStatus("Select a destination table first.", true);
+                return;
+            }
+            if (HasUnsavedChanges)
+            {
+                SetStatus("Save the current items before moving the order.", true);
+                return;
+            }
+
+            var merge = destination.Status == TableStatus.Occupied;
+            if (!_dialogs.Confirm(merge ? "Merge table orders?" : "Move table order?",
+                $"Move the saved items to {destination.TableNumber}?")) return;
+            await ExecuteBusyActionAsync(async () =>
+            {
+                await _orderService.TransferTableOrderAsync(_orderId.Value, _revision, destination.Id, merge);
+                _orderId = null;
+                _revision = 0;
+                OrderItems.Clear();
+                _savedItems = CurrentItems();
+                TableStatus = TableStatus.Available;
+                NotifyTotalsChanged();
+                SetStatus($"Order moved to {destination.TableNumber}. Open that table to continue.", false);
+            }, "Could not move the order. Refresh the dining floor and try again.");
+        }
+
+        private Task SendKitchenAsync() => ExecuteBusyActionAsync(async () =>
+        {
+            var result = await _kitchen.SendAsync(_orderId.Value, _revision);
+            _revision = result.Revision;
+            SetStatus(result.Message, false);
+        }, "Could not finish sending the ticket. If it printed, check with the kitchen before retrying.");
+
+        private Task MarkServedAsync() => ExecuteBusyActionAsync(async () =>
+        {
+            _revision = await _kitchen.MarkServedAsync(_orderId.Value, _revision);
+            SetStatus("Order marked served.", false);
+        }, "Could not mark the order served. Send new items to the kitchen first.");
+
         private async Task CancelOrderAsync()
         {
             if (_orderId is not int orderId || !_dialogs.Confirm("Cancel order?",
@@ -341,9 +413,11 @@ namespace ServeX.ViewModels
             {
                 await _orderService.CancelOrderAsync(orderId);
                 _orderId = null;
+                _revision = 0;
+            _revision = 0;
                 OrderItems.Clear();
                 _savedItems = CurrentItems();
-                TableStatus = (await _orderService.GetTableAsync(_tableId))?.Status ?? TableStatus;
+                TableStatus = (await _orderService.GetOrderLocationAsync(_tableId, _locationType))?.Status ?? TableStatus;
                 NotifyTotalsChanged();
                 SetStatus($"Order #{orderId} cancelled.", false);
             }, "This order could not be cancelled. Reopen it to check its current status.");
@@ -381,11 +455,12 @@ namespace ServeX.ViewModels
             OnPropertyChanged(nameof(IsMenuEmpty));
         }
 
-        private OrderLineItemViewModel CreateLineItem(int menuItemId, string name, string category, decimal unitPrice, int quantity)
+        private OrderLineItemViewModel CreateLineItem(int menuItemId, string name, string category, decimal unitPrice, int quantity, bool taxExempt)
         {
             return new OrderLineItemViewModel
             {
                 MenuItemId = menuItemId,
+                TaxExempt = taxExempt,
                 Name = name,
                 Category = category,
                 UnitPrice = unitPrice,
@@ -401,7 +476,7 @@ namespace ServeX.ViewModels
                 menuItem?.Name ?? "Menu Item",
                 menuItem?.Category ?? string.Empty,
                 item.Price,
-                item.Quantity);
+                item.Quantity, item.TaxExempt);
 
             OrderItems.Add(lineItem);
         }
@@ -458,6 +533,9 @@ namespace ServeX.ViewModels
             SaveOrderCommand.RaiseCanExecuteChanged();
             GenerateBillCommand.RaiseCanExecuteChanged();
             CancelOrderCommand.RaiseCanExecuteChanged();
+            SendKitchenCommand.RaiseCanExecuteChanged();
+            MarkServedCommand.RaiseCanExecuteChanged();
+            TransferCommand.RaiseCanExecuteChanged();
         }
 
         private void SetStatus(string message, bool isError)
@@ -516,8 +594,18 @@ namespace ServeX.ViewModels
             Order savedOrder = null;
             await ExecuteBusyActionAsync(async () =>
             {
-                savedOrder = await _orderService.SaveTableOrderAsync(_tableId, items, _orderId);
+                savedOrder = await _orderService.SaveTableOrderAsync(_tableId, items, _orderId, _revision, AllowReservedTable, _locationType);
                 _orderId = savedOrder.Id;
+                _revision = savedOrder.Revision;
+                foreach (var savedItem in savedOrder.Items)
+                {
+                    var matching = OrderItems.Where(item => item.MenuItemId == savedItem.MenuItemId).ToArray();
+                    foreach (var duplicate in matching.Skip(1)) OrderItems.Remove(duplicate);
+                    matching[0].TaxExempt = savedItem.TaxExempt;
+                    matching[0].UnitPrice = savedItem.Price;
+                    matching[0].Quantity = savedItem.Quantity;
+                }
+                NotifyTotalsChanged();
                 _savedItems = CurrentItems();
                 TableStatus = TableStatus.Occupied;
 

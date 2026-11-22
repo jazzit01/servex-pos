@@ -1,4 +1,6 @@
+using System.Windows;
 using System.Windows.Controls;
+using ServeX.ViewModels;
 
 namespace ServeX.Views
 {
@@ -7,6 +9,12 @@ namespace ServeX.Views
         public BillingView()
         {
             InitializeComponent();
+        }
+
+        private void PrepareConfirmation(object sender, RoutedEventArgs args)
+        {
+            if (DataContext is BillingViewModel billing) billing.ManagerPassword = ManagerPasswordBox.Password;
+            ManagerPasswordBox.Clear();
         }
     }
 }

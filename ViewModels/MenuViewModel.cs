@@ -29,6 +29,7 @@ namespace ServeX.ViewModels
         private string _editorName = string.Empty;
         private string _editorCategory = string.Empty;
         private string _editorPrice = string.Empty;
+        private bool _editorTaxExempt;
         private bool _editorIsAvailable = true;
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
@@ -134,6 +135,9 @@ namespace ServeX.ViewModels
             }
         }
 
+        public string[] CategoryChoices => MenuItems.Select(item => item.Category)
+            .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(category => category).ToArray();
+
         public string EditorCategory
         {
             get => _editorCategory;
@@ -158,6 +162,12 @@ namespace ServeX.ViewModels
                     NotifyValidationStates();
                 }
             }
+        }
+
+        public bool EditorTaxExempt
+        {
+            get => _editorTaxExempt;
+            set => SetProperty(ref _editorTaxExempt, value);
         }
 
         public bool EditorIsAvailable
@@ -284,6 +294,7 @@ namespace ServeX.ViewModels
                 Name = EditorName.Trim(),
                 Category = EditorCategory.Trim(),
                 Price = decimal.Round(price, 2),
+                TaxExempt = EditorTaxExempt,
                 IsAvailable = EditorIsAvailable
             };
 
@@ -316,26 +327,27 @@ namespace ServeX.ViewModels
                 return;
             }
 
-            if (!_dialogs.Confirm("Delete menu item", "Delete this menu item? This cannot be undone. Records linked to order history will be protected.")) return;
+            if (!_dialogs.Confirm("Archive menu item", "Hide this item from the menu and new orders? Existing order records will keep it.")) return;
 
             await ExecuteBusyActionAsync(async () =>
             {
-                await _menuService.DeleteMenuItemAsync(menuItem.Id);
+                await _menuService.ArchiveMenuItemAsync(menuItem.Id);
                 if (_editingItemId == menuItem.Id)
                 {
                     CloseEditor();
                 }
 
                 await RefreshAsync();
-                SetStatus("Menu item deleted successfully.", false);
+                SetStatus("Menu item archived.", false);
                 RaiseMenuItemsChanged();
-            }, "The menu item could not be deleted. Items linked to orders cannot be removed.");
+            }, "The menu item could not be archived.");
         }
 
         private void OpenAddPanel()
         {
             ResetEditor();
             _editingItemId = null;
+            EditorTaxExempt = false;
             EditorIsAvailable = true;
             IsEditorOpen = true;
             OnPropertyChanged(nameof(IsEditMode));
@@ -355,6 +367,7 @@ namespace ServeX.ViewModels
             EditorName = menuItem.Name;
             EditorCategory = menuItem.Category;
             EditorPrice = menuItem.Price.ToString("0.##", CultureInfo.InvariantCulture);
+            EditorTaxExempt = menuItem.TaxExempt;
             EditorIsAvailable = menuItem.IsAvailable;
             IsEditorOpen = true;
             OnPropertyChanged(nameof(IsEditMode));
@@ -426,6 +439,7 @@ namespace ServeX.ViewModels
             EditorName = string.Empty;
             EditorCategory = string.Empty;
             EditorPrice = string.Empty;
+            EditorTaxExempt = false;
             EditorIsAvailable = true;
             TouchValidation();
             OnPropertyChanged(nameof(IsEditMode));
@@ -490,6 +504,7 @@ namespace ServeX.ViewModels
 
         private void OnMenuItemsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
+            OnPropertyChanged(nameof(CategoryChoices));
             ApplySearchFilter();
             OnPropertyChanged(nameof(IsEmpty));
         }

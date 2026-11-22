@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ServeX.Infrastructure.Persistence;
 using ServeX.Presentation.Navigation;
 using ServeX.Services;
+using ServeX.Models;
 using ServeX.ViewModels;
 using ServeX.Views;
 
@@ -18,6 +19,8 @@ namespace ServeX.Application
             services.AddSingleton<PresentationFactory>();
             services.AddSingleton<WorkspaceNavigation>();
             services.AddTransient<DashboardViewModel>();
+            services.AddTransient<HistoryViewModel>();
+            services.AddTransient<RoomsViewModel>();
             services.AddTransient<MenuViewModel>();
             services.AddTransient<TablesViewModel>();
             services.AddTransient<ParcelViewModel>();
@@ -26,7 +29,10 @@ namespace ServeX.Application
             services.AddSingleton<DialogService>();
             services.AddSingleton<ReceiptPrintService>();
             services.AddSingleton<OrderWorkspaceService>();
+            services.AddSingleton<KitchenWorkspaceService>();
             services.AddSingleton<BillingWorkspaceService>();
+            services.AddSingleton<Func<int, OrderType, OrderViewModel>>(provider => (id, type) =>
+                ActivatorUtilities.CreateInstance<OrderViewModel>(provider, id, type));
             services.AddSingleton<Func<int, OrderViewModel>>(provider => id =>
                 ActivatorUtilities.CreateInstance<OrderViewModel>(provider, id));
             services.AddSingleton<Func<int, BillingViewModel>>(provider => id =>

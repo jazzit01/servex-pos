@@ -17,9 +17,10 @@ namespace ServeX.Services
             _navigation = navigation;
         }
 
-        public async Task ShowAsync(int orderId)
+        public async Task ShowAsync(int orderId, bool readOnly = false)
         {
             var viewModel = _createViewModel(orderId);
+            viewModel.ReadOnly = readOnly;
             await viewModel.LoadAsync();
 
             await _navigation.OpenDetailAsync(viewModel);

@@ -45,6 +45,7 @@ namespace ServeX.Services
                 {
                     return await context.MenuItems
                         .AsNoTracking()
+                        .Where(item => !item.IsArchived)
                         .OrderBy(menuItem => menuItem.Category)
                         .ThenBy(menuItem => menuItem.Name)
                         .ToListAsync();
@@ -57,7 +58,25 @@ namespace ServeX.Services
             }
         }
 
-        public async Task<Order> GetActiveOrderForTableAsync(int tableId)
+        public async Task<Table> GetOrderLocationAsync(int id, OrderType locationType)
+        {
+            if (locationType == OrderType.Table) return await GetTableAsync(id);
+            using var context = _contexts.CreateDbContext();
+            var room = await context.Rooms.AsNoTracking().SingleOrDefaultAsync(row => row.Id == id);
+            return room == null ? null : new Table
+            {
+                Id = room.Id, TableNumber = room.RoomNumber,
+                Status = room.Status switch
+                {
+                    RoomStatus.Reserved => TableStatus.Reserved,
+                    RoomStatus.Occupied => TableStatus.Occupied,
+                    RoomStatus.Maintenance => TableStatus.Cleaning,
+                    _ => TableStatus.Available
+                }
+            };
+        }
+
+        public async Task<Order> GetActiveOrderForTableAsync(int tableId, OrderType locationType = OrderType.Table)
         {
             try
             {
@@ -69,11 +88,12 @@ namespace ServeX.Services
                         .ThenInclude(orderItem => orderItem.MenuItem)
                         .Include(order => order.Bill)
                         .Where(order =>
-                            order.Type == OrderType.Table &&
+                            order.Type == locationType &&
                             order.ReferenceId == tableId &&
                             order.Status != OrderStatus.Billed &&
                             order.Status != OrderStatus.Paid &&
-                            order.Status != OrderStatus.Cancelled)
+                            order.Status != OrderStatus.Cancelled &&
+                            order.Status != OrderStatus.Merged)
                         .OrderByDescending(order => order.CreatedAt)
                         .FirstOrDefaultAsync();
                 }
@@ -116,6 +136,7 @@ namespace ServeX.Services
                 throw new InvalidOperationException("Only an open, unpaid order can be cancelled.");
 
             order.Status = OrderStatus.Cancelled;
+            order.CancelledAt = DateTime.UtcNow;
             if (order.Type == OrderType.Table)
             {
                 var otherOpenOrder = await context.Orders.AnyAsync(item => item.Id != orderId &&
@@ -128,12 +149,75 @@ namespace ServeX.Services
                 }
             }
 
+            if (order.Type == OrderType.Room)
+            {
+                var room = await context.Rooms.FindAsync(order.ReferenceId);
+                if (room?.Status == RoomStatus.Occupied) room.Status = RoomStatus.Available;
+            }
+
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
             _logService.LogInfo($"Order #{orderId} cancelled");
         }
 
-        public async Task<Order> SaveTableOrderAsync(int tableId, IEnumerable<OrderSaveItem> items, int? expectedOrderId = null)
+        public async Task TransferTableOrderAsync(int orderId, int revision, int destinationId, bool merge)
+        {
+            using var context = _contexts.CreateDbContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
+            var open = context.Orders.Where(order => order.Type == OrderType.Table &&
+                (order.Status == OrderStatus.Open || order.Status == OrderStatus.Preparing || order.Status == OrderStatus.Served));
+            var source = await open.Include(order => order.Items).SingleOrDefaultAsync(order => order.Id == orderId);
+            if (source == null || source.Revision != revision || source.ReferenceId == destinationId)
+                throw new InvalidOperationException("The source order changed. Reopen it first.");
+
+            var from = await context.Tables.FindAsync(source.ReferenceId);
+            var destination = await context.Tables.FindAsync(destinationId);
+            if (from == null || destination == null || destination.Status is TableStatus.Reserved or TableStatus.Cleaning)
+                throw new InvalidOperationException("Choose an available table or one with an active order to merge.");
+
+            var target = await open.Include(order => order.Items).Include(order => order.Bill)
+                .SingleOrDefaultAsync(order => order.ReferenceId == destinationId);
+            if ((target != null) != merge)
+                throw new InvalidOperationException("The destination changed. Refresh the dining floor and try again.");
+
+            if (target == null)
+            {
+                source.ReferenceId = destinationId;
+                source.Revision++;
+            }
+            else
+            {
+                foreach (var item in source.Items)
+                {
+                    var matching = target.Items.FirstOrDefault(line => line.MenuItemId == item.MenuItemId &&
+                        line.Price == item.Price && line.TaxExempt == item.TaxExempt);
+                    if (matching == null)
+                    {
+                        matching = new OrderItem { MenuItemId = item.MenuItemId, Price = item.Price, TaxExempt = item.TaxExempt };
+                        target.Items.Add(matching);
+                    }
+                    matching.Quantity += item.Quantity;
+                    matching.KitchenSentQuantity += item.KitchenSentQuantity;
+                }
+
+                var rate = await OrderPricing.GetTaxPercentageAsync(context);
+                target.Bill ??= new Bill();
+                target.Bill.Subtotal = OrderPricing.Round(target.Items.Sum(line => line.Price * line.Quantity));
+                target.Bill.Tax = OrderPricing.Tax(target.Items.Where(line => !line.TaxExempt).Sum(line => line.Price * line.Quantity), rate);
+                target.Bill.Total = target.Bill.Subtotal + target.Bill.Tax;
+                target.Bill.Discount = 0m;
+                target.Revision++;
+                source.Status = OrderStatus.Merged;
+            }
+
+            from.Status = TableStatus.Available;
+            destination.Status = TableStatus.Occupied;
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            _logService.LogInfo($"Order #{orderId} {(merge ? "merged into" : "moved to")} table {destination.TableNumber}.");
+        }
+
+        public async Task<Order> SaveTableOrderAsync(int tableId, IEnumerable<OrderSaveItem> items, int? expectedOrderId = null, int? expectedRevision = null, bool allowReserved = false, OrderType locationType = OrderType.Table)
         {
             var orderItems = items?
                 .Where(item => item.Quantity > 0)
@@ -149,32 +233,40 @@ namespace ServeX.Services
                 using (var context = _contexts.CreateDbContext())
                 {
                     using var transaction = await context.Database.BeginTransactionAsync();
-                    var table = await context.Tables.FirstOrDefaultAsync(item => item.Id == tableId);
-                    if (table == null)
-                    {
-                        throw new InvalidOperationException("The selected table could not be found.");
-                    }
+                    if (locationType is not (OrderType.Table or OrderType.Room))
+                        throw new InvalidOperationException("Choose a table or room.");
+                    var table = locationType == OrderType.Table ? await context.Tables.FindAsync(tableId) : null;
+                    var room = locationType == OrderType.Room ? await context.Rooms.FindAsync(tableId) : null;
+                    if (table == null && room == null)
+                        throw new InvalidOperationException("The selected location could not be found.");
 
                     var order = await context.Orders
                         .Include(item => item.Items)
                         .Include(item => item.Bill)
                         .Where(item =>
-                            item.Type == OrderType.Table &&
+                            item.Type == locationType &&
                             item.ReferenceId == tableId &&
                             item.Status != OrderStatus.Billed &&
                             item.Status != OrderStatus.Paid &&
-                            item.Status != OrderStatus.Cancelled)
+                            item.Status != OrderStatus.Cancelled &&
+                            item.Status != OrderStatus.Merged)
                         .OrderByDescending(item => item.CreatedAt)
                         .FirstOrDefaultAsync();
 
-                    if (expectedOrderId.HasValue && order?.Id != expectedOrderId)
+                    if ((expectedOrderId.HasValue && order?.Id != expectedOrderId) ||
+                        (expectedRevision.HasValue && (order?.Id != expectedOrderId || (order?.Revision ?? 0) != expectedRevision)))
                         throw new InvalidOperationException("The table order changed. Reopen it before saving.");
 
                     if (order == null)
                     {
+                        if (table?.Status == TableStatus.Cleaning || room?.Status == RoomStatus.Maintenance)
+                            throw new InvalidOperationException("Mark the table clean before starting a new order.");
+                        if ((table?.Status == TableStatus.Reserved || room?.Status == RoomStatus.Reserved) && !allowReserved)
+                            throw new InvalidOperationException("Confirm using the reserved table before starting a new order.");
+
                         order = new Order
                         {
-                            Type = OrderType.Table,
+                            Type = locationType,
                             ReferenceId = tableId,
                             Status = OrderStatus.Open,
                             CreatedAt = DateTime.UtcNow
@@ -183,25 +275,12 @@ namespace ServeX.Services
                         context.Orders.Add(order);
                     }
 
-                    if (order.Items.Any())
-                    {
-                        context.OrderItems.RemoveRange(order.Items);
-                    }
-
-                    order.Items = new List<OrderItem>();
-                    foreach (var item in orderItems)
-                    {
-                        order.Items.Add(new OrderItem
-                        {
-                            MenuItemId = item.MenuItemId,
-                            Quantity = item.Quantity,
-                            Price = OrderPricing.Round(item.Price)
-                        });
-                    }
+                    await ApplyOrderItemsAsync(context, order, orderItems);
+                    order.Revision++;
 
                     var taxPercentage = await OrderPricing.GetTaxPercentageAsync(context);
-                    var subtotal = OrderPricing.Round(orderItems.Sum(item => item.Price * item.Quantity));
-                    var tax = OrderPricing.Tax(subtotal, taxPercentage);
+                    var subtotal = OrderPricing.Round(order.Items.Sum(item => item.Price * item.Quantity));
+                    var tax = OrderPricing.Tax(order.Items.Where(item => !item.TaxExempt).Sum(item => item.Price * item.Quantity), taxPercentage);
                     var total = subtotal + tax;
 
                     if (order.Bill == null)
@@ -214,11 +293,12 @@ namespace ServeX.Services
                     order.Bill.Discount = 0m;
                     order.Bill.Total = total;
 
-                    table.Status = TableStatus.Occupied;
+                    if (table != null) table.Status = TableStatus.Occupied;
+                    if (room != null) room.Status = RoomStatus.Occupied;
 
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
-                    _logService.LogInfo(string.Format("Order saved for table {0} with {1} items", table.TableNumber, orderItems.Count));
+                    _logService.LogInfo(string.Format("Order saved for table {0} with {1} items", table?.TableNumber ?? room.RoomNumber, orderItems.Count));
                     return order;
                 }
             }
@@ -229,7 +309,7 @@ namespace ServeX.Services
             }
         }
 
-        public async Task<Order> SaveParcelOrderAsync(int? orderId, string customerName, IEnumerable<OrderSaveItem> items)
+        public async Task<Order> SaveParcelOrderAsync(int? orderId, string customerName, IEnumerable<OrderSaveItem> items, int? expectedRevision = null)
         {
             var orderItems = items?
                 .Where(item => item.Quantity > 0)
@@ -260,9 +340,10 @@ namespace ServeX.Services
                                 item.Type == OrderType.Parcel &&
                                 item.Status != OrderStatus.Billed &&
                                 item.Status != OrderStatus.Paid &&
-                                item.Status != OrderStatus.Cancelled);
-                        if (order == null)
-                            throw new InvalidOperationException("The parcel order is no longer editable. Refresh before starting a new order.");
+                                item.Status != OrderStatus.Cancelled &&
+                            item.Status != OrderStatus.Merged);
+                        if (order == null || (expectedRevision.HasValue && order.Revision != expectedRevision))
+                            throw new InvalidOperationException("The parcel order changed. Reopen it before saving.");
                     }
 
                     if (order == null)
@@ -283,25 +364,12 @@ namespace ServeX.Services
                         order.CustomerName = normalizedCustomerName;
                     }
 
-                    if (order.Items.Any())
-                    {
-                        context.OrderItems.RemoveRange(order.Items);
-                    }
-
-                    order.Items = new List<OrderItem>();
-                    foreach (var item in orderItems)
-                    {
-                        order.Items.Add(new OrderItem
-                        {
-                            MenuItemId = item.MenuItemId,
-                            Quantity = item.Quantity,
-                            Price = OrderPricing.Round(item.Price)
-                        });
-                    }
+                    await ApplyOrderItemsAsync(context, order, orderItems);
+                    order.Revision++;
 
                     var taxPercentage = await OrderPricing.GetTaxPercentageAsync(context);
-                    var subtotal = OrderPricing.Round(orderItems.Sum(item => item.Price * item.Quantity));
-                    var tax = OrderPricing.Tax(subtotal, taxPercentage);
+                    var subtotal = OrderPricing.Round(order.Items.Sum(item => item.Price * item.Quantity));
+                    var tax = OrderPricing.Tax(order.Items.Where(item => !item.TaxExempt).Sum(item => item.Price * item.Quantity), taxPercentage);
                     var total = subtotal + tax;
 
                     if (order.Bill == null)
@@ -324,6 +392,58 @@ namespace ServeX.Services
             {
                 _logService.LogError("Parcel order save failed", exception);
                 throw;
+            }
+        }
+
+        private static async Task ApplyOrderItemsAsync(ServeXDbContext context, Order order, IEnumerable<OrderSaveItem> requested)
+        {
+            var quantities = requested.GroupBy(item => item.MenuItemId)
+                .ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
+            var ids = quantities.Keys.ToArray();
+            var menu = await context.MenuItems.Where(item => ids.Contains(item.Id)).ToDictionaryAsync(item => item.Id);
+            var oldItems = order.Items.ToLookup(item => item.MenuItemId);
+
+            foreach (var (menuId, quantity) in quantities)
+            {
+                if (!menu.TryGetValue(menuId, out var catalog))
+                    throw new InvalidOperationException("A menu item no longer exists. Refresh the order.");
+                if ((!catalog.IsAvailable || catalog.IsArchived) && quantity > oldItems[menuId].Sum(item => item.Quantity))
+                    throw new InvalidOperationException("An unavailable menu item cannot be added or increased.");
+            }
+
+            var removed = order.Items.Where(item => !quantities.ContainsKey(item.MenuItemId)).ToArray();
+            foreach (var item in removed)
+            {
+                order.Items.Remove(item);
+                context.OrderItems.Remove(item);
+            }
+
+            foreach (var (menuId, quantity) in quantities)
+            {
+                var catalog = menu[menuId];
+                var existing = oldItems[menuId].ToArray();
+                var line = existing.FirstOrDefault();
+                if (line == null)
+                {
+                    line = new OrderItem { MenuItemId = menuId };
+                    order.Items.Add(line);
+                }
+                else
+                {
+                    foreach (var duplicate in existing.Skip(1))
+                    {
+                        order.Items.Remove(duplicate);
+                        context.OrderItems.Remove(duplicate);
+                    }
+                }
+
+                line.Quantity = quantity;
+                line.KitchenSentQuantity = Math.Min(quantity, line.KitchenSentQuantity);
+                if (catalog.IsAvailable && !catalog.IsArchived)
+                {
+                    line.Price = OrderPricing.Round(catalog.Price);
+                    line.TaxExempt = catalog.TaxExempt;
+                }
             }
         }
 

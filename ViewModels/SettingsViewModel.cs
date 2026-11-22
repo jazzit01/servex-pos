@@ -23,6 +23,8 @@ namespace ServeX.ViewModels
         private readonly AsyncRelayCommand _backupDatabaseCommand;
         private readonly LogService _logService;
         private readonly DialogService _dialogs;
+        private readonly ApplicationAccessService _access;
+        private readonly BusinessArchiveService _archives;
         private bool _isBusy;
         private bool _isLoaded;
         private string _restaurantName = string.Empty;
@@ -36,18 +38,70 @@ namespace ServeX.ViewModels
             ApplicationSettingsService applicationSettingsService,
             DatabaseBackupService databaseBackupService,
             SaveFileDialogService saveFileDialogService,
-            ServeX.Infrastructure.Persistence.DatabaseLocation location, LogService logService, DialogService dialogs)
+            ServeX.Infrastructure.Persistence.DatabaseLocation location, LogService logService, DialogService dialogs, ApplicationAccessService access, BusinessArchiveService archives)
         {
             _logService = logService;
             _dialogs = dialogs;
+            _access = access;
+            _archives = archives;
             _applicationSettingsService = applicationSettingsService ?? throw new ArgumentNullException(nameof(applicationSettingsService));
             _databaseBackupService = databaseBackupService ?? throw new ArgumentNullException(nameof(databaseBackupService));
             _saveFileDialogService = saveFileDialogService ?? throw new ArgumentNullException(nameof(saveFileDialogService));
             _location = location;
             _saveSettingsCommand = new AsyncRelayCommand(async _ => await SaveSettingsAsync(), _ => !IsBusy);
             _backupDatabaseCommand = new AsyncRelayCommand(async _ => await BackupDatabaseAsync(), _ => !IsBusy);
+            ExportDataCommand = new AsyncRelayCommand(_ => SaveArchiveAsync(support: false), _ => !IsBusy);
+            SupportBundleCommand = new AsyncRelayCommand(_ => SaveArchiveAsync(support: true), _ => !IsBusy);
             RestoreDatabaseCommand = new AsyncRelayCommand(_ => RestoreDatabaseAsync(), _ => !IsBusy);
         }
+
+        public int CurrentUserId { get; set; }
+
+        public UserRole[] StaffRoles { get; } = Enum.GetValues<UserRole>();
+
+        public UserRole NewStaffRole { get; set; } = UserRole.Cashier;
+
+        public string NewStaffName { get; set; }
+
+        public Task AddStaffAsync(string password) => ExecuteBusyActionAsync(async () =>
+        {
+            await _access.CreateStaffAsync(NewStaffName, password, NewStaffRole);
+            SetStatus("Staff account created.", false);
+        }, "Could not create the account. Check the username is unique and the password has 8 to 128 characters.");
+
+        public Task ChangePasswordAsync(string currentPassword, string password, string confirmation)
+        {
+            if (IsBusy) return Task.CompletedTask;
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 8 || password.Length > 128)
+            {
+                SetStatus("Use a password between 8 and 128 characters.", true);
+                return Task.CompletedTask;
+            }
+
+            if (password != confirmation)
+            {
+                SetStatus("The two new passwords must match.", true);
+                return Task.CompletedTask;
+            }
+
+            return ExecuteBusyActionAsync(async () =>
+            {
+                var changed = await _access.ChangePasswordAsync(CurrentUserId, currentPassword, password);
+                SetStatus(changed ? "Password updated." : "The current password is incorrect.", !changed);
+            }, "The password could not be updated.");
+        }
+
+        public string[] CurrencyLocales => ReceiptProfile.Locales;
+
+        public int[] PaperWidths { get; } = new[] { 58, 80 };
+
+        public string Locale { get; set; } = "en-IN";
+
+        public string TaxName { get; set; } = "Tax";
+
+        public string TaxNumber { get; set; }
+
+        public int ReceiptWidth { get; set; } = 80;
 
         public string AppVersion => typeof(SettingsViewModel).Assembly.GetName().Version.ToString(3);
 
@@ -58,6 +112,10 @@ namespace ServeX.ViewModels
         public AsyncRelayCommand SaveSettingsCommand => _saveSettingsCommand;
 
         public AsyncRelayCommand BackupDatabaseCommand => _backupDatabaseCommand;
+
+        public AsyncRelayCommand ExportDataCommand { get; }
+
+        public AsyncRelayCommand SupportBundleCommand { get; }
 
         public AsyncRelayCommand RestoreDatabaseCommand { get; }
 
@@ -116,6 +174,8 @@ namespace ServeX.ViewModels
                     _saveSettingsCommand.RaiseCanExecuteChanged();
                     _backupDatabaseCommand.RaiseCanExecuteChanged();
                     RestoreDatabaseCommand.RaiseCanExecuteChanged();
+                    ExportDataCommand.RaiseCanExecuteChanged();
+                    SupportBundleCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -250,7 +310,7 @@ namespace ServeX.ViewModels
                 var updatedSettings = await _applicationSettingsService.UpdateSettingsAsync(
                     RestaurantName,
                     Phone,
-                    taxPercentage, Address);
+                    taxPercentage, Address, new ReceiptProfile(Locale, TaxName, TaxNumber, ReceiptWidth));
 
                 ApplySettings(updatedSettings);
                 RestaurantNameSaved?.Invoke(updatedSettings.RestaurantName);
@@ -291,6 +351,25 @@ namespace ServeX.ViewModels
                 }
                 SetStatus($"Backup saved to {backupPath} ({size:N0} bytes).", false);
             }, "The database backup could not be created.");
+        }
+
+        private async Task SaveArchiveAsync(bool support)
+        {
+            if (support && !_dialogs.Confirm("Create support bundle?",
+                "This ZIP contains a database copy and logs, including business and account data. Share it only with someone you trust."))
+                return;
+
+            var title = support ? "Create support bundle" : "Export orders, bills, and menu";
+            var prefix = support ? "servex-support" : "servex-export";
+            var path = _saveFileDialogService.PickZipPath(title, $"{prefix}-{DateTime.Now:yyyyMMdd-HHmmss}.zip");
+            if (path == null) return;
+
+            await ExecuteBusyActionAsync(async () =>
+            {
+                if (support) await _archives.CreateSupportBundleAsync(path);
+                else await _archives.ExportCsvAsync(path);
+                SetStatus($"Archive saved to {path}.", false);
+            }, "Could not save the archive. Choose a new file and try again.");
         }
 
         private async Task RestoreDatabaseAsync()
@@ -345,6 +424,14 @@ namespace ServeX.ViewModels
             var safeSettings = settings ?? CreateDefaultSettings();
 
             RestaurantName = safeSettings.RestaurantName ?? string.Empty;
+            Locale = safeSettings.Locale;
+            TaxName = safeSettings.TaxName;
+            TaxNumber = safeSettings.TaxNumber;
+            ReceiptWidth = safeSettings.ReceiptWidth;
+            OnPropertyChanged(nameof(Locale));
+            OnPropertyChanged(nameof(TaxName));
+            OnPropertyChanged(nameof(TaxNumber));
+            OnPropertyChanged(nameof(ReceiptWidth));
             Address = safeSettings.Address ?? string.Empty;
             Phone = safeSettings.Phone ?? string.Empty;
             TaxPercentageInput = safeSettings.TaxPercentage.ToString("0.##", CultureInfo.CurrentCulture);

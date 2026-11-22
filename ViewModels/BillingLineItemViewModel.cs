@@ -2,6 +2,8 @@ namespace ServeX.ViewModels
 {
     public class BillingLineItemViewModel : ViewModelBase
     {
+        public bool TaxExempt { get; set; }
+
         public string Name { get; set; }
 
         public int Quantity { get; set; }

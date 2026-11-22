@@ -1,0 +1,66 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ServeX.Views.HistoryView">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20">
+            <WrapPanel Margin="0,0,0,12">
+                <StackPanel Margin="0,0,12,8">
+                    <TextBlock Text="From"/>
+                    <DatePicker SelectedDate="{Binding Start}" AutomationProperties.Name="From date" Width="135"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,12,8">
+                    <TextBlock Text="Through"/>
+                    <DatePicker SelectedDate="{Binding End}" AutomationProperties.Name="Through date" Width="135"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,12,8">
+                    <TextBlock Text="Order or reference"/>
+                    <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Order or reference" Width="170" Style="{StaticResource FormTextBoxStyle}"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,12,8">
+                    <TextBlock Text="Type"/>
+                    <ComboBox ItemsSource="{Binding Types}" SelectedItem="{Binding Type}" AutomationProperties.Name="Order type" MinWidth="92"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,12,8">
+                    <TextBlock Text="Status"/>
+                    <ComboBox ItemsSource="{Binding Statuses}" SelectedItem="{Binding Status}" AutomationProperties.Name="Order status" MinWidth="92"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,12,8">
+                    <TextBlock Text="Payment"/>
+                    <ComboBox ItemsSource="{Binding Methods}" SelectedItem="{Binding Method}" AutomationProperties.Name="Payment method" MinWidth="92"/>
+                </StackPanel>
+                <Button Content="Apply filters" Command="{Binding RefreshCommand}" Style="{StaticResource PrimaryActionButtonStyle}" VerticalAlignment="Center"/>
+            </WrapPanel>
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+            <DataGrid ItemsSource="{Binding Orders}" SelectedItem="{Binding Selected}" Style="{StaticResource OperationalGridStyle}"
+                      MaxHeight="380" MinHeight="110" AutomationProperties.Name="Order history" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Order" Binding="{Binding Id}" Width="70"/>
+                    <DataGridTextColumn Header="Created (local)" Binding="{Binding CreatedLocal, StringFormat={}{0:dd MMM yyyy HH:mm}}" Width="155"/>
+                    <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="*"/>
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
+                    <DataGridTextColumn Header="Payment" Binding="{Binding PaymentDisplay}" Width="100"/>
+                    <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2}" Width="100"/>
+                </DataGrid.Columns>
+            </DataGrid>
+            <Button Content="View order or reprint receipt" Command="{Binding OpenOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}" HorizontalAlignment="Left" Margin="0,8,0,20"/>
+            <Border Style="{StaticResource SurfaceCardStyle}" Padding="16">
+                <StackPanel>
+                    <TextBlock Text="Sales report" Style="{StaticResource SectionTitleTextStyle}"/>
+                    <TextBlock Text="Reports use the selected date range. Item and category amounts are before tax and discount." TextWrapping="Wrap" Margin="0,8,0,8"/>
+                    <WrapPanel Margin="0,0,0,8">
+                        <ComboBox ItemsSource="{Binding Groupings}" SelectedItem="{Binding Grouping}" AutomationProperties.Name="Report grouping" MinWidth="140" Margin="0,0,8,0"/>
+                        <Button Content="Refresh report" Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,0"/>
+                        <Button Content="Print report" Command="{Binding PrintReportCommand}" Style="{StaticResource SecondaryActionButtonStyle}"/>
+                    </WrapPanel>
+                    <DataGrid ItemsSource="{Binding Report}" Style="{StaticResource OperationalGridStyle}" MaxHeight="350" MinHeight="110"
+                              IsReadOnly="True" AutomationProperties.Name="Sales report">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Metric" Binding="{Binding Label}" Width="*"/>
+                            <DataGridTextColumn Header="Count" Binding="{Binding Units}" Width="100"/>
+                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=C2}" Width="130"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

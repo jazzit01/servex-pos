@@ -1,4 +1,4 @@
 namespace ServeX.Presentation.Navigation
 {
-    public enum WorkspaceDestination { Dashboard, Menu, Tables, Parcel, Settings }
+    public enum WorkspaceDestination { Dashboard, Menu, Tables, Parcel, Settings, History, Rooms }
 }

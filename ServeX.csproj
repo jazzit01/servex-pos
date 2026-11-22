@@ -5,7 +5,8 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>ServeX</RootNamespace>
     <AssemblyName>ServeX</AssemblyName>
-    <Version>0.2.0</Version>
+    <ApplicationIcon>Assets/ServeX.ico</ApplicationIcon>
+    <Version>0.3.0</Version>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>

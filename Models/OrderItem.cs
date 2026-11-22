@@ -1,3 +1,5 @@
+#nullable enable
+
 namespace ServeX.Models
 {
     public class OrderItem
@@ -10,10 +12,14 @@ namespace ServeX.Models
 
         public int Quantity { get; set; }
 
+        public int KitchenSentQuantity { get; set; }
+
+        public bool TaxExempt { get; set; }
+
         public decimal Price { get; set; }
 
-        public Order Order { get; set; }
+        public Order? Order { get; set; }
 
-        public MenuItem MenuItem { get; set; }
+        public MenuItem? MenuItem { get; set; }
     }
 }
