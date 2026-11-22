@@ -8,6 +8,10 @@ namespace ServeX.Services
     {
         public int OrderId { get; set; }
 
+        public string RestaurantName { get; set; }
+        public string RestaurantAddress { get; set; }
+        public string RestaurantPhone { get; set; }
+
         public string TableNumber { get; set; }
 
         public PaymentMethod PaymentMethod { get; set; }

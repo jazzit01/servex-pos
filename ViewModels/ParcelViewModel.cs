@@ -51,6 +51,7 @@ namespace ServeX.ViewModels
             DecreaseQuantityCommand = new RelayCommand(item => DecreaseQuantity(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             RemoveItemCommand = new RelayCommand(item => RemoveItem(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             SaveOrderCommand = new AsyncRelayCommand(async _ => await SaveOrderAsync(), _ => CanSaveOrder);
+            CancelOrderCommand = new AsyncRelayCommand(_ => CancelOrderAsync(), _ => !IsBusy && _orderId.HasValue);
             GenerateBillCommand = new AsyncRelayCommand(async _ => await GenerateBillAsync(), _ => CanGenerateBill);
             NewParcelCommand = new RelayCommand(_ => StartNewParcel(), _ => !IsBusy);
         }
@@ -72,6 +73,8 @@ namespace ServeX.ViewModels
         public RelayCommand RemoveItemCommand { get; }
 
         public AsyncRelayCommand SaveOrderCommand { get; }
+
+        public AsyncRelayCommand CancelOrderCommand { get; }
 
         public AsyncRelayCommand GenerateBillCommand { get; }
 
@@ -144,7 +147,7 @@ namespace ServeX.ViewModels
 
         public bool CanGenerateBill => !IsBusy && OrderItems.Count > 0;
 
-        public decimal Subtotal => decimal.Round(OrderItems.Sum(item => item.LineTotal), 2);
+        public decimal Subtotal => OrderPricing.Round(OrderItems.Sum(item => item.LineTotal));
 
         public decimal TaxPercentage
         {
@@ -161,7 +164,7 @@ namespace ServeX.ViewModels
 
         public string TaxLabel => string.Format("Tax ({0:0.##}%)", TaxPercentage);
 
-        public decimal Tax => decimal.Round(Subtotal * (TaxPercentage / 100m), 2);
+        public decimal Tax => OrderPricing.Tax(Subtotal, TaxPercentage);
 
         public decimal Total => Subtotal + Tax;
 
@@ -267,6 +270,20 @@ namespace ServeX.ViewModels
             NotifyTotalsChanged();
         }
 
+        private async Task CancelOrderAsync()
+        {
+            if (_orderId is not int orderId || !_dialogs.Confirm("Cancel order?",
+                $"Cancel order #{orderId}? The order will remain in the records, and unsaved changes will be discarded."))
+                return;
+
+            await ExecuteBusyActionAsync(async () =>
+            {
+                await _orderService.CancelOrderAsync(orderId);
+                ResetDraft(false);
+                SetStatus($"Order #{orderId} cancelled.", false);
+            }, "This order could not be cancelled. Reopen it to check its current status.");
+        }
+
         private async Task SaveOrderAsync()
         {
             await PersistOrderAsync(true);
@@ -285,7 +302,7 @@ namespace ServeX.ViewModels
                 await _billingWorkspaceService.ShowAsync(order.Id);
 
                 var refreshedOrder = await _orderService.GetOrderAsync(order.Id);
-                if (refreshedOrder != null && refreshedOrder.Status == OrderStatus.Billed)
+                if (refreshedOrder?.Bill?.PaidAt != null || refreshedOrder?.Status == OrderStatus.Paid)
                 {
                     ResetDraft(false);
                     SetStatus("Parcel order billed successfully. Ready for the next parcel.", false);
@@ -366,6 +383,7 @@ namespace ServeX.ViewModels
             RemoveItemCommand.RaiseCanExecuteChanged();
             SaveOrderCommand.RaiseCanExecuteChanged();
             GenerateBillCommand.RaiseCanExecuteChanged();
+            CancelOrderCommand.RaiseCanExecuteChanged();
             NewParcelCommand.RaiseCanExecuteChanged();
         }
 

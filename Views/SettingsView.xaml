@@ -13,6 +13,8 @@
                         <HeaderedContentControl Header="Restaurant profile" Content="Update the details used throughout daily service." Style="{StaticResource PageHeaderStyle}"/>
                         <TextBlock Text="Restaurant name" Style="{StaticResource FieldLabelStyle}"/>
                         <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Restaurant name" Text="{Binding RestaurantName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <TextBlock Text="Address" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Restaurant address" Text="{Binding Address, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="58"/>
                         <TextBlock Text="Phone" Style="{StaticResource FieldLabelStyle}"/>
                         <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Phone" Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
                         <TextBlock Text="Tax percentage" Style="{StaticResource FieldLabelStyle}"/>
@@ -35,6 +37,7 @@
                     <Border Padding="20" Style="{StaticResource SoftPanelStyle}" Margin="0,16,0,0">
                         <StackPanel>
                             <TextBlock Text="Recovery and storage" Style="{StaticResource SectionTitleTextStyle}"/>
+                            <TextBlock Text="{Binding AppVersion, StringFormat=ServeX version {0}}" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0"/>
                             <TextBlock Text="ServeX restarts to apply a backup and keeps a copy of the current database." Margin="0,12,0,0" Foreground="{StaticResource MutedTextBrush}"/>
                             <Button Content="Restore from backup…" Command="{Binding RestoreDatabaseCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,16,0,0"/>
                         </StackPanel>

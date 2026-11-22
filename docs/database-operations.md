@@ -5,11 +5,12 @@
 1. `SERVEX_DATABASE_PATH`, when explicitly configured, must be an absolute path to
    an **existing** file. Invalid values fail closed. This is an operator override;
    keep it set for each launch until the permanent path pin is updated offline.
-2. Otherwise the per-user `database-location.txt` pin is authoritative. If missing,
-   startup stops. If a different legacy database is also present, selection is
-   ambiguous and startup stops.
-3. On first selection, an existing executable-relative `Data/servex.db` is retained.
-   If both legacy and Local App Data files exist, selection is ambiguous.
+2. Otherwise the per-user `database-location.txt` pin is authoritative. If the
+   pinned database is missing, startup stops. The pin records the legacy source
+   after relocation so the original can remain available for recovery.
+3. An executable-relative `Data/servex.db` is copied to Local App Data using
+   SQLite’s verified backup operation before the pin is updated. If an unrelated
+   local database also exists, startup stops for operator selection.
 4. Without either existing database, fresh storage is created under
    `%LOCALAPPDATA%\ServeX\Data\servex.db`, then pinned. A zero-length reserved file
    permits retry if first-launch migration fails. It is not a replacement for any
@@ -18,12 +19,13 @@
 The DI composition root resolves once and every runtime service uses that same
 path. The parameterless/design-time context uses the same policy. Contexts use
 SQLite connection-string builders, including for paths containing semicolons.
-The Settings screen displays the active database path. Logs are stored separately
-at `%LOCALAPPDATA%\ServeX\Logs\servex.log`.
+The Settings screen displays the active database path. Runtime logs are stored
+beside that database.
 
-No automatic relocation is attempted: existing SQLite WAL/SHM files, Windows
-permissions and multiple installations make a blind file copy unsafe. If the old
-folder is read-only, startup reports failure; it never falls back to an empty DB.
+Close older ServeX installations before starting the upgraded version. The
+original legacy database remains available for recovery while the upgraded app
+writes to the pinned copy. If verification or pinning fails, the original
+database remains in place and startup reports the failure.
 A missing pin itself cannot identify a database under another Windows profile or
 another installation directory. Operators must inventory those locations before
 using a new profile/install folder. Do not interpret a fresh setup screen as proof

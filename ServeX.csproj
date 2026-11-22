@@ -5,7 +5,11 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>ServeX</RootNamespace>
     <AssemblyName>ServeX</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Version>0.2.0</Version>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <ImplicitUsings>disable</ImplicitUsings>
     <DefaultItemExcludes>$(DefaultItemExcludes);Tests/**;.codex-build/**;.dotnet/**;.nuget/**;bin/**;obj/**;artifacts/**</DefaultItemExcludes>
   </PropertyGroup>
