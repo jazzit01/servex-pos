@@ -22,6 +22,7 @@ namespace ServeX.ViewModels
         private readonly AsyncRelayCommand _saveSettingsCommand;
         private readonly AsyncRelayCommand _backupDatabaseCommand;
         private readonly LogService _logService;
+        private readonly DialogService _dialogs;
         private bool _isBusy;
         private bool _isLoaded;
         private string _restaurantName = string.Empty;
@@ -34,15 +35,17 @@ namespace ServeX.ViewModels
             ApplicationSettingsService applicationSettingsService,
             DatabaseBackupService databaseBackupService,
             SaveFileDialogService saveFileDialogService,
-            ServeX.Infrastructure.Persistence.DatabaseLocation location, LogService logService)
+            ServeX.Infrastructure.Persistence.DatabaseLocation location, LogService logService, DialogService dialogs)
         {
             _logService = logService;
+            _dialogs = dialogs;
             _applicationSettingsService = applicationSettingsService ?? throw new ArgumentNullException(nameof(applicationSettingsService));
             _databaseBackupService = databaseBackupService ?? throw new ArgumentNullException(nameof(databaseBackupService));
             _saveFileDialogService = saveFileDialogService ?? throw new ArgumentNullException(nameof(saveFileDialogService));
             _location = location;
             _saveSettingsCommand = new AsyncRelayCommand(async _ => await SaveSettingsAsync(), _ => !IsBusy);
             _backupDatabaseCommand = new AsyncRelayCommand(async _ => await BackupDatabaseAsync(), _ => !IsBusy);
+            RestoreDatabaseCommand = new AsyncRelayCommand(_ => RestoreDatabaseAsync(), _ => !IsBusy);
         }
 
         public string DatabasePath => _location.FilePath;
@@ -52,6 +55,8 @@ namespace ServeX.ViewModels
         public AsyncRelayCommand SaveSettingsCommand => _saveSettingsCommand;
 
         public AsyncRelayCommand BackupDatabaseCommand => _backupDatabaseCommand;
+
+        public AsyncRelayCommand RestoreDatabaseCommand { get; }
 
         public string RestaurantName
         {
@@ -98,6 +103,7 @@ namespace ServeX.ViewModels
                 {
                     _saveSettingsCommand.RaiseCanExecuteChanged();
                     _backupDatabaseCommand.RaiseCanExecuteChanged();
+                    RestoreDatabaseCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -259,6 +265,29 @@ namespace ServeX.ViewModels
                 var backupPath = await _databaseBackupService.BackupAsync(destinationFilePath);
                 SetStatus("Backup created successfully at " + backupPath, false);
             }, "The database backup could not be created.");
+        }
+
+        private async Task RestoreDatabaseAsync()
+        {
+            var sourcePath = _saveFileDialogService.PickDatabaseRestoreSource();
+            if (sourcePath == null || !_dialogs.Confirm("Restore database?",
+                "ServeX will restart and restore the selected backup. Orders and settings saved after that backup will be absent from the restored database. A copy of the current database will be kept."))
+                return;
+
+            await ExecuteBusyActionAsync(async () =>
+            {
+                await _databaseBackupService.StageRestoreAsync(sourcePath);
+                try
+                {
+                    ((App)System.Windows.Application.Current).RestartAfterRestore();
+                }
+                catch (Exception exception)
+                {
+                    _logService.LogError("ServeX could not restart after staging a restore", exception);
+                    _dialogs.ShowInformation("Backup ready", "ServeX will close. Open it again to apply the staged backup.");
+                    System.Windows.Application.Current.Shutdown();
+                }
+            }, "The backup could not be prepared. Choose a valid ServeX backup and try again.");
         }
 
         private async Task ExecuteBusyActionAsync(Func<Task> action, string fallbackMessage)

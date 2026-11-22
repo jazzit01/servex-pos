@@ -35,7 +35,8 @@
                     <Border Padding="20" Style="{StaticResource SoftPanelStyle}" Margin="0,16,0,0">
                         <StackPanel>
                             <TextBlock Text="Recovery and storage" Style="{StaticResource SectionTitleTextStyle}"/>
-                            <TextBlock Text="Restore only while ServeX is closed, to a new file. Keep the original database and confirm the restored records before taking new orders." Margin="0,12,0,0" Foreground="{StaticResource MutedTextBrush}"/>
+                            <TextBlock Text="ServeX restarts to apply a backup and keeps a copy of the current database." Margin="0,12,0,0" Foreground="{StaticResource MutedTextBrush}"/>
+                            <Button Content="Restore from backup…" Command="{Binding RestoreDatabaseCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,16,0,0"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
