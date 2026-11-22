@@ -7,6 +7,17 @@ namespace ServeX.Services
     [SupportedOSPlatform("windows")]
     public class SaveFileDialogService
     {
+        public string PickDatabaseRestoreSource()
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Choose a ServeX backup",
+                Filter = "SQLite Database (*.db)|*.db|All Files (*.*)|*.*",
+                CheckFileExists = true
+            };
+            return dialog.ShowDialog() == true ? dialog.FileName : null;
+        }
+
         public string PickDatabaseBackupPath(string suggestedFileName)
         {
             var dialog = new SaveFileDialog

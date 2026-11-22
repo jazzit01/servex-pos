@@ -8,6 +8,29 @@ namespace ServeX.Tests;
 
 public class OrderBillingTests
 {
+    [Fact]
+    public async Task MenuRejectsDuplicateNamesInTheSameCategoryAndPricesThatRoundToZero()
+    {
+        using var db = new TestDatabase();
+        await db.Initialize();
+        var menu = db.Services.GetRequiredService<MenuService>();
+        var first = await menu.AddMenuItemAsync(new MenuItem { Name = " Café ", Category = " Drinks ", Price = 15 });
+        var second = await menu.AddMenuItemAsync(new MenuItem { Name = "CAFÉ", Category = "Desserts", Price = 20 });
+
+        await Assert.ThrowsAsync<MenuValidationException>(() => menu.AddMenuItemAsync(
+            new MenuItem { Name = "café", Category = "DRINKS", Price = 15 }));
+        second.Category = "DRINKS";
+        await Assert.ThrowsAsync<MenuValidationException>(() => menu.UpdateMenuItemAsync(second));
+        first.Price = 0.001m;
+        await Assert.ThrowsAsync<MenuValidationException>(() => menu.UpdateMenuItemAsync(first));
+
+        first.Price = 16;
+        await menu.UpdateMenuItemAsync(first);
+        var saved = await menu.GetMenuItemsAsync();
+        Assert.Equal(16m, saved.Single(item => item.Id == first.Id).Price);
+        Assert.Equal("Desserts", saved.Single(item => item.Id == second.Id).Category);
+    }
+
     [Theory]
     [InlineData(19.99, 2, 5, 39.98, 2.00, 41.98)]
     [InlineData(10.10, 1, 5, 10.10, 0.50, 10.60)]

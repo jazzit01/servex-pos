@@ -53,7 +53,7 @@ Table and menu screens work for adding and editing, but deletes are unsafe or un
 
 - [x] **Block deleting a table that has an open order.** The service refuses deletion for any table with order history.
 - [ ] **P1 – Archive menu items instead of failing to delete.** Items that were ever ordered cannot be deleted (foreign key is `Restrict`), and staff only see a generic error. Add an archived flag, hide archived items from ordering, and keep them in old bills.
-- [ ] **P1 – Menu validation.** Check for duplicate item names within a category, and a price above zero.
+- [x] **P1 – Menu validation.** Add and edit reject duplicate names within a category and prices that round to zero or less.
 - [ ] **P1 – Reserved tables.** `Reserved` can only be set by hand in the edit panel. Add a reserve and release action on the floor view, and block new orders on a reserved table unless confirmed.
 - [ ] **P2 – Rooms.** The model, seed rows and header count exist, but there is no Rooms screen, no room orders, and the dashboard prints "Room #id". Either build them (screen, room status, room orders, billing to room) or remove the model, seed rows and count.
 - [ ] **P2 – Category management.** Categories are free text on each item. Add a category list so spelling stays consistent.
@@ -86,10 +86,10 @@ Printing works through the Windows print dialog path, but the receipt does not c
 
 ## Backup, restore and data location
 
-Backup uses SQLite's own copy routine, which is safe while the app runs. Nothing exists yet to bring a backup back.
+Backup and restore use SQLite’s native copy operation. Restore stages a verified copy and applies it on restart before operations resume.
 
-- [ ] **P0 – Restore from backup.** Add a Restore action in Settings: pick a file, confirm, validate that it is a ServeX database, close open connections, replace the live file, and restart the app. Keep a copy of the replaced database first.
-- [ ] **P1 – Automatic backups.** Create a dated backup on every start or close and keep the last N, in a folder outside the install directory.
+- [x] **P0 – Restore from backup.** Settings stages a verified ServeX backup and restarts the app. Startup keeps a safety copy before replacing active data. The data operation is covered by SQLite tests. Windows file picker and restart still need a hands-on check.
+- [x] **P1 – Automatic backups.** Normal startup creates one backup per day in Local App Data and retains the seven most recent dated backups per database.
 - [ ] **P1 – Backup location and result.** Remember the last folder used, and show the saved path and file size after a successful backup.
 - [x] **P1 – Migration safety.** Startup creates an integrity-checked backup before applying pending migrations to an existing database.
 - [ ] **P2 – Export data.** Export orders, bills and menu to CSV or Excel for the accountant.

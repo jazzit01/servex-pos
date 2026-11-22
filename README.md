@@ -80,6 +80,11 @@ DB in `Backups`. A failed backup blocks migration. The historical empty table-ar
 default is repaired to `Indoor` after a backup; IDs, statuses and relationships stay
 intact. Startup preserves existing users and business records.
 
+Normal startup keeps the seven most recent daily backups per database under
+`%LOCALAPPDATA%\ServeX\AutomaticBackups`. In Settings, **Restore from backup** stages a verified copy and restarts ServeX.
+Startup saves the current database in its `Backups` folder before applying the
+restore. Check the restored orders and settings before resuming service.
+
 ## Tests and verification
 
 ```powershell

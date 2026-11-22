@@ -83,12 +83,28 @@ controls as the original DB, retain off-device copies and periodically exercise
 restore on isolated copies. Monitor free space; automatic pre-migration backups
 are not a complete scheduled backup/retention strategy.
 
+## Restore from Settings
+
+Choose **Settings → Restore from backup**, select a ServeX backup, and confirm
+the restart. ServeX validates the copy and prepares its schema before closing.
+At startup it puts a safety snapshot named `before-restore-*.db` in the active
+database’s `Backups` folder, then applies the staged copy. Review restored orders,
+settings, and balances before entering new sales.
+
+If startup cannot finish, keep the safety snapshot and the staged
+`*.restore-pending.db` file for recovery. The app reports the error and offers a
+retry before opening any workspace.
+
+Normal startup also keeps the seven most recent daily snapshots per database
+under `%LOCALAPPDATA%\ServeX\AutomaticBackups`. Retention applies only to these
+automatic files.
+
 ## Offline restore (never overwrites live data)
 
 Close every ServeX process first. Preserve the current database directory intact.
 `DatabaseBackupService.RestoreToNewFileAsync(backupPath, newDatabasePath)` provides
 an operator/tooling API for integrity-checked restore to a **new** path. It is
-covered by temporary-database tests, and no restore button is exposed in the POS.
+covered by temporary-database tests. Use this procedure when normal startup is unavailable or when you need to validate a copy without replacing the active database.
 
 For an operator without a custom tool, Settings-generated backups are standalone
 SQLite files: copy the backup to a new filename while ServeX is closed, then use
