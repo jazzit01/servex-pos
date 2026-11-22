@@ -139,7 +139,7 @@ namespace ServeX.ViewModels
             }
         }
 
-        public decimal Subtotal => decimal.Round(Items.Sum(item => item.LineTotal), 2);
+        public decimal Subtotal => OrderPricing.Round(Items.Sum(item => item.LineTotal));
 
         public decimal TaxPercentage
         {
@@ -157,11 +157,11 @@ namespace ServeX.ViewModels
 
         public string TaxLabel => string.Format("Tax ({0:0.##}%)", TaxPercentage);
 
-        public decimal Tax => decimal.Round(Subtotal * (TaxPercentage / 100m), 2);
+        public decimal Tax => OrderPricing.Tax(Subtotal, TaxPercentage);
 
-        public decimal Discount => TryParseDiscount(DiscountInput, out var discount) ? decimal.Round(discount, 2) : 0m;
+        public decimal Discount => TryParseDiscount(DiscountInput, out var discount) ? OrderPricing.Round(discount) : 0m;
 
-        public decimal FinalTotal => Math.Max(0m, decimal.Round(Subtotal + Tax - Discount, 2));
+        public decimal FinalTotal => Math.Max(0m, OrderPricing.Round(Subtotal + Tax - Discount));
 
         public bool HasItems => Items.Count > 0;
 
@@ -209,7 +209,7 @@ namespace ServeX.ViewModels
                     SelectedPaymentMethod = orderData.Order.Bill.PaymentMethod.Value;
                 }
 
-                IsBilled = orderData.Order.Status == OrderStatus.Billed || orderData.Order.Bill?.PaidAt != null;
+                IsBilled = orderData.Order.Status is OrderStatus.Billed or OrderStatus.Paid || orderData.Order.Bill?.PaidAt != null;
                 _receiptData = IsBilled ? _billingService.CreateReceiptData(orderData) : null;
 
                 if (IsBilled)
@@ -301,8 +301,12 @@ namespace ServeX.ViewModels
 
             try
             {
-                _receiptPrintService.PrintReceipt(_receiptData);
-                SetStatus("Receipt sent to the printer.", false);
+                var sent = _receiptPrintService.PrintReceipt(_receiptData);
+                SetStatus(sent ? "Receipt sent to the printer." : "Printing cancelled.", false);
+            }
+            catch (ReceiptPrinterException exception)
+            {
+                SetStatus(exception.Message, true);
             }
             catch (Exception exception)
             {

@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using ServeX.Data;
@@ -23,22 +24,45 @@ public class StorageBackupTests
         Assert.False(File.Exists(location.FilePath));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LegacyDatabaseRelocatesAndPinsTheVerifiedCopy(bool oldPinExists)
+    {
+        using var db = new TestDatabase();
+        await db.SeedCustomerAsync();
+        var app = Path.Combine(db.DirectoryPath, "app");
+        var local = Path.Combine(db.DirectoryPath, "local");
+        var legacy = Path.Combine(app, "Data", "servex.db");
+        await db.Services.GetRequiredService<DatabaseBackupService>().BackupAsync(legacy);
+        if (oldPinExists)
+        {
+            Directory.CreateDirectory(Path.Combine(local, "ServeX"));
+            File.WriteAllText(Path.Combine(local, "ServeX", "database-location.txt"), legacy);
+        }
+
+        var migrated = DatabaseLocation.Resolve(app, local);
+        Assert.StartsWith(Path.Combine(local, "ServeX", "Data") + Path.DirectorySeparatorChar, migrated.FilePath);
+        Assert.True(File.Exists(legacy));
+        using (var check = new RuntimeDbContextFactory(migrated).CreateDbContext())
+            Assert.Equal("Customer Item", (await check.MenuItems.SingleAsync()).Name);
+        Assert.Equal(migrated.FilePath, DatabaseLocation.Resolve(app, local).FilePath);
+        Assert.Equal(migrated.FilePath, DatabaseLocation.Resolve(Path.Combine(db.DirectoryPath, "moved-app"), local).FilePath);
+    }
+
     [Fact]
-    public void LegacyDatabaseRemainsInPlaceAndPinPreventsSilentSwitchAfterMove()
+    public void CorruptLegacyDatabaseIsNeverReplacedOrPinned()
     {
         using var db = new TestDatabase();
         var app = Path.Combine(db.DirectoryPath, "app");
         var local = Path.Combine(db.DirectoryPath, "local");
         var legacy = Path.Combine(app, "Data", "servex.db");
         Directory.CreateDirectory(Path.GetDirectoryName(legacy));
-        var content = new byte[] { 1, 2, 3 };
-        File.WriteAllBytes(legacy, content);
-        Assert.Equal(legacy, DatabaseLocation.Resolve(app, local).FilePath);
-        Assert.Equal(content, File.ReadAllBytes(legacy));
-        Assert.Equal(legacy, DatabaseLocation.Resolve(Path.Combine(db.DirectoryPath, "moved-app"), local).FilePath);
-        File.Move(legacy, legacy + ".moved");
-        Assert.Throws<InvalidOperationException>(() => DatabaseLocation.Resolve(app, local));
-        Assert.False(File.Exists(Path.Combine(local, "ServeX", "Data", "servex.db")));
+        File.WriteAllText(legacy, "damaged legacy database");
+
+        Assert.ThrowsAny<Exception>(() => DatabaseLocation.Resolve(app, local));
+        Assert.False(File.Exists(Path.Combine(local, "ServeX", "database-location.txt")));
+        Assert.Equal("damaged legacy database", File.ReadAllText(legacy));
     }
 
     [Fact]
@@ -76,8 +100,83 @@ public class StorageBackupTests
         Assert.Equal("Committed WAL item", (await check.MenuItems.SingleAsync()).Name);
         Assert.Equal("Customer Restaurant", (await check.Settings.SingleAsync()).RestaurantName);
         Assert.Single(await check.Users.ToListAsync());
-        Assert.Equal(5, (await check.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(await context.Database.GetAppliedMigrationsAsync(), await check.Database.GetAppliedMigrationsAsync());
         Assert.True(File.Exists(db.Location.FilePath));
+    }
+
+    [Fact]
+    public async Task StagedRestoreLeavesLiveDataUntilStartupAndPreservesThePreviousDatabase()
+    {
+        using var db = new TestDatabase();
+        await db.SeedCustomerAsync();
+        var service = db.Services.GetRequiredService<DatabaseBackupService>();
+        var backup = await service.BackupAsync(Path.Combine(db.DirectoryPath, "original.db"));
+        using (var context = db.Context())
+        {
+            await context.Database.OpenConnectionAsync();
+            await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
+            await context.Database.ExecuteSqlRawAsync("UPDATE MenuItems SET Name='Most recent sale catalog';");
+        }
+
+        await service.StageRestoreAsync(backup);
+        using (var before = db.Context())
+            Assert.Equal("Most recent sale catalog", (await before.MenuItems.SingleAsync()).Name);
+
+        var safetyPath = await service.ApplyPendingRestoreAsync();
+        Assert.NotNull(safetyPath);
+        using (var after = db.Context())
+            Assert.Equal("Customer Item", (await after.MenuItems.SingleAsync()).Name);
+
+        using var saved = new RuntimeDbContextFactory(new DatabaseLocation(safetyPath)).CreateDbContext();
+        Assert.Equal("Most recent sale catalog", (await saved.MenuItems.SingleAsync()).Name);
+        Assert.Null(await service.ApplyPendingRestoreAsync());
+    }
+
+    [Fact]
+    public async Task DailyBackupsKeepSevenDatesAndPreserveUnmanagedFiles()
+    {
+        using var db = new TestDatabase();
+        await db.SeedCustomerAsync();
+        var service = db.Services.GetRequiredService<DatabaseBackupService>();
+        var root = Path.Combine(db.DirectoryPath, "automatic");
+        var firstDay = new DateOnly(2026, 11, 1);
+
+        await service.CreateDailyBackupAsync(root, firstDay);
+        var directory = Assert.Single(Directory.GetDirectories(root));
+        var manual = Path.Combine(directory, "manual.db");
+        await File.WriteAllTextAsync(manual, "unmanaged");
+        await service.CreateDailyBackupAsync(root, firstDay);
+        Assert.Single(Directory.GetFiles(directory, "daily-*.db"));
+
+        for (var day = 1; day <= 8; day++)
+            await service.CreateDailyBackupAsync(root, firstDay.AddDays(day));
+
+        Assert.Equal(7, Directory.GetFiles(directory, "daily-*.db").Length);
+        Assert.False(File.Exists(Path.Combine(directory, "daily-2026-11-02.db")));
+        Assert.True(File.Exists(Path.Combine(directory, "daily-2026-11-09.db")));
+        Assert.Equal("unmanaged", await File.ReadAllTextAsync(manual));
+    }
+
+    [Fact]
+    public async Task InvalidRestoreCannotReplaceOrQueueAgainstActiveDatabase()
+    {
+        using var db = new TestDatabase();
+        await db.SeedCustomerAsync();
+        var service = db.Services.GetRequiredService<DatabaseBackupService>();
+        var invalid = Path.Combine(db.DirectoryPath, "foreign.db");
+        using (var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = invalid }.ToString()))
+        {
+            await connection.OpenAsync();
+            using var command = connection.CreateCommand();
+            command.CommandText = "CREATE TABLE Unrelated(Id INTEGER);";
+            await command.ExecuteNonQueryAsync();
+        }
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => service.StageRestoreAsync(invalid));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.StageRestoreAsync(db.Location.FilePath));
+        Assert.Null(await service.ApplyPendingRestoreAsync());
+        using var check = db.Context();
+        Assert.Equal("Customer Item", (await check.MenuItems.SingleAsync()).Name);
     }
 
     [Fact]

@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Reflection;
 using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
@@ -33,7 +35,7 @@ namespace ServeX
             try
             {
                 _instanceMutex = new Mutex(false, @"Local\ServeX.POS");
-                try { _ownsMutex = _instanceMutex.WaitOne(0); }
+                try { _ownsMutex = _instanceMutex.WaitOne(e.Args.Contains("--restore-restart") ? TimeSpan.FromSeconds(20) : TimeSpan.Zero); }
                 catch (AbandonedMutexException) { _ownsMutex = true; }
                 if (!_ownsMutex)
                 {
@@ -59,6 +61,10 @@ namespace ServeX
                 {
                     try
                     {
+                        var recoveryCopy = await Task.Run(() => _services.GetRequiredService<DatabaseBackupService>().ApplyPendingRestoreAsync());
+                        if (recoveryCopy != null)
+                            _logService.LogInfo("Database restored. Previous database backup: " + recoveryCopy);
+
                         // SQLite's async API may perform synchronous I/O. Keep migration work off the UI dispatcher.
                         await Task.Run(() => _services.GetRequiredService<DatabaseInitializationService>().InitializeAsync());
                         break;
@@ -66,13 +72,30 @@ namespace ServeX
                     catch (Exception exception)
                     {
                         _logService.LogError("Database initialization failed", exception);
-                        if (MessageBox.Show("The database could not be initialized. No replacement database will be used.\n\nCheck disk space, folder access and database availability, then choose Yes to retry.\nDiagnostics: " + LogService.LogFilePath,
+                        if (MessageBox.Show("The database could not be initialized. No replacement database will be used.\n\nCheck disk space, folder access and database availability, then choose Yes to retry.\nDiagnostics: " + _logService.FilePath,
                             "ServeX Database", MessageBoxButton.YesNo, MessageBoxImage.Error) != MessageBoxResult.Yes)
                         { Shutdown(-1); return; }
                     }
                 }
                 if (demo)
+                {
                     await _services.GetRequiredService<DemoDataService>().SeedEmptyDemoAsync();
+                }
+                else
+                {
+                    try
+                    {
+                        var backupRoot = Path.Combine(local, "ServeX", "AutomaticBackups");
+                        await _services.GetRequiredService<DatabaseBackupService>()
+                            .CreateDailyBackupAsync(backupRoot, DateOnly.FromDateTime(DateTime.Now));
+                    }
+                    catch (Exception exception)
+                    {
+                        _logService.LogError("Daily backup failed", exception);
+                        MessageBox.Show("ServeX could not create today's automatic backup. Check free disk space and create a backup from Settings.",
+                            "Database Backup", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                }
 
                 var access = _services.GetRequiredService<ApplicationAccessService>();
                 var settingsService = _services.GetRequiredService<ApplicationSettingsService>();
@@ -111,17 +134,31 @@ namespace ServeX
             catch (Exception exception)
             {
                 _logService.LogError("ServeX startup failed", exception);
-                MessageBox.Show("ServeX could not start.\n\n" + exception.Message + "\n\nDiagnostics: " + LogService.LogFilePath,
+                MessageBox.Show("ServeX could not start. Check that the data folder is accessible, then try again.\n\nDiagnostics: " + _logService.FilePath,
                     "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown(-1);
             }
+        }
+
+        internal void RestartAfterRestore()
+        {
+            var processPath = Environment.ProcessPath
+                ?? throw new InvalidOperationException("The ServeX executable path could not be located.");
+            var start = new ProcessStartInfo(processPath) { UseShellExecute = false };
+            if (string.Equals(Path.GetFileNameWithoutExtension(processPath), "dotnet", StringComparison.OrdinalIgnoreCase))
+                start.ArgumentList.Add(Assembly.GetEntryAssembly().Location);
+            foreach (var argument in Environment.GetCommandLineArgs().Skip(1).Where(arg => arg != "--restore-restart"))
+                start.ArgumentList.Add(argument);
+            start.ArgumentList.Add("--restore-restart");
+            using var process = Process.Start(start) ?? throw new InvalidOperationException("ServeX could not restart.");
+            Shutdown();
         }
 
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             _logService.LogError("Unhandled UI exception; shutting down", e.Exception);
             e.Handled = true;
-            MessageBox.Show("An unexpected error occurred. ServeX will close to avoid further operations in an uncertain state.\nRestart ServeX and check your last operation before retrying.\n\nDiagnostics: " + LogService.LogFilePath,
+            MessageBox.Show("An unexpected error occurred. ServeX will close to avoid further operations in an uncertain state.\nRestart ServeX and check your last operation before retrying.\n\nDiagnostics: " + _logService.FilePath,
                 "ServeX Error", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(-1);
         }

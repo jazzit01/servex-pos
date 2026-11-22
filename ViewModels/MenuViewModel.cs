@@ -250,7 +250,7 @@ namespace ServeX.ViewModels
                             return "Enter a valid price.";
                         }
 
-                        if (price <= 0)
+                        if (decimal.Round(price, 2) <= 0)
                         {
                             return "Price must be greater than zero.";
                         }
@@ -399,6 +399,10 @@ namespace ServeX.ViewModels
             try
             {
                 await action();
+            }
+            catch (MenuValidationException exception)
+            {
+                SetStatus(exception.Message, true);
             }
             catch (DbUpdateException exception)
             {

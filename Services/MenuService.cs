@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +8,11 @@ using ServeX.Models;
 
 namespace ServeX.Services
 {
+    public sealed class MenuValidationException : InvalidOperationException
+    {
+        public MenuValidationException(string message) : base(message) { }
+    }
+
     public class MenuService
     {
         private readonly IDbContextFactory<ServeXDbContext> _contexts;
@@ -36,16 +42,19 @@ namespace ServeX.Services
             {
                 using (var context = _contexts.CreateDbContext())
                 {
+                    using var transaction = await context.Database.BeginTransactionAsync();
+                    var (name, category, price) = await ValidateAsync(context, menuItem, null);
                     var entity = new MenuItem
                     {
-                        Name = menuItem.Name,
-                        Category = menuItem.Category,
-                        Price = menuItem.Price,
+                        Name = name,
+                        Category = category,
+                        Price = price,
                         IsAvailable = menuItem.IsAvailable
                     };
 
                     context.MenuItems.Add(entity);
                     await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
                     _logService.LogInfo(string.Format("Menu item added: {0}", entity.Name));
                     return entity;
                 }
@@ -63,18 +72,21 @@ namespace ServeX.Services
             {
                 using (var context = _contexts.CreateDbContext())
                 {
+                    using var transaction = await context.Database.BeginTransactionAsync();
                     var entity = await context.MenuItems.FirstOrDefaultAsync(item => item.Id == menuItem.Id);
                     if (entity == null)
                     {
                         throw new System.InvalidOperationException("The menu item no longer exists. Refresh and try again.");
                     }
 
-                    entity.Name = menuItem.Name;
-                    entity.Category = menuItem.Category;
-                    entity.Price = menuItem.Price;
+                    var (name, category, price) = await ValidateAsync(context, menuItem, entity.Id);
+                    entity.Name = name;
+                    entity.Category = category;
+                    entity.Price = price;
                     entity.IsAvailable = menuItem.IsAvailable;
 
                     await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
                     _logService.LogInfo(string.Format("Menu item updated: {0}", entity.Name));
                 }
             }
@@ -83,6 +95,31 @@ namespace ServeX.Services
                 _logService.LogError("Menu item update failed", exception);
                 throw;
             }
+        }
+
+        private static async Task<(string Name, string Category, decimal Price)> ValidateAsync(
+            ServeXDbContext context, MenuItem item, int? currentId)
+        {
+            ArgumentNullException.ThrowIfNull(item);
+            var name = item.Name?.Trim() ?? string.Empty;
+            var category = item.Category?.Trim() ?? string.Empty;
+            var price = decimal.Round(item.Price, 2);
+
+            if (name.Length == 0 || name.Length > 100)
+                throw new MenuValidationException("Enter a menu item name from 1 to 100 characters.");
+            if (category.Length == 0 || category.Length > 50)
+                throw new MenuValidationException("Enter a category from 1 to 50 characters.");
+            if (price <= 0)
+                throw new MenuValidationException("Price must be greater than zero after rounding to two decimal places.");
+
+            var otherNames = await context.MenuItems.Where(other => other.Id != currentId)
+                .Select(other => new { other.Name, other.Category }).ToListAsync();
+            if (otherNames.Any(other =>
+                string.Equals(other.Name.Trim(), name, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(other.Category.Trim(), category, StringComparison.OrdinalIgnoreCase)))
+                throw new MenuValidationException("An item with this name already exists in this category.");
+
+            return (name, category, price);
         }
 
         public async Task DeleteMenuItemAsync(int id)

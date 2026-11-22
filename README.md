@@ -20,11 +20,8 @@ dotnet test Tests/ServeX.Tests.csproj -c Release --no-build --no-restore -p:Test
 dotnet run --project ServeX.csproj
 ```
 
-The repository historically tracks binaries and a SQLite database under `bin/`.
-These are retained for compatibility and data preservation. A normal Debug run from
-this checkout can detect that database as a legacy installation. For an isolated
-first-launch check, publish to a **new directory** and use a separate Windows test
-user/profile, or use the explicit Debug demo action:
+Build output and local databases are ignored. For an isolated first-launch check,
+use the explicit Debug demo action:
 
 ```powershell
 dotnet run --project ServeX.csproj -- --demo
@@ -67,18 +64,39 @@ regression risk without improving this phase. See [architectural decisions](docs
 ## Database safety
 
 Fresh installations use `%LOCALAPPDATA%\ServeX\Data\servex.db`. Existing
-`<executable directory>\Data\servex.db` installations stay at their original path.
+`<executable directory>\Data\servex.db` installations are copied into Local App Data
+on startup using SQLite's backup operation. ServeX verifies and pins the new
+copy while keeping the original as a recovery copy.
 The selected path is pinned in `%LOCALAPPDATA%\ServeX\database-location.txt`.
 A missing pinned file, conflicting legacy/local files, inaccessible storage, or
-corrupt database stops startup; no replacement database is selected. See the
+corrupt database stops startup; no replacement database is selected. Runtime logs
+are written beside the active database and rotate at 2 MiB with one retained
+copy. Failures before database selection use the Local App Data fallback log.
+See the
 [storage, migration and recovery procedure](docs/database-operations.md) before
 moving an installation or restoring a backup.
 
-Initialization applies the five existing **forward** EF migrations. Before changing
+Initialization applies the **forward** EF migrations. Before changing
 an existing schema it creates an integrity-checked backup beside the selected
 DB in `Backups`. A failed backup blocks migration. The historical empty table-area
 default is repaired to `Indoor` after a backup; IDs, statuses and relationships stay
-intact. No new schema migration, database reset, deletion or recreation is used.
+intact. Startup preserves existing users and business records.
+
+Normal startup keeps the seven most recent daily backups per database under
+`%LOCALAPPDATA%\ServeX\AutomaticBackups`. In Settings, **Restore from backup** stages a verified copy and restarts ServeX.
+Startup saves the current database in its `Backups` folder before applying the
+restore. Check the restored orders and settings before resuming service.
+
+## Build a Windows package
+
+Publish a self-contained x64 build to a fresh folder:
+
+```powershell
+dotnet publish ServeX.csproj -c Release -r win-x64 -p:PublishProfile=WindowsX64 -o artifacts/ServeX-win-x64
+```
+
+Copy the entire output folder to a Windows x64 PC and run `ServeX.exe`. The
+output includes the .NET desktop runtime. An installer is tracked separately.
 
 ## Tests and verification
 
@@ -121,9 +139,7 @@ inventory, actual commands/results and remaining gates. No Phase 3/4 work is inc
 
 - Windows interactive authentication, bindings, dialogs, all POS workflows and
   physical receipt printing require the documented manual acceptance pass.
-- Legacy passwords remain plaintext and license validation remains disabled.
-  These existing security issues need a separate compatible credential/license
-  migration before production deployment; Phase 1 does not hardcode new credentials.
+- Startup converts legacy passwords to salted PBKDF2 hashes. Pre-upgrade backups may contain the original credentials, so restrict access to those backups. The app does not ask for a license key.
 - Only one process per Windows session is guarded. Shared-database/multi-session
   or multi-terminal concurrency is unsupported; payment concurrency is not solved
   by this phase. Use a single Windows account/session per installation.
