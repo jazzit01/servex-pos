@@ -18,7 +18,7 @@ public class InitializationTests
         await db.Initialize();
         await db.Initialize();
         using var context = db.Context();
-        Assert.Equal(5, (await context.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(6, (await context.Database.GetAppliedMigrationsAsync()).Count());
         Assert.Empty(await context.MenuItems.ToListAsync());
         Assert.Empty(await context.Tables.ToListAsync());
         Assert.Empty(await context.Rooms.ToListAsync());
@@ -40,7 +40,12 @@ public class InitializationTests
         using var context = db.Context();
         Assert.Single(await context.MenuItems.ToListAsync());
         Assert.Equal("Customer Restaurant", (await context.Settings.SingleAsync()).RestaurantName);
-        Assert.Equal("test-only-password", (await context.Users.SingleAsync()).Password);
+        var account = await context.Users.SingleAsync();
+        Assert.True(account.IsPasswordHashed);
+        Assert.NotEqual("test-only-password", account.Password);
+        var access = db.Services.GetRequiredService<ApplicationAccessService>();
+        Assert.NotNull(await access.ValidateLoginAsync(account.Username, "test-only-password"));
+        Assert.Null(await access.ValidateLoginAsync(account.Username, account.Password));
         Assert.Equal(RoomStatus.Reserved, (await context.Rooms.SingleAsync()).Status);
         Assert.Equal(TableStatus.Occupied, (await context.Tables.SingleAsync()).Status);
         Assert.Equal(order.Id, (await context.Orders.SingleAsync()).Id);
@@ -89,7 +94,27 @@ public class InitializationTests
         Assert.Equal(TableArea.Indoor, table.Area);
         Assert.Equal(TableStatus.Occupied, table.Status);
         Assert.Equal("Original Table", table.TableNumber);
-        Assert.Equal(5, (await check.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(6, (await check.Database.GetAppliedMigrationsAsync()).Count());
+    }
+
+    [Fact]
+    public async Task PasswordUpgradeConvertsAccountsFromThePreviousSchemaOnce()
+    {
+        using var db = new TestDatabase();
+        using (var context = db.Context())
+        {
+            await context.GetService<IMigrator>().MigrateAsync("20260411062438_AddParcelSupport");
+            await context.Database.ExecuteSqlRawAsync("INSERT INTO Users (Username, Password) VALUES ('legacy', 'legacy-password')");
+        }
+
+        await db.Initialize();
+        using var check = db.Context();
+        var account = await check.Users.AsNoTracking().SingleAsync();
+        Assert.True(account.IsPasswordHashed);
+        Assert.NotEqual("legacy-password", account.Password);
+
+        await db.Initialize();
+        Assert.Equal(account.Password, (await check.Users.AsNoTracking().SingleAsync()).Password);
     }
 
     [Fact]

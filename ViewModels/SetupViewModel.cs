@@ -12,7 +12,6 @@ namespace ServeX.ViewModels
     {
         private readonly LogService _logService;
         private readonly ApplicationAccessService _applicationAccessService;
-        private readonly LicenseService _licenseService;
         private readonly Func<string, Task> _onSetupCompletedAsync;
         private bool _isBusy;
         private string _restaurantName = string.Empty;
@@ -21,18 +20,15 @@ namespace ServeX.ViewModels
         private string _taxPercentageInput = "5";
         private string _adminUsername = string.Empty;
         private string _adminPassword = string.Empty;
-        private string _licenseKey = string.Empty;
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
         public SetupViewModel(
             ApplicationAccessService applicationAccessService,
-            LicenseService licenseService,
             Func<string, Task> onSetupCompletedAsync, LogService logService)
         {
             _logService = logService;
             _applicationAccessService = applicationAccessService ?? throw new ArgumentNullException(nameof(applicationAccessService));
-            _licenseService = licenseService ?? throw new ArgumentNullException(nameof(licenseService));
             _onSetupCompletedAsync = onSetupCompletedAsync ?? throw new ArgumentNullException(nameof(onSetupCompletedAsync));
 
             SaveSetupCommand = new AsyncRelayCommand(async _ => await SaveSetupAsync(), _ => !IsBusy);
@@ -106,18 +102,6 @@ namespace ServeX.ViewModels
             set
             {
                 if (SetProperty(ref _adminPassword, value))
-                {
-                    NotifyValidationState();
-                }
-            }
-        }
-
-        public string LicenseKey
-        {
-            get => _licenseKey;
-            set
-            {
-                if (SetProperty(ref _licenseKey, value))
                 {
                     NotifyValidationState();
                 }
@@ -255,9 +239,6 @@ namespace ServeX.ViewModels
 
                         return string.Empty;
 
-                    case nameof(LicenseKey):
-                        return string.Empty;
-
                     default:
                         return string.Empty;
                 }
@@ -288,8 +269,7 @@ namespace ServeX.ViewModels
                     Phone = Phone.Trim(),
                     TaxPercentage = taxPercentage,
                     AdminUsername = AdminUsername.Trim(),
-                    AdminPassword = AdminPassword,
-                    LicenseKey = LicenseKey
+                    AdminPassword = AdminPassword
                 });
 
                 await _onSetupCompletedAsync(AdminUsername.Trim());
@@ -369,7 +349,6 @@ namespace ServeX.ViewModels
             OnPropertyChanged(nameof(TaxPercentageInput));
             OnPropertyChanged(nameof(AdminUsername));
             OnPropertyChanged(nameof(AdminPassword));
-            OnPropertyChanged(nameof(LicenseKey));
             NotifyValidationState();
         }
 

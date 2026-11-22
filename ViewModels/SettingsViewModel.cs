@@ -27,7 +27,6 @@ namespace ServeX.ViewModels
         private string _restaurantName = string.Empty;
         private string _phone = string.Empty;
         private string _taxPercentageInput = "5";
-        private string _licenseKey = string.Empty;
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
@@ -88,12 +87,6 @@ namespace ServeX.ViewModels
                     NotifyValidationState();
                 }
             }
-        }
-
-        public string LicenseKey
-        {
-            get => _licenseKey;
-            private set => SetProperty(ref _licenseKey, value);
         }
 
         public bool IsBusy
@@ -299,7 +292,6 @@ namespace ServeX.ViewModels
             RestaurantName = safeSettings.RestaurantName ?? string.Empty;
             Phone = safeSettings.Phone ?? string.Empty;
             TaxPercentageInput = safeSettings.TaxPercentage.ToString("0.##", CultureInfo.CurrentCulture);
-            LicenseKey = safeSettings.LicenseKey ?? string.Empty;
         }
 
         private void SetStatus(string message, bool isError)
@@ -363,8 +355,7 @@ namespace ServeX.ViewModels
             {
                 RestaurantName = "ServeX",
                 Phone = string.Empty,
-                TaxPercentage = 5m,
-                LicenseKey = string.Empty
+                TaxPercentage = 5m
             };
         }
 

@@ -10,14 +10,12 @@ namespace ServeX.Services
     public class ApplicationAccessService
     {
         private readonly IDbContextFactory<ServeXDbContext> _contexts;
-        private readonly LicenseService _licenseService;
         private readonly LogService _logService;
 
-        public ApplicationAccessService(LicenseService licenseService, IDbContextFactory<ServeXDbContext> contexts, LogService logService)
+        public ApplicationAccessService(IDbContextFactory<ServeXDbContext> contexts, LogService logService)
         {
             _contexts = contexts;
             _logService = logService;
-            _licenseService = licenseService ?? throw new ArgumentNullException(nameof(licenseService));
         }
 
         public async Task<StartupFlow> GetStartupFlowAsync()
@@ -55,7 +53,6 @@ namespace ServeX.Services
                 throw new ArgumentNullException(nameof(request));
             }
 
-            var normalizedLicenseKey = _licenseService.Normalize(request.LicenseKey);
             var normalizedUsername = request.AdminUsername.Trim();
 
             try
@@ -79,14 +76,14 @@ namespace ServeX.Services
                             RestaurantName = request.RestaurantName.Trim(),
                             Address = request.Address.Trim(),
                             Phone = request.Phone.Trim(),
-                            TaxPercentage = decimal.Round(request.TaxPercentage, 2),
-                            LicenseKey = normalizedLicenseKey
+                            TaxPercentage = decimal.Round(request.TaxPercentage, 2)
                         });
 
                         context.Users.Add(new User
                         {
                             Username = normalizedUsername,
-                            Password = request.AdminPassword
+                            Password = PasswordHash.Create(request.AdminPassword),
+                            IsPasswordHashed = true
                         });
 
                         await context.SaveChangesAsync();
@@ -129,9 +126,10 @@ namespace ServeX.Services
 
                     var user = await context.Users
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(user =>
-                            user.Username.ToLower() == normalizedUsername.ToLower() &&
-                            user.Password == normalizedPassword);
+                        .FirstOrDefaultAsync(user => user.Username.ToLower() == normalizedUsername.ToLower());
+
+                    if (user != null && (!user.IsPasswordHashed || !PasswordHash.Verify(normalizedPassword, user.Password)))
+                        user = null;
 
                     if (user == null)
                     {

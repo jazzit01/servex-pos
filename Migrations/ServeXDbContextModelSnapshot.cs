@@ -238,6 +238,9 @@ namespace ServeX.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsPasswordHashed")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasMaxLength(200)
