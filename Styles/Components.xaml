@@ -5,21 +5,26 @@
         <Setter Property="Foreground" Value="{StaticResource SidebarTextBrush}"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
         <Setter Property="Margin" Value="0,0,0,6"/>
-        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="MinHeight" Value="42"/>
+        <Setter Property="ToolTip" Value="{Binding Content, RelativeSource={RelativeSource Self}}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Root" Background="{TemplateBinding Background}" Padding="14,12" CornerRadius="6">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}" Padding="10,8" CornerRadius="6">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="30"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="{TemplateBinding Tag}" FontFamily="Segoe MDL2 Assets" FontSize="17" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center"/>
-                            <ContentPresenter Grid.Column="1" RecognizesAccessKey="True" VerticalAlignment="Center"/>
+                            <ContentPresenter x:Name="NavLabel" Grid.Column="1" RecognizesAccessKey="True" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                            <Setter TargetName="NavLabel" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="Root" Property="Padding" Value="8"/>
+                        </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Root" Property="Opacity" Value="0.8"/>
                         </Trigger>

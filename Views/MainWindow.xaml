@@ -30,19 +30,23 @@
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="208"/>
+            <ColumnDefinition x:Name="SidebarColumn" Width="208"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <Border Background="{StaticResource SidebarBrush}" Padding="16,24,16,16">
+        <Border Background="{StaticResource SidebarBrush}" Padding="10,16,10,12">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <StackPanel Margin="10,0,0,28">
+                <StackPanel Margin="0,0,0,12">
+                    <Button x:Name="ToggleSidebarButton" Content="☰" Click="ToggleSidebar" Width="40" Height="40"
+                            HorizontalAlignment="Left" ToolTip="Collapse sidebar" AutomationProperties.Name="Collapse sidebar"
+                            Style="{StaticResource SecondaryActionButtonStyle}"/>
+                    <StackPanel x:Name="SidebarBrand" Margin="8,8,0,0">
                     <TextBlock Text="ServeX" FontSize="26" FontWeight="Bold" Foreground="{StaticResource SidebarTextBrush}"/>
-                    <TextBlock Text="POINT OF SALE" FontSize="11" Margin="0,4,0,0" Foreground="{StaticResource SidebarMutedBrush}"/>
+                    </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Row="1" KeyboardNavigation.TabNavigation="Continue">
                     <Button Content="Dashboard" Tag="" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Dashboard}" AutomationProperties.Name="Dashboard">
@@ -136,12 +140,14 @@
                         </Button.Style>
                     </Button>
                 </StackPanel>
-                <Border Grid.Row="2" BorderBrush="{StaticResource SidebarHoverBrush}" BorderThickness="0,1,0,0" Padding="10,16,0,0">
+                <Border Grid.Row="2" BorderBrush="{StaticResource SidebarHoverBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
                     <StackPanel>
+                        <StackPanel x:Name="SidebarAccount">
                         <TextBlock Text="{Binding RestaurantName}" Foreground="{StaticResource SidebarTextBrush}" FontWeight="SemiBold"/>
                         <TextBlock Text="Signed in as" Margin="0,12,0,2" FontSize="12" Foreground="{StaticResource SidebarMutedBrush}"/>
                         <TextBlock Text="{Binding CurrentUsername}" Foreground="{StaticResource SidebarTextBrush}"/>
-                        <Button Content="Sign out" Command="{Binding SignOutCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,12,0,0"/>
+                        </StackPanel>
+                        <Button Content="Sign out" Tag="&#xE7E8;" Command="{Binding SignOutCommand}" AutomationProperties.Name="Sign out" Style="{StaticResource SidebarNavigationButtonStyle}" Margin="0,8,0,0"/>
                     </StackPanel>
                 </Border>
             </Grid>

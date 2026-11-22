@@ -27,11 +27,11 @@
     <SolidColorBrush x:Key="InfoBrush" Color="#245C98"/>
     <SolidColorBrush x:Key="InfoSoftBrush" Color="#EAF2FC"/>
     <!-- Semantic tokens; legacy keys above remain compatible with every existing view. -->
-    <SolidColorBrush x:Key="SidebarBrush" Color="#122536"/>
-    <SolidColorBrush x:Key="SidebarHoverBrush" Color="#203B50"/>
-    <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#14515E"/>
-    <SolidColorBrush x:Key="SidebarTextBrush" Color="#F2F7FC"/>
-    <SolidColorBrush x:Key="SidebarMutedBrush" Color="#B6C9D9"/>
+    <SolidColorBrush x:Key="SidebarBrush" Color="#EEF4EF"/>
+    <SolidColorBrush x:Key="SidebarHoverBrush" Color="#CCDAD0"/>
+    <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#C7E5D4"/>
+    <SolidColorBrush x:Key="SidebarTextBrush" Color="#18382B"/>
+    <SolidColorBrush x:Key="SidebarMutedBrush" Color="#426356"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="#335C81"/>
     <SolidColorBrush x:Key="NeutralBrush" Color="#526579"/>
     <SolidColorBrush x:Key="BorderBrush" Color="#D7DFE8"/>

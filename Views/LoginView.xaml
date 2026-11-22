@@ -6,7 +6,7 @@
         <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Username" Text="{Binding Username, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
         <TextBlock Text="Password" Style="{StaticResource FieldLabelStyle}"/>
         <PasswordBox Style="{StaticResource FormPasswordBoxStyle}" AutomationProperties.Name="Password" helpers:PasswordBoxAssistant.BindPassword="True" helpers:PasswordBoxAssistant.BoundPassword="{Binding Password, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
-        <TextBlock Text="Use the account created during initial setup." Foreground="{StaticResource MutedTextBrush}" Margin="0,12,0,20"/>
+        <CheckBox Content="Remember my username on this PC" IsChecked="{Binding RememberUsername}" Margin="0,12,0,20"/>
         <Button Content="Sign in" Command="{Binding LoginCommand}" Style="{StaticResource PrimaryActionButtonStyle}" IsDefault="True" MinHeight="48"/>
     </StackPanel>
 </UserControl>

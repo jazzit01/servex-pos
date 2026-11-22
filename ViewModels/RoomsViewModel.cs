@@ -19,7 +19,7 @@ namespace ServeX.ViewModels
         private RoomStatus _status = RoomStatus.Available;
         private string _message;
 
-        public RoomsViewModel(RoomService rooms, OrderWorkspaceService orders, LogService log)
+        public RoomsViewModel(RoomService rooms, OrderWorkspaceService orders, LogService log, DialogService dialogs, OperatorSession session)
         {
             _rooms = rooms;
             _orders = orders;
@@ -31,6 +31,17 @@ namespace ServeX.ViewModels
                 await LoadAsync();
                 Message = "Room saved.";
             }));
+            DeleteCommand = new AsyncRelayCommand(_ => RunAsync(async () =>
+            {
+                var room = Selected;
+                if (room == null || !dialogs.Confirm("Delete room?", $"Delete room {room.RoomNumber}? Rooms with order history are protected.")) return;
+                await _rooms.DeleteAsync(room.Id);
+                Selected = null;
+                Number = string.Empty;
+                Status = RoomStatus.Available;
+                await LoadAsync();
+                Message = "Room deleted.";
+            }), _ => Selected != null && session.MayManage);
             OpenOrderCommand = new AsyncRelayCommand(_ => RunAsync(async () =>
             {
                 if (Selected != null) await _orders.ShowForRoomAsync(Selected);
@@ -40,6 +51,7 @@ namespace ServeX.ViewModels
 
         public RelayCommand NewCommand { get; }
         public AsyncRelayCommand SaveCommand { get; }
+        public AsyncRelayCommand DeleteCommand { get; }
         public AsyncRelayCommand OpenOrderCommand { get; }
         public RoomStatus[] StatusOptions { get; } = Enum.GetValues<RoomStatus>();
         public IReadOnlyList<Room> Items => _items;
@@ -59,6 +71,7 @@ namespace ServeX.ViewModels
                     Status = value.Status;
                 }
                 OpenOrderCommand.RaiseCanExecuteChanged();
+                DeleteCommand.RaiseCanExecuteChanged();
             }
         }
 
@@ -74,7 +87,7 @@ namespace ServeX.ViewModels
             catch (Exception exception)
             {
                 _log.LogError("Room operation failed", exception);
-                Message = "Could not complete the room action. Check the room number, status, and active orders.";
+                Message = "Could not complete the room action. Check the room number or status. Rooms with order history cannot be deleted.";
             }
         }
     }

@@ -18,6 +18,7 @@ namespace ServeX.Application
             services.AddServeXCore(location);
             services.AddSingleton<PresentationFactory>();
             services.AddSingleton<WorkspaceNavigation>();
+            services.AddSingleton<RememberedUsername>();
             services.AddTransient<DashboardViewModel>();
             services.AddTransient<HistoryViewModel>();
             services.AddTransient<RoomsViewModel>();

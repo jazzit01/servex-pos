@@ -69,7 +69,6 @@ namespace ServeX.ViewModels
             _saveCommand = new AsyncRelayCommand(async _ => await SaveAsync(), _ => CanSave);
             _cancelCommand = new RelayCommand(_ => CloseEditor(), _ => !IsBusy);
             _selectTableCommand = new RelayCommand(table => SelectTable(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
-            AddStarterLayoutCommand = new AsyncRelayCommand(_ => AddStarterLayoutAsync(), _ => CanDeleteTables && !IsBusy);
             ChangeFloorStatusCommand = new AsyncRelayCommand(_ => ChangeFloorStatusAsync(),
                 _ => !IsBusy && SelectedTable?.Status is TableStatus.Available or TableStatus.Reserved or TableStatus.Cleaning);
             _openSelectedOrderCommand = new AsyncRelayCommand(async _ => await OpenOrderScreenAsync(SelectedTable), _ => !IsBusy && SelectedTable != null);
@@ -102,7 +101,6 @@ namespace ServeX.ViewModels
 
         public RelayCommand SelectTableCommand => _selectTableCommand;
 
-        public AsyncRelayCommand AddStarterLayoutCommand { get; }
 
         public AsyncRelayCommand ChangeFloorStatusCommand { get; }
 
@@ -441,17 +439,8 @@ namespace ServeX.ViewModels
                 await RefreshAsync();
                 SetStatus("Table deleted successfully.", false);
                 RaiseTablesChanged();
-            }, "The table could not be deleted.");
+            }, "The table could not be deleted. Tables linked to order history are protected.");
         }
-
-        private Task AddStarterLayoutAsync() => ExecuteBusyActionAsync(async () =>
-        {
-            var added = await _tableService.AddStarterLayoutAsync();
-            await RefreshAsync();
-            SetStatus(added > 0 ? $"Added {added} tables and rooms to empty areas." :
-                "The indoor, outdoor, and room areas already have entries.", false);
-            if (added > 0) RaiseTablesChanged();
-        }, "The starter layout could not be added.");
 
         private async Task ChangeFloorStatusAsync()
         {
@@ -708,7 +697,6 @@ namespace ServeX.ViewModels
             _showIndoorTablesCommand.RaiseCanExecuteChanged();
             _showOutdoorTablesCommand.RaiseCanExecuteChanged();
             ChangeFloorStatusCommand.RaiseCanExecuteChanged();
-            AddStarterLayoutCommand.RaiseCanExecuteChanged();
         }
 
         private void NotifySummaryProperties()

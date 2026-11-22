@@ -14,6 +14,7 @@ namespace ServeX.ViewModels
         private readonly ApplicationAccessService _applicationAccessService;
         private readonly Func<User, Task> _onLoginSucceededAsync;
         private bool _isBusy;
+        private readonly RememberedUsername _rememberedUsername;
         private string _username = string.Empty;
         private string _password = string.Empty;
         private string _statusMessage = string.Empty;
@@ -22,7 +23,7 @@ namespace ServeX.ViewModels
         public LoginViewModel(
             ApplicationAccessService applicationAccessService,
             string restaurantName,
-            Func<User, Task> onLoginSucceededAsync, LogService logService,
+            Func<User, Task> onLoginSucceededAsync, LogService logService, RememberedUsername rememberedUsername,
             string preferredUsername = "",
             string initialStatusMessage = "")
         {
@@ -31,12 +32,17 @@ namespace ServeX.ViewModels
             _onLoginSucceededAsync = onLoginSucceededAsync ?? throw new ArgumentNullException(nameof(onLoginSucceededAsync));
 
             RestaurantName = restaurantName ?? "ServeX";
-            _username = preferredUsername ?? string.Empty;
+            _rememberedUsername = rememberedUsername;
+            var remembered = _rememberedUsername.Read();
+            RememberUsername = !string.IsNullOrWhiteSpace(remembered);
+            _username = string.IsNullOrWhiteSpace(preferredUsername) ? remembered : preferredUsername;
             _statusMessage = initialStatusMessage ?? string.Empty;
             LoginCommand = new AsyncRelayCommand(async _ => await LoginAsync(), _ => !IsBusy);
         }
 
         public AsyncRelayCommand LoginCommand { get; }
+
+        public bool RememberUsername { get; set; }
 
         public string RestaurantName { get; }
 
@@ -147,6 +153,7 @@ namespace ServeX.ViewModels
                     return;
                 }
 
+                _rememberedUsername.Save(RememberUsername ? user.Username : null);
                 await _onLoginSucceededAsync(user);
             }, "Login failed.");
         }
