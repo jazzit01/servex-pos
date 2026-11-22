@@ -19,7 +19,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 CloseApplications=yes
 OutputDir=..\artifacts\installer
 OutputBaseFilename=ServeX-{#AppVersion}-win-x64-setup
-SetupIconFile=..\Assets\ServeX.ico
+SetupIconFile=..\Assets\ServeXInstaller.ico
 UninstallDisplayIcon={app}\ServeX.exe
 
 [Files]
