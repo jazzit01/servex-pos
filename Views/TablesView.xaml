@@ -110,6 +110,7 @@
                             <TextBlock Text="{Binding EditorTitle}" Style="{StaticResource SectionTitleTextStyle}"/>
                             <TextBlock Text="Table number" Style="{StaticResource FieldLabelStyle}"/>
                             <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Table number" Text="{Binding EditorTableNumber, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                            <TextBlock Text="{Binding NewTableNameHint}" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                             <TextBlock Text="Area" Style="{StaticResource FieldLabelStyle}"/>
                             <ComboBox ItemsSource="{Binding AvailableAreas}" SelectedItem="{Binding EditorArea}" Style="{StaticResource FormComboBoxStyle}" AutomationProperties.Name="Table area"/>
                             <TextBlock Text="Status" Style="{StaticResource FieldLabelStyle}"/>

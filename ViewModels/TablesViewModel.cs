@@ -192,9 +192,18 @@ namespace ServeX.ViewModels
                 {
                     OnPropertyChanged(nameof(CanSave));
                     NotifyValidationStates();
+                    OnPropertyChanged(nameof(NewTableNameHint));
                 }
             }
         }
+
+        private string FinalEditorName => IsEditMode
+            ? EditorTableNumber?.Trim() ?? string.Empty
+            : TableService.FormatNewTableNumber(EditorTableNumber, EditorArea);
+
+        public string NewTableNameHint => IsEditMode ? string.Empty : string.IsNullOrWhiteSpace(EditorTableNumber)
+            ? $"Enter a number for {TableService.FormatNewTableNumber("6", EditorArea)}, or type a custom name."
+            : $"Table name: {FinalEditorName}";
 
         public TableArea EditorArea
         {
@@ -203,8 +212,8 @@ namespace ServeX.ViewModels
             {
                 if (SetProperty(ref _editorArea, value))
                 {
-                    OnPropertyChanged(nameof(CanSave));
-                    NotifyCommandStates();
+                    NotifyValidationStates();
+                    OnPropertyChanged(nameof(NewTableNameHint));
                 }
             }
         }
@@ -359,14 +368,14 @@ namespace ServeX.ViewModels
                             return "Table number is required.";
                         }
 
-                        if (EditorTableNumber.Trim().Length > 20)
+                        if (FinalEditorName.Length > 20)
                         {
                             return "Table number must be 20 characters or fewer.";
                         }
 
                         if (_tables.Any(table =>
                                 table.Id != _editingTableId.GetValueOrDefault() &&
-                                string.Equals(table.TableNumber, EditorTableNumber.Trim(), StringComparison.OrdinalIgnoreCase)))
+                                string.Equals(table.TableNumber, FinalEditorName, StringComparison.OrdinalIgnoreCase)))
                         {
                             return "Table number must be unique.";
                         }
@@ -391,7 +400,7 @@ namespace ServeX.ViewModels
             var table = new Table
             {
                 Id = _editingTableId.GetValueOrDefault(),
-                TableNumber = EditorTableNumber.Trim(),
+                TableNumber = FinalEditorName,
                 Area = EditorArea,
                 Status = EditorStatus
             };
@@ -408,7 +417,7 @@ namespace ServeX.ViewModels
                 }
                 else
                 {
-                    await _tableService.AddTableAsync(table);
+                    table = await _tableService.AddTableAsync(table);
                 }
 
                 await RefreshAsync(table.TableNumber);
@@ -482,10 +491,11 @@ namespace ServeX.ViewModels
             {
                 ResetEditor();
                 _editingTableId = null;
-                EditorArea = TableArea.Indoor;
+                EditorArea = SelectedAreaFilter;
                 EditorStatus = TableStatus.Available;
                 IsEditorOpen = true;
                 OnPropertyChanged(nameof(IsEditMode));
+                OnPropertyChanged(nameof(NewTableNameHint));
                 OnPropertyChanged(nameof(EditorTitle));
                 ClearStatus();
                 NotifyCommandStates();
@@ -512,6 +522,7 @@ namespace ServeX.ViewModels
                 EditorStatus = NormalizeEditableStatus(table.Status);
                 IsEditorOpen = true;
                 OnPropertyChanged(nameof(IsEditMode));
+                OnPropertyChanged(nameof(NewTableNameHint));
                 OnPropertyChanged(nameof(EditorTitle));
                 ClearStatus();
                 NotifyCommandStates();

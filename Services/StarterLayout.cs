@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ServeX.Data;
@@ -15,12 +16,12 @@ namespace ServeX.Services
             var tables = await context.Tables.AsNoTracking().ToListAsync();
             var usedNumbers = new HashSet<string>(tables.Select(table => table.TableNumber), StringComparer.OrdinalIgnoreCase);
             var added = 0;
-            foreach (var (area, prefix) in new[] { (TableArea.Indoor, "IN-"), (TableArea.Outdoor, "OUT-") })
+            foreach (var area in new[] { TableArea.Indoor, TableArea.Outdoor })
             {
                 if (tables.Any(table => table.Area == area)) continue;
                 for (int number = 1, count = 0; count < 5; number++)
                 {
-                    var name = $"{prefix}{number}";
+                    var name = TableService.FormatNewTableNumber(number.ToString(CultureInfo.InvariantCulture), area);
                     if (!usedNumbers.Add(name)) continue;
                     context.Tables.Add(new Table { TableNumber = name, Area = area, Status = TableStatus.Available });
                     count++;

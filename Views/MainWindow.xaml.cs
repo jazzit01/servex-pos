@@ -1,5 +1,8 @@
+using System;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Threading;
 
 namespace ServeX.Views
 {
@@ -24,9 +27,16 @@ namespace ServeX.Views
             AutomationProperties.SetName(ToggleSidebarButton, label);
         }
 
+        private readonly DispatcherTimer _clock = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+
         public MainWindow()
         {
             InitializeComponent();
+            _clock.Tick += (_, _) => UpdateClock();
+            Loaded += (_, _) => { UpdateClock(); _clock.Start(); };
+            Closed += (_, _) => _clock.Stop();
         }
+        private void UpdateClock() =>
+            HeaderClock.Text = DateTime.Now.ToString("MMM'/'dd HH:mm:ss", CultureInfo.InvariantCulture);
     }
 }
