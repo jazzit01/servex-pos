@@ -9,4 +9,5 @@ TestResults/
 *.db-wal
 *.db-shm
 *.log
+*.log.1
 .vs/

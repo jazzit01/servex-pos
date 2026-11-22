@@ -16,7 +16,7 @@ namespace ServeX.ViewModels
         private readonly DialogService _dialogs;
         private readonly LogService _logService;
         private readonly TableService _tableService;
-        private readonly OrderWindowService _orderWindowService;
+        private readonly OrderWorkspaceService _orderWorkspaceService;
         private readonly RelayCommand _beginAddCommand;
         private readonly RelayCommand _editCommand;
         private readonly AsyncRelayCommand _deleteCommand;
@@ -41,12 +41,12 @@ namespace ServeX.ViewModels
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
-        public TablesViewModel(TableService tableService, OrderWindowService orderWindowService, LogService logService, DialogService dialogs)
+        public TablesViewModel(TableService tableService, OrderWorkspaceService orderWorkspaceService, LogService logService, DialogService dialogs)
         {
             _dialogs = dialogs;
             _logService = logService;
             _tableService = tableService ?? throw new ArgumentNullException(nameof(tableService));
-            _orderWindowService = orderWindowService ?? throw new ArgumentNullException(nameof(orderWindowService));
+            _orderWorkspaceService = orderWorkspaceService ?? throw new ArgumentNullException(nameof(orderWorkspaceService));
 
             VisibleTables = new ObservableCollection<TableFloorItemViewModel>();
 
@@ -439,7 +439,7 @@ namespace ServeX.ViewModels
                     throw new InvalidOperationException("The selected table could not be found.");
                 }
 
-                await _orderWindowService.ShowForTableAsync(rawTable);
+                await _orderWorkspaceService.ShowForTableAsync(rawTable);
                 await RefreshAsync(rawTable.TableNumber);
                 RaiseTablesChanged();
             }, "The order screen could not be opened.");

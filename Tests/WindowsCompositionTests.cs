@@ -117,11 +117,9 @@ public class WindowsCompositionTests
                     view.UpdateLayout();
                     Assert.True(double.IsFinite(view.ActualWidth));
                 }
-                // Constructors parse shell/dialog resources without opening UI or printing.
+                // Constructors parse shell and authentication resources without opening UI or printing.
                 new ServeX.Views.MainWindow { DataContext = main }.Close();
                 new ServeX.Views.AuthWindow { DataContext = auth }.Close();
-                new ServeX.Views.OrderWindow { DataContext = order }.Close();
-                new ServeX.Views.BillingWindow().Close();
                 app.Shutdown();
             }
             catch (Exception exception) { failure = exception; }

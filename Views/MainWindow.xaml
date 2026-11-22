@@ -15,6 +15,12 @@
         <DataTemplate DataType="{x:Type viewModels:SettingsViewModel}">
             <views:SettingsView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:OrderViewModel}">
+            <views:OrderView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:BillingViewModel}">
+            <views:BillingView/>
+        </DataTemplate>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -124,7 +130,7 @@
                         <TextBlock Text="{Binding CurrentSectionTitle}" FontSize="22" FontWeight="SemiBold"/>
                         <TextBlock Text="{Binding CurrentSectionSubtitle}" Margin="0,4,16,0" Style="{StaticResource SectionSubtitleTextStyle}"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Content="Back to dashboard" Command="{Binding GoBackCommand}" Style="{StaticResource SecondaryActionButtonStyle}" VerticalAlignment="Center" Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVisibility}}"/>
+                    <Button Grid.Column="1" Content="{Binding BackButtonLabel}" Command="{Binding GoBackCommand}" Style="{StaticResource SecondaryActionButtonStyle}" VerticalAlignment="Center" Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVisibility}}"/>
                 </Grid>
             </Border>
             <ContentControl Grid.Row="1" Margin="20,12,20,0" Content="{Binding}" ContentTemplate="{StaticResource StatusMessageTemplate}"/>

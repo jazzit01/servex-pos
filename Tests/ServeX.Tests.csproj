@@ -30,6 +30,6 @@
     <Compile Include="../Application/CoreServices.cs" Link="Production/CoreServices.cs" />
     <Compile Include="../Presentation/Navigation/*.cs" Link="Production/Navigation/%(Filename)%(Extension)" />
     <Compile Include="../ViewModels/ViewModelBase.cs;../ViewModels/RelayCommand.cs;../ViewModels/AsyncRelayCommand.cs;../ViewModels/OrderLineItemViewModel.cs" Link="Production/ViewModels/%(Filename)%(Extension)" />
-    <Compile Include="../Services/*.cs" Exclude="../Services/*WindowService.cs;../Services/DialogService.cs;../Services/SaveFileDialogService.cs;../Services/ReceiptPrintService.cs" Link="Production/Services/%(Filename)%(Extension)" />
+    <Compile Include="../Services/*.cs" Exclude="../Services/*WorkspaceService.cs;../Services/DialogService.cs;../Services/SaveFileDialogService.cs;../Services/ReceiptPrintService.cs" Link="Production/Services/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

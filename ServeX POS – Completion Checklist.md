@@ -15,6 +15,12 @@ Already built:
 
 Reviewed: repo `jazzit01/servex-pos`, one visible commit, about 10,300 lines of C# and XAML (WPF, .NET 8, SQLite).
 
+## Implementation notes
+
+The original findings below describe the project at the time of the audit. The Phase 2 baseline now supports explicit Debug demo data, selects Local App Data for new installations, backs up existing databases before migrations, and blocks deleting tables with order history. It also includes a README, tests, and Windows CI configuration. Legacy database locations are retained, so relocation of existing installations remains a separate checklist item.
+
+This pass moves table orders and billing into the main workspace, caps the log with one rotated copy, and makes startup and dashboard errors staff-friendly. The navigation test cases below reflect the new flow. Windows interactive verification remains open.
+
 ## P0 – Security and data safety
 
 Six problems should be fixed before the app touches real customers or real sales data.
@@ -22,9 +28,9 @@ Six problems should be fixed before the app touches real customers or real sales
 - [ ] **Hash passwords.** `User.Password` is stored and compared as plain text (`ApplicationAccessService`). Store a salted hash (PBKDF2 or BCrypt), verify by hash, and migrate the existing admin row.
 - [ ] **Stop seeding demo data on fresh installs.** `DatabaseInitializationService` adds Classic Burger, Caesar Salad, tables T1/T2, rooms R101/R102 and a fake open order for T1 before setup runs. This inflates order counts and leaves T1 occupied. Seed only in a debug build or behind an explicit "load sample data" option.
 - [ ] **Move the database out of the install folder.** `servex.db` lives in `AppContext.BaseDirectory/Data`, so it is lost on reinstall and unwritable under Program Files. Use `%LocalAppData%\ServeX` and migrate any existing file on first start.
-- [ ] **Move and cap the log file.** `logs.txt` also sits in the install folder and never rotates. Write it next to the database and roll it by size or day.
+- [x] **Move and cap the log file.** `logs.txt` also sits in the install folder and never rotates. Runtime logs now live next to the active database and rotate at 2 MiB with one previous file retained.
 - [ ] **Replace the license stub.** `LicenseService.IsValid` always returns true. Either implement real validation or remove the license field and screen text until it is real.
-- [ ] **Stop showing raw exception text to staff.** The global handler prints `e.Exception.Message`. Show a plain message, log the detail, and also handle exceptions outside the UI thread (`AppDomain` and `TaskScheduler` handlers).
+- [x] **Stop showing raw exception text to staff.** Startup, dashboard, and global error messages display staff-facing guidance. Detailed errors go to the log, including failures caught by the `AppDomain` and `TaskScheduler` handlers.
 
 ## Orders and billing workflow
 
@@ -139,7 +145,7 @@ Every command bound in the screens is listed below with the result to expect. Ru
 ### Main window and navigation
 
 - [ ] **Sidebar: Dashboard, Menu, Tables, Parcel, Settings:** each opens its own screen and the title and subtitle update.
-- [ ] **Back to Dashboard:** hidden on the dashboard, visible elsewhere, returns to the dashboard.
+- [ ] **Back and Dashboard:** on an order or bill, Back returns to the previous screen. Dashboard is available in the sidebar. On top-level screens, Back to dashboard returns to the dashboard.
 - [ ] **Header counts:** Menu items, tables, rooms and orders change after adding or deleting.
 - [ ] **Logout:** *gap* – not available yet.
 
@@ -165,24 +171,24 @@ Every command bound in the screens is listed below with the result to expect. Ru
 - [ ] **Select table:** highlights it and shows its details and available actions.
 - [ ] **Add table:** unique number required; a duplicate (any case) is refused; area and status are saved.
 - [ ] **Edit table / Edit selected:** both open the same panel with the table's values; saving updates the floor.
-- [ ] **Open order (floor card and selected panel):** opens the order window for that table; an occupied table loads its saved items.
+- [ ] **Open order (floor card and selected panel):** opens the order workspace for that table; an occupied table loads its saved items.
 - [ ] **Delete table / Delete selected:** an empty table is removed; a table with an open order is refused (*gap*).
 - [ ] **Cancel:** closes the panel without saving.
 
-### Table order window
+### Table order workspace
 
 - [ ] **Category filter:** shows only that category; "All" shows everything.
 - [ ] **Add item:** adds a line; adding the same item again increases its quantity.
 - [ ] **Increase / Decrease quantity:** totals update; decreasing from 1 removes the line or stops at 1 (confirm which is intended).
 - [ ] **Remove item:** removes the line and updates totals.
 - [ ] **Save order:** an empty order is refused; a valid one marks the table Occupied; reopening shows the same items.
-- [ ] **Generate bill:** saves the order, then opens billing for it.
+- [ ] **Generate bill:** saves the order, then opens billing in the same main window.
 - [ ] **Totals:** subtotal, tax at the configured percentage, and total match a hand calculation.
 
 ### Parcel
 
 - [ ] **Customer name:** blank saves as "Atithi".
-- [ ] **Add, increase, decrease, remove item:** same behaviour as the table order window.
+- [ ] **Add, increase, decrease, remove item:** same behaviour as the table order workspace.
 - [ ] **Save order:** creates a parcel order with no table; it can be reopened and edited until billed.
 - [ ] **Generate bill:** opens billing for the parcel.
 - [ ] **New parcel:** clears the draft and starts a fresh order without touching saved ones.
@@ -193,7 +199,7 @@ Every command bound in the screens is listed below with the result to expect. Ru
 - [ ] **Payment method (Cash, Card, UPI):** the selected method is saved and shown on the receipt.
 - [ ] **Confirm payment:** marks the order billed, frees the table, and blocks a second payment on the same order.
 - [ ] **Print receipt:** disabled until payment is confirmed; prints the items, tax, discount, total and method.
-- [ ] **Closing the window without paying:** the order stays open and the table stays Occupied.
+- [ ] **Going back without paying:** the order stays open and the table stays Occupied.
 
 ### Settings
 
