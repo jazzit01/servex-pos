@@ -62,7 +62,7 @@
                         <Button Content="Send to kitchen" Command="{Binding SendKitchenCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
                         <Button Content="Mark served" Command="{Binding MarkServedCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
                         <Button Content="Cancel order" Command="{Binding CancelOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
-                        <Button Content="Generate bill" Command="{Binding GenerateBillCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,0,8"/>
+                        <Button Content="Checkout" Command="{Binding GenerateBillCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,0,8"/>
                     </WrapPanel>
                 </StackPanel>
             </Border>

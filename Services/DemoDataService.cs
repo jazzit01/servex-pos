@@ -20,12 +20,7 @@ namespace ServeX.Services
             context.MenuItems.AddRange(
                 new MenuItem { Name = "Classic Burger", Price = 249m, Category = "Main Course", IsAvailable = true },
                 new MenuItem { Name = "Caesar Salad", Price = 179m, Category = "Salad", IsAvailable = true });
-            context.Tables.AddRange(
-                new Table { TableNumber = "T1", Area = TableArea.Indoor, Status = TableStatus.Available },
-                new Table { TableNumber = "T2", Area = TableArea.Indoor, Status = TableStatus.Available });
-            context.Rooms.AddRange(
-                new Room { RoomNumber = "R101", Status = RoomStatus.Available },
-                new Room { RoomNumber = "R102", Status = RoomStatus.Available });
+            await StarterLayout.AddToEmptyAreasAsync(context);
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
         }

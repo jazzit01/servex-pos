@@ -89,6 +89,17 @@ namespace ServeX.Services
             }
         }
 
+        public async Task<int> AddStarterLayoutAsync()
+        {
+            _session.RequireManager();
+            using var context = _contexts.CreateDbContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
+            var added = await StarterLayout.AddToEmptyAreasAsync(context);
+            if (added > 0) await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return added;
+        }
+
         public async Task<Table> AddTableAsync(Table table)
         {
             try

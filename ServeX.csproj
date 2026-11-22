@@ -6,7 +6,7 @@
     <RootNamespace>ServeX</RootNamespace>
     <AssemblyName>ServeX</AssemblyName>
     <ApplicationIcon>Assets/ServeX.ico</ApplicationIcon>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
@@ -16,6 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Resource Include="Assets/ServeX.ico" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
       <PrivateAssets>all</PrivateAssets>

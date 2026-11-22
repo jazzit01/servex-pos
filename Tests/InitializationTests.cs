@@ -127,7 +127,7 @@ public class InitializationTests
         await demo.SeedEmptyDemoAsync();
         using var context = db.Context();
         Assert.Equal(2, await context.MenuItems.CountAsync());
-        Assert.Equal(2, await context.Rooms.CountAsync());
+        Assert.Equal(3, await context.Rooms.CountAsync());
         Assert.All(await context.Tables.ToListAsync(), t => Assert.Equal(TableStatus.Available, t.Status));
         Assert.Empty(await context.Orders.ToListAsync());
         Assert.Empty(await context.Bills.ToListAsync());

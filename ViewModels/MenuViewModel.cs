@@ -21,6 +21,9 @@ namespace ServeX.ViewModels
         private readonly AsyncRelayCommand _deleteCommand;
         private readonly AsyncRelayCommand _saveCommand;
         private readonly RelayCommand _cancelCommand;
+        private readonly AsyncRelayCommand _saveAndAddAnotherCommand;
+        private static readonly string[] StarterCategories =
+            { "Starters", "Main Course", "Rice & Breads", "Sides", "Drinks", "Desserts" };
         private readonly RelayCommand _clearSearchCommand;
         private bool _isBusy;
         private bool _isEditorOpen;
@@ -47,6 +50,7 @@ namespace ServeX.ViewModels
             _editCommand = new RelayCommand(item => OpenEditPanel(item as MenuItem), item => !IsBusy && item is MenuItem);
             _deleteCommand = new AsyncRelayCommand(async item => await DeleteAsync(item as MenuItem), item => !IsBusy && item is MenuItem);
             _saveCommand = new AsyncRelayCommand(async _ => await SaveAsync(), _ => CanSave);
+            _saveAndAddAnotherCommand = new AsyncRelayCommand(_ => SaveAsync(addAnother: true), _ => CanSave && !IsEditMode);
             _cancelCommand = new RelayCommand(_ => CloseEditor(), _ => !IsBusy);
             _clearSearchCommand = new RelayCommand(_ => SearchText = string.Empty, _ => HasSearchText);
         }
@@ -64,6 +68,8 @@ namespace ServeX.ViewModels
         public AsyncRelayCommand DeleteCommand => _deleteCommand;
 
         public AsyncRelayCommand SaveCommand => _saveCommand;
+
+        public AsyncRelayCommand SaveAndAddAnotherCommand => _saveAndAddAnotherCommand;
 
         public RelayCommand CancelCommand => _cancelCommand;
 
@@ -135,7 +141,7 @@ namespace ServeX.ViewModels
             }
         }
 
-        public string[] CategoryChoices => MenuItems.Select(item => item.Category)
+        public string[] CategoryChoices => MenuItems.Select(item => item.Category).Concat(StarterCategories)
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(category => category).ToArray();
 
         public string EditorCategory
@@ -273,7 +279,7 @@ namespace ServeX.ViewModels
             }
         }
 
-        private async Task SaveAsync()
+        private async Task SaveAsync(bool addAnother = false)
         {
             TouchValidation();
             if (!IsFormValid())
@@ -314,7 +320,13 @@ namespace ServeX.ViewModels
                 }
 
                 await RefreshAsync();
-                CloseEditor(false);
+                if (addAnother)
+                {
+                    OpenAddPanel();
+                    EditorCategory = menuItem.Category;
+                }
+                else
+                    CloseEditor(false);
                 SetStatus(successMessage, false);
                 RaiseMenuItemsChanged();
             }, "The menu item could not be saved.");
@@ -475,6 +487,7 @@ namespace ServeX.ViewModels
             _editCommand.RaiseCanExecuteChanged();
             _deleteCommand.RaiseCanExecuteChanged();
             _saveCommand.RaiseCanExecuteChanged();
+            _saveAndAddAnotherCommand.RaiseCanExecuteChanged();
             _cancelCommand.RaiseCanExecuteChanged();
             _clearSearchCommand.RaiseCanExecuteChanged();
         }
