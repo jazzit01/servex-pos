@@ -11,7 +11,28 @@ namespace ServeX.Services
     public sealed class RoomService
     {
         private readonly IDbContextFactory<ServeXDbContext> _contexts;
-        public RoomService(IDbContextFactory<ServeXDbContext> contexts) { _contexts = contexts; }
+        private readonly OperatorSession _session;
+
+        public RoomService(IDbContextFactory<ServeXDbContext> contexts, OperatorSession session)
+        {
+            _contexts = contexts;
+            _session = session;
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            _session.RequireManager();
+            using var context = _contexts.CreateDbContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
+            var room = await context.Rooms.FindAsync(id);
+            if (room == null) return;
+            if (await context.Orders.AnyAsync(order => order.Type == OrderType.Room && order.ReferenceId == id))
+                throw new InvalidOperationException("Rooms linked to order history cannot be deleted.");
+
+            context.Rooms.Remove(room);
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
 
         public async Task<List<Room>> ListAsync()
         {

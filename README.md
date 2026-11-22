@@ -122,8 +122,7 @@ See [actual results and the required Windows acceptance checklist](docs/validati
 ## Day-to-day workflows
 
 First-run setup adds five indoor tables, five outdoor tables, and three available
-rooms. An administrator can use **Tables → Add starter layout** to fill empty
-areas on an existing installation. Menu categories include starter suggestions
+rooms. Existing installations retain their own layout. Menu categories include starter suggestions
 and any custom categories already saved.
 
 

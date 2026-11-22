@@ -18,6 +18,19 @@ public class StartupAndCommandTests
     }
 
     [Fact]
+    public void RememberedUsernameCanBeSavedAndCleared()
+    {
+        using var db = new TestDatabase();
+        var path = Path.Combine(db.DirectoryPath, "remembered-username.txt");
+        var preference = new RememberedUsername(db.Services.GetRequiredService<LogService>(), path);
+        Assert.Empty(preference.Read());
+        preference.Save("operator");
+        Assert.Equal("operator", new RememberedUsername(db.Services.GetRequiredService<LogService>(), path).Read());
+        preference.Save(null);
+        Assert.Empty(preference.Read());
+    }
+
+    [Fact]
     public async Task FreshSetupAddsStarterAreasAndDoesNotCreateSampleSalesOrMenuItems()
     {
         using var db = new TestDatabase();
@@ -34,7 +47,7 @@ public class StartupAndCommandTests
         Assert.Equal(3, await context.Rooms.CountAsync());
         Assert.Empty(await context.MenuItems.ToListAsync());
         Assert.Empty(await context.Orders.ToListAsync());
-        Assert.Equal(0, await db.Services.GetRequiredService<TableService>().AddStarterLayoutAsync());
+
     }
 
     [Fact]
@@ -44,8 +57,11 @@ public class StartupAndCommandTests
         await db.Initialize();
         var tables = db.Services.GetRequiredService<TableService>();
         await tables.AddTableAsync(new Table { TableNumber = "OUT-1", Area = TableArea.Indoor });
-        Assert.Equal(8, await tables.AddStarterLayoutAsync());
-        Assert.Equal(0, await tables.AddStarterLayoutAsync());
+        await db.Services.GetRequiredService<ApplicationAccessService>().SaveInitialSetupAsync(new InitialSetupRequest
+        {
+            RestaurantName = "Test Restaurant", Address = "Address", Phone = "123",
+            AdminUsername = "admin", AdminPassword = "test-password"
+        });
         var all = await tables.GetTablesAsync();
         Assert.Equal("OUT-1", Assert.Single(all, table => table.Area == TableArea.Indoor).TableNumber);
         Assert.Equal(5, all.Count(table => table.Area == TableArea.Outdoor));

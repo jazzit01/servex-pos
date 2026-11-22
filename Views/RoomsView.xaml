@@ -21,6 +21,7 @@
                 <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status}" Style="{StaticResource FormComboBoxStyle}"/>
                 <Button Content="Save room" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,12,0,0"/>
                 <Button Content="New room" Command="{Binding NewCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
+                <Button Content="Delete room" Command="{Binding DeleteCommand}" Style="{StaticResource DangerActionButtonStyle}" Margin="0,8,0,0"/>
                 <Button Content="Open room order" Command="{Binding OpenOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
             </StackPanel>
         </Border>

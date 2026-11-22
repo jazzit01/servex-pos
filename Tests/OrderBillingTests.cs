@@ -142,6 +142,10 @@ public class OrderBillingTests
         await billing.ConfirmPaymentAsync(order.Id, 0m, PaymentMethod.Cash);
         Assert.Equal("203", billing.CreateReceiptData(await billing.GetBillingOrderAsync(order.Id)).TableNumber);
         Assert.Equal(RoomStatus.Available, (await rooms.ListAsync()).Single(item => item.Id == room.Id).Status);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => rooms.DeleteAsync(room.Id));
+        var unused = (await rooms.ListAsync()).Single(item => item.Id != room.Id);
+        await rooms.DeleteAsync(unused.Id);
+        Assert.DoesNotContain(await rooms.ListAsync(), item => item.Id == unused.Id);
     }
 
     [Fact]

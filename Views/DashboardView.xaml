@@ -2,6 +2,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="20">
             <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
+            <TextBlock x:Name="DashboardClock" HorizontalAlignment="Right" Margin="0,0,12,8" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" AutomationProperties.Name="Local date and time"/>
             <UniformGrid Columns="4">
                 <HeaderedContentControl Margin="0,0,12,12" Background="#172E46" BorderBrush="#172E46" Foreground="#F3F7FC" Header="Today's sales" Tag="Confirmed payments today" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding TodayRevenue, StringFormat=C2}" Style="{StaticResource FinancialTextStyle}" FontSize="26" Foreground="#F3F7FC"/></HeaderedContentControl.Content></HeaderedContentControl>
                 <HeaderedContentControl Margin="0,0,12,12" Background="#F4F7FC" BorderBrush="#CBD9ED" Foreground="#254878" Header="Active orders" Tag="Open, preparing or served" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding ActiveOrders}" Style="{StaticResource FinancialTextStyle}" FontSize="26" Foreground="#254878"/></HeaderedContentControl.Content></HeaderedContentControl>
@@ -26,7 +27,7 @@
             <Border Style="{StaticResource SurfaceCardStyle}" Padding="16" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Text="Unpaid orders" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,8"/>
-                    <DataGrid ItemsSource="{Binding OpenOrders}" Style="{StaticResource OperationalGridStyle}" MaxHeight="240" IsReadOnly="True" AutomationProperties.Name="Unpaid orders">
+                    <DataGrid ItemsSource="{Binding OpenOrders}" Style="{StaticResource OperationalGridStyle}" MaxHeight="240" IsReadOnly="True" Visibility="{Binding HasOpenOrders, Converter={StaticResource BoolToVisibility}}" AutomationProperties.Name="Unpaid orders">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Order" Binding="{Binding Id}" Width="80"/>
                             <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="*"/>
@@ -34,12 +35,14 @@
                             <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2}" Width="100"/>
                         </DataGrid.Columns>
                     </DataGrid>
+                    <TextBlock Text="No unpaid orders." Foreground="{StaticResource MutedTextBrush}"
+                               Visibility="{Binding IsOpenOrdersEmpty, Converter={StaticResource BoolToVisibility}}"/>
                 </StackPanel>
             </Border>
             <Border Style="{StaticResource SurfaceCardStyle}" Padding="16">
                 <StackPanel>
-                    <HeaderedContentControl Header="Recent orders" Content="Latest service activity, including unpaid orders. Sales above include confirmed payments only." Style="{StaticResource PageHeaderStyle}"/>
-                    <DataGrid ItemsSource="{Binding RecentOrders}" Style="{StaticResource OperationalGridStyle}" MinHeight="100" MaxHeight="360" AutomationProperties.Name="Recent orders">
+                    <TextBlock Text="Recent orders" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,8"/>
+                    <DataGrid ItemsSource="{Binding RecentOrders}" Style="{StaticResource OperationalGridStyle}" MinHeight="100" MaxHeight="360" IsReadOnly="True" Visibility="{Binding HasRecentOrders, Converter={StaticResource BoolToVisibility}}" AutomationProperties.Name="Recent orders">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Order" Binding="{Binding OrderId, StringFormat=#{0}}" Width="80"/>
                             <DataGridTextColumn Header="Guest / reference" Binding="{Binding ReferenceLabel}" Width="*" MinWidth="150"/>
@@ -49,7 +52,8 @@
                             <DataGridTextColumn Header="Created (local)" Binding="{Binding CreatedAtLocal, StringFormat={}{0:dd MMM HH:mm}}" Width="135"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <HeaderedContentControl Header="Ready for the first order" Content="New service activity will appear here. Start a table order or open the dining floor." Style="{StaticResource EmptyStateStyle}" Visibility="{Binding IsRecentOrdersEmpty, Converter={StaticResource BoolToVisibility}}"/>
+                    <TextBlock Text="No orders yet." Foreground="{StaticResource MutedTextBrush}"
+                               Visibility="{Binding IsRecentOrdersEmpty, Converter={StaticResource BoolToVisibility}}"/>
                 </StackPanel>
             </Border>
         </StackPanel>

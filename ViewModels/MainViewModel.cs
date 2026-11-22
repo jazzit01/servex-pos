@@ -289,7 +289,7 @@ namespace ServeX.ViewModels
                     case WorkspaceDestination.Settings:
                         return "Protect the database, confirm environment details, and keep day-to-day operations safe.";
                     default:
-                        return "Track revenue, table activity, and recent orders from one calm operational overview.";
+                        return "Sales, table status, and orders.";
                 }
             }
         }

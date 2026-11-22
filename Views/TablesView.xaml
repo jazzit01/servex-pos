@@ -32,8 +32,6 @@
                 </Button.Style>
             </Button>
             <Button Content="Add table" Command="{Binding BeginAddCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="8,0,0,8"/>
-            <Button Content="Add starter layout" Command="{Binding AddStarterLayoutCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="8,0,0,8"
-                    ToolTip="Adds 5 tables to each empty area and 3 rooms if the room list is empty."/>
             <TextBlock Text="{Binding VisibleTablesCount, Mode=OneWay, StringFormat=Tables: {0}}" Margin="20,12,12,8"/>
             <TextBlock Text="{Binding AvailableCount, Mode=OneWay, StringFormat=Available: {0}}" Margin="0,12,12,8" Foreground="{StaticResource SuccessBrush}"/>
             <TextBlock Text="{Binding OccupiedCount, Mode=OneWay, StringFormat=Occupied: {0}}" Margin="0,12,12,8" Foreground="{StaticResource DangerBrush}"/>
@@ -82,7 +80,7 @@
                                         </Button>
                                         <TextBlock Text="{Binding CustomerDisplayName}" Margin="0,10,0,2"/>
                                         <TextBlock Text="{Binding ServiceCaption}" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
-                                        <Button Content="Table details" Margin="0,12,0,0" Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}"/>
+                                        <Button Content="Manage table" Margin="0,12,0,0" Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -103,7 +101,7 @@
                             <Button Content="{Binding FloorStatusAction}" Command="{Binding ChangeFloorStatusCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
                             <WrapPanel Margin="0,8,0,0">
                                 <Button Content="Edit" Command="{Binding EditSelectedCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,0"/>
-                                <Button Content="Delete" Command="{Binding DeleteSelectedCommand}" Style="{StaticResource DangerActionButtonStyle}"/>
+                                <Button Content="Delete table" Command="{Binding DeleteSelectedCommand}" Style="{StaticResource DangerActionButtonStyle}"/>
                             </WrapPanel>
                         </StackPanel>
                     </Border>
