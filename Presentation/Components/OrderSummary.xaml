@@ -59,6 +59,7 @@
                     </Grid>
                     <WrapPanel Margin="0,8,0,0">
                         <Button Content="Save order" Command="{Binding SaveOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
+                        <Button Content="Cancel order" Command="{Binding CancelOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,8"/>
                         <Button Content="Generate bill" Command="{Binding GenerateBillCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,0,8"/>
                     </WrapPanel>
                 </StackPanel>

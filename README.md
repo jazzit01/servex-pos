@@ -64,7 +64,9 @@ regression risk without improving this phase. See [architectural decisions](docs
 ## Database safety
 
 Fresh installations use `%LOCALAPPDATA%\ServeX\Data\servex.db`. Existing
-`<executable directory>\Data\servex.db` installations stay at their original path.
+`<executable directory>\Data\servex.db` installations are copied into Local App Data
+on startup using SQLite's backup operation. ServeX verifies and pins the new
+copy while keeping the original as a recovery copy.
 The selected path is pinned in `%LOCALAPPDATA%\ServeX\database-location.txt`.
 A missing pinned file, conflicting legacy/local files, inaccessible storage, or
 corrupt database stops startup; no replacement database is selected. Runtime logs
@@ -84,6 +86,17 @@ Normal startup keeps the seven most recent daily backups per database under
 `%LOCALAPPDATA%\ServeX\AutomaticBackups`. In Settings, **Restore from backup** stages a verified copy and restarts ServeX.
 Startup saves the current database in its `Backups` folder before applying the
 restore. Check the restored orders and settings before resuming service.
+
+## Build a Windows package
+
+Publish a self-contained x64 build to a fresh folder:
+
+```powershell
+dotnet publish ServeX.csproj -c Release -r win-x64 -p:PublishProfile=WindowsX64 -o artifacts/ServeX-win-x64
+```
+
+Copy the entire output folder to a Windows x64 PC and run `ServeX.exe`. The
+output includes the .NET desktop runtime. An installer is tracked separately.
 
 ## Tests and verification
 

@@ -24,22 +24,45 @@ public class StorageBackupTests
         Assert.False(File.Exists(location.FilePath));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LegacyDatabaseRelocatesAndPinsTheVerifiedCopy(bool oldPinExists)
+    {
+        using var db = new TestDatabase();
+        await db.SeedCustomerAsync();
+        var app = Path.Combine(db.DirectoryPath, "app");
+        var local = Path.Combine(db.DirectoryPath, "local");
+        var legacy = Path.Combine(app, "Data", "servex.db");
+        await db.Services.GetRequiredService<DatabaseBackupService>().BackupAsync(legacy);
+        if (oldPinExists)
+        {
+            Directory.CreateDirectory(Path.Combine(local, "ServeX"));
+            File.WriteAllText(Path.Combine(local, "ServeX", "database-location.txt"), legacy);
+        }
+
+        var migrated = DatabaseLocation.Resolve(app, local);
+        Assert.StartsWith(Path.Combine(local, "ServeX", "Data") + Path.DirectorySeparatorChar, migrated.FilePath);
+        Assert.True(File.Exists(legacy));
+        using (var check = new RuntimeDbContextFactory(migrated).CreateDbContext())
+            Assert.Equal("Customer Item", (await check.MenuItems.SingleAsync()).Name);
+        Assert.Equal(migrated.FilePath, DatabaseLocation.Resolve(app, local).FilePath);
+        Assert.Equal(migrated.FilePath, DatabaseLocation.Resolve(Path.Combine(db.DirectoryPath, "moved-app"), local).FilePath);
+    }
+
     [Fact]
-    public void LegacyDatabaseRemainsInPlaceAndPinPreventsSilentSwitchAfterMove()
+    public void CorruptLegacyDatabaseIsNeverReplacedOrPinned()
     {
         using var db = new TestDatabase();
         var app = Path.Combine(db.DirectoryPath, "app");
         var local = Path.Combine(db.DirectoryPath, "local");
         var legacy = Path.Combine(app, "Data", "servex.db");
         Directory.CreateDirectory(Path.GetDirectoryName(legacy));
-        var content = new byte[] { 1, 2, 3 };
-        File.WriteAllBytes(legacy, content);
-        Assert.Equal(legacy, DatabaseLocation.Resolve(app, local).FilePath);
-        Assert.Equal(content, File.ReadAllBytes(legacy));
-        Assert.Equal(legacy, DatabaseLocation.Resolve(Path.Combine(db.DirectoryPath, "moved-app"), local).FilePath);
-        File.Move(legacy, legacy + ".moved");
-        Assert.Throws<InvalidOperationException>(() => DatabaseLocation.Resolve(app, local));
-        Assert.False(File.Exists(Path.Combine(local, "ServeX", "Data", "servex.db")));
+        File.WriteAllText(legacy, "damaged legacy database");
+
+        Assert.ThrowsAny<Exception>(() => DatabaseLocation.Resolve(app, local));
+        Assert.False(File.Exists(Path.Combine(local, "ServeX", "database-location.txt")));
+        Assert.Equal("damaged legacy database", File.ReadAllText(legacy));
     }
 
     [Fact]

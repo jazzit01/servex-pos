@@ -41,15 +41,8 @@ namespace ServeX.Services
 
         public async Task<decimal> GetTaxPercentageAsync()
         {
-            using (var context = _contexts.CreateDbContext())
-            {
-                var taxPercentage = await context.Settings
-                    .AsNoTracking()
-                    .Select(setting => (decimal?)setting.TaxPercentage)
-                    .FirstOrDefaultAsync();
-
-                return taxPercentage ?? 5m;
-            }
+            using var context = _contexts.CreateDbContext();
+            return await OrderPricing.GetTaxPercentageAsync(context);
         }
 
         public async Task<decimal> GetTaxRateAsync()
@@ -58,7 +51,7 @@ namespace ServeX.Services
             return taxPercentage / 100m;
         }
 
-        public async Task<AppSetting> UpdateSettingsAsync(string restaurantName, string phone, decimal taxPercentage)
+        public async Task<AppSetting> UpdateSettingsAsync(string restaurantName, string phone, decimal taxPercentage, string address = null)
         {
             if (string.IsNullOrWhiteSpace(restaurantName))
             {
@@ -69,6 +62,9 @@ namespace ServeX.Services
             {
                 throw new ArgumentException("Phone number is required.", nameof(phone));
             }
+
+            if (address != null && (string.IsNullOrWhiteSpace(address) || address.Trim().Length > 250))
+                throw new ArgumentException("Enter a restaurant address up to 250 characters.", nameof(address));
 
             if (taxPercentage < 0m || taxPercentage > 100m)
             {
@@ -90,6 +86,7 @@ namespace ServeX.Services
 
                     settings.RestaurantName = restaurantName.Trim();
                     settings.Phone = phone.Trim();
+                    if (address != null) settings.Address = address.Trim();
                     settings.TaxPercentage = taxPercentage;
 
                     await context.SaveChangesAsync();

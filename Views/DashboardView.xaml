@@ -18,7 +18,8 @@
                     </WrapPanel>
                     <WrapPanel>
                         <TextBlock Text="{Binding TotalOrdersToday, StringFormat=Orders today: {0}}" Margin="0,0,24,0" Foreground="{StaticResource MutedTextBrush}"/>
-                        <TextBlock Text="{Binding ParcelOrdersCount, StringFormat=Parcels today: {0}}" Foreground="{StaticResource MutedTextBrush}"/>
+                        <TextBlock Text="{Binding ParcelOrdersCount, StringFormat=Parcels today: {0}}" Margin="0,0,24,0" Foreground="{StaticResource MutedTextBrush}"/>
+                        <TextBlock Text="{Binding ReservedTables, StringFormat=Reserved tables: {0}}" Foreground="{StaticResource MutedTextBrush}"/>
                     </WrapPanel>
                 </StackPanel>
             </Border>

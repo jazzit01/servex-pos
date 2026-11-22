@@ -139,25 +139,30 @@ namespace ServeX.Services
 
         // Offline operator recovery only. Never overwrites a database or targets the live path.
         public static Task RestoreToNewFileAsync(string backupPath, string newDatabasePath) =>
-            RestoreToNewFileAsync(backupPath, newDatabasePath, Verify);
+            Task.Run(() => CopyVerifiedDatabase(backupPath, newDatabasePath));
 
-        private static Task RestoreToNewFileAsync(string backupPath, string newDatabasePath, Action<string> verify, Action<string> prepare = null) =>
-            Task.Run(() =>
+        internal static void CopyVerifiedDatabase(string backupPath, string newDatabasePath) =>
+            CopyVerifiedDatabase(backupPath, newDatabasePath, Verify);
+
+        private static Task RestoreToNewFileAsync(string backupPath, string newDatabasePath, Action<string> verify, Action<string> prepare) =>
+            Task.Run(() => CopyVerifiedDatabase(backupPath, newDatabasePath, verify, prepare));
+
+        private static void CopyVerifiedDatabase(string backupPath, string newDatabasePath, Action<string> verify, Action<string> prepare = null)
+        {
+            verify(backupPath);
+            if (File.Exists(newDatabasePath)) throw new IOException("Restore requires a new, unused destination file.");
+            var staging = newDatabasePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
             {
-                verify(backupPath);
-                if (File.Exists(newDatabasePath)) throw new IOException("Restore requires a new, unused destination file.");
-                var staging = newDatabasePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
-                try
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(newDatabasePath)));
-                    using (var source = Open(backupPath, SqliteOpenMode.ReadOnly))
-                    using (var target = Open(staging, SqliteOpenMode.ReadWriteCreate)) source.BackupDatabase(target);
-                    verify(staging);
-                    prepare?.Invoke(staging);
-                    File.Move(staging, newDatabasePath, false);
-                }
-                finally { if (File.Exists(staging)) File.Delete(staging); }
-            });
+                Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(newDatabasePath)));
+                using (var source = Open(backupPath, SqliteOpenMode.ReadOnly))
+                using (var target = Open(staging, SqliteOpenMode.ReadWriteCreate)) source.BackupDatabase(target);
+                verify(staging);
+                prepare?.Invoke(staging);
+                File.Move(staging, newDatabasePath, false);
+            }
+            finally { if (File.Exists(staging)) File.Delete(staging); }
+        }
 
         private static SqliteConnection Open(string path, SqliteOpenMode mode)
         {

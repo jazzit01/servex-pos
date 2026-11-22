@@ -46,7 +46,8 @@ namespace ServeX.Services
                 return new BillingOrderData
                 {
                     Order = order,
-                    Table = table
+                    Table = table,
+                    Restaurant = await context.Settings.AsNoTracking().OrderBy(setting => setting.Id).FirstOrDefaultAsync()
                 };
             }
         }
@@ -57,6 +58,7 @@ namespace ServeX.Services
             {
                 using (var context = _contexts.CreateDbContext())
                 {
+                    using var transaction = await context.Database.BeginTransactionAsync();
                     var order = await context.Orders
                         .Include(item => item.Items)
                         .ThenInclude(item => item.MenuItem)
@@ -85,9 +87,9 @@ namespace ServeX.Services
                     if (!Enum.IsDefined(paymentMethod))
                         throw new InvalidOperationException("Select a valid payment method.");
 
-                    var taxRate = await GetTaxRateAsync(context);
-                    var subtotal = decimal.Round(orderItems.Select(item => item.Price * item.Quantity).DefaultIfEmpty(0m).Sum(), 2);
-                    var tax = decimal.Round(subtotal * taxRate, 2);
+                    var taxPercentage = await OrderPricing.GetTaxPercentageAsync(context);
+                    var subtotal = OrderPricing.Round(orderItems.Sum(item => item.Price * item.Quantity));
+                    var tax = OrderPricing.Tax(subtotal, taxPercentage);
                     var grossTotal = subtotal + tax;
 
                     if (discount < 0)
@@ -107,12 +109,12 @@ namespace ServeX.Services
 
                     order.Bill.Subtotal = subtotal;
                     order.Bill.Tax = tax;
-                    order.Bill.Discount = decimal.Round(discount, 2);
-                    order.Bill.Total = decimal.Round(grossTotal - discount, 2);
+                    order.Bill.Discount = OrderPricing.Round(discount);
+                    order.Bill.Total = OrderPricing.Round(grossTotal - discount);
                     order.Bill.PaymentMethod = paymentMethod;
                     order.Bill.PaidAt = DateTime.UtcNow;
 
-                    order.Status = OrderStatus.Billed;
+                    order.Status = OrderStatus.Paid;
 
                     if (order.Type == OrderType.Table)
                     {
@@ -124,6 +126,7 @@ namespace ServeX.Services
                     }
 
                     await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
                     _logService.LogInfo(string.Format("Payment confirmed for order #{0} via {1}", order.Id, paymentMethod));
                     return order.Bill;
                 }
@@ -137,7 +140,7 @@ namespace ServeX.Services
 
         public ReceiptData CreateReceiptData(BillingOrderData orderData)
         {
-            if (orderData?.Order?.Bill == null)
+            if (orderData?.Order?.Bill?.PaidAt == null)
             {
                 return null;
             }
@@ -145,11 +148,14 @@ namespace ServeX.Services
             return new ReceiptData
             {
                 OrderId = orderData.Order.Id,
+                RestaurantName = orderData.Restaurant?.RestaurantName ?? "ServeX",
+                RestaurantAddress = orderData.Restaurant?.Address,
+                RestaurantPhone = orderData.Restaurant?.Phone,
                 TableNumber = orderData.Order.Type == OrderType.Parcel
                     ? GetParcelLabel(orderData.Order.CustomerName)
                     : orderData.Table?.TableNumber ?? "Parcel",
                 PaymentMethod = orderData.Order.Bill.PaymentMethod ?? PaymentMethod.Cash,
-                PaidAt = orderData.Order.Bill.PaidAt ?? DateTime.UtcNow,
+                PaidAt = orderData.Order.Bill.PaidAt.Value,
                 Subtotal = orderData.Order.Bill.Subtotal,
                 Tax = orderData.Order.Bill.Tax,
                 Discount = orderData.Order.Bill.Discount,
@@ -175,23 +181,9 @@ namespace ServeX.Services
         {
             using (var context = _contexts.CreateDbContext())
             {
-                return await GetTaxPercentageAsync(context);
+                return await OrderPricing.GetTaxPercentageAsync(context);
             }
         }
 
-        private static async Task<decimal> GetTaxPercentageAsync(ServeXDbContext context)
-        {
-            var configuredTax = await context.Settings
-                .AsNoTracking()
-                .Select(setting => (decimal?)setting.TaxPercentage)
-                .FirstOrDefaultAsync();
-
-            return configuredTax ?? 5m;
-        }
-
-        private static async Task<decimal> GetTaxRateAsync(ServeXDbContext context)
-        {
-            return await GetTaxPercentageAsync(context) / 100m;
-        }
     }
 }

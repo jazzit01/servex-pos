@@ -17,7 +17,7 @@ Reviewed: repo `jazzit01/servex-pos`, one visible commit, about 10,300 lines of 
 
 ## Implementation notes
 
-The original findings below describe the project at the time of the audit. The Phase 2 baseline now supports explicit Debug demo data, selects Local App Data for new installations, backs up existing databases before migrations, and blocks deleting tables with order history. It also includes a README, tests, and Windows CI configuration. Legacy database locations are retained, so relocation of existing installations remains a separate checklist item.
+The original findings below describe the project at the time of the audit. The Phase 2 baseline now supports explicit Debug demo data, selects Local App Data for new installations, backs up existing databases before migrations, and blocks deleting tables with order history. It also includes a README, tests, and Windows CI configuration. Legacy database relocation now keeps the original file as a recovery copy.
 
 This pass moves table orders and billing into the main workspace, caps the log with one rotated copy, and makes startup and dashboard errors staff-friendly. The navigation test cases below reflect the new flow. Windows interactive verification remains open.
 
@@ -27,7 +27,7 @@ Six problems should be fixed before the app touches real customers or real sales
 
 - [x] **Hash passwords.** New credentials use salted PBKDF2-SHA256. Startup upgrades existing accounts before login and preserves their passwords.
 - [x] **Stop seeding demo data on fresh installs.** Sample records are available only through explicit Debug demo mode.
-- [ ] **Move the database out of the install folder.** `servex.db` lives in `AppContext.BaseDirectory/Data`, so it is lost on reinstall and unwritable under Program Files. Use `%LocalAppData%\ServeX` and migrate any existing file on first start.
+- [x] **Move the database out of the install folder.** Startup copies a verified legacy database to Local App Data and pins it, preserving the original. An explicit recovery path still overrides selection.
 - [x] **Move and cap the log file.** `logs.txt` also sits in the install folder and never rotates. Runtime logs now live next to the active database and rotate at 2 MiB with one previous file retained.
 - [x] **Remove the license stub.** Setup and Settings no longer ask for or display a key. Existing database values are preserved.
 - [x] **Stop showing raw exception text to staff.** Startup, dashboard, and global error messages display staff-facing guidance. Detailed errors go to the log, including failures caught by the `AppDomain` and `TaskScheduler` handlers.
@@ -36,8 +36,8 @@ Six problems should be fixed before the app touches real customers or real sales
 
 Orders can be created and billed, but several states and controls the data model promises are never reachable from the screens.
 
-- [ ] **P1 – Cancel order.** `OrderStatus.Cancelled` exists, but no screen or command cancels an order. Add a Cancel button with a confirmation, free the table, and keep the order for history.
-- [ ] **P1 – Set "Paid" after payment.** `BillingService.ConfirmPaymentAsync` sets the status to `Billed` and never uses `Paid`. Decide on one meaning for each, then update the dashboard and guards to match.
+- [x] **P1 – Cancel order.** Saved table and parcel orders have a confirmed Cancel action. Cancellation keeps history, releases the table, and prevents billing.
+- [x] **P1 – Set "Paid" after payment.** New payments use Paid. Legacy Billed records with a payment timestamp still display as Paid in the dashboard.
 - [x] **P1 – Block billing of cancelled or already-paid orders.** The service rejects cancelled orders and orders already marked billed or paid.
 - [ ] **P1 – Release the table after a closed bill.** The table goes straight to Available. `TableStatus.Cleaning` is never set, so add a "mark clean" step if you want it.
 - [ ] **P2 – Kitchen flow.** `Preparing` and `Served` are never set. Add a send-to-kitchen action, a kitchen ticket print, and a mark-served control, or delete the unused statuses.
@@ -67,7 +67,7 @@ There is one admin account and no way to leave the session, change a password or
 - [ ] **P1 – Change password.** Add it to Settings, asking for the current password first.
 - [ ] **P1 – Manage users and roles.** Add staff accounts with at least Admin and Cashier roles. Limit Settings, Menu edits, deletes, discounts and backup to Admin.
 - [ ] **P1 – Login hardening.** Add a short lockout or delay after repeated failures, and make the username check case-insensitive in the database rather than with `ToLower()` in the query.
-- [ ] **P1 – Edit all restaurant details.** `UpdateSettingsAsync` only saves name, phone and tax. Address and license key cannot be changed after setup. Add address, and show the license state.
+- [x] **P1 – Edit all restaurant details.** Settings saves name, address, phone, and tax. The inactive license feature was removed.
 - [ ] **P2 – Tax settings.** One flat percentage applies to everything. Add a tax label (GST, VAT), an optional tax number for receipts, and a way to mark items as tax-exempt.
 - [ ] **P2 – Warn when tax changes.** Open orders are re-priced at the new rate when billed. Show a note, or lock the rate on the order when it is first saved.
 - [ ] **P2 – Currency and locale.** Amounts are shown with `N2` and no currency symbol. Add a currency setting and apply it everywhere, including receipts.
@@ -76,10 +76,10 @@ There is one admin account and no way to leave the session, change a password or
 
 Printing works through the Windows print dialog path, but the receipt does not carry the restaurant's own details.
 
-- [ ] **P1 – Use the real restaurant header.** `ReceiptPrintService` prints the fixed text "SERVEX" and "Simple Receipt". Print the restaurant name, address and phone from Settings, plus the tax number if one is added.
+- [x] **P1 – Use the real restaurant header.** Receipts use the saved restaurant name, address, and phone.
 - [ ] **P1 – Show tax rate and currency.** Print the tax percentage next to the tax line and use the configured currency symbol.
 - [ ] **P1 – Reprint a past bill.** Receipts can only be printed from the billing screen right after payment. Add a reprint action from order history.
-- [ ] **P1 – Handle printer problems.** Show a clear message when no printer is installed, the printer is offline, or the user cancels. Let the user choose a printer instead of always using the default.
+- [x] **P1 – Handle printer problems.** Ask staff to select a Windows printer and handle cancellation, unavailable printers, and offline printers. Physical printer acceptance remains open.
 - [ ] **P2 – Long item names and paper width.** Item names are drawn on one line at a fixed width. Wrap long names so they do not run off an 80 mm roll, and make width configurable for 58 mm printers.
 - [ ] **P2 – Kitchen ticket.** A separate printout of new items per order, with table and time, goes with the kitchen flow in the orders section.
 - [ ] **P2 – Print preview or PDF.** Offer an on-screen preview and a save-as-PDF option for testing without a printer.
@@ -90,7 +90,7 @@ Backup and restore use SQLite’s native copy operation. Restore stages a verifi
 
 - [x] **P0 – Restore from backup.** Settings stages a verified ServeX backup and restarts the app. Startup keeps a safety copy before replacing active data. The data operation is covered by SQLite tests. Windows file picker and restart still need a hands-on check.
 - [x] **P1 – Automatic backups.** Normal startup creates one backup per day in Local App Data and retains the seven most recent dated backups per database.
-- [ ] **P1 – Backup location and result.** Remember the last folder used, and show the saved path and file size after a successful backup.
+- [x] **P1 – Backup location and result.** Settings remembers the last successful backup folder and shows the saved path and file size.
 - [x] **P1 – Migration safety.** Startup creates an integrity-checked backup before applying pending migrations to an existing database.
 - [ ] **P2 – Export data.** Export orders, bills and menu to CSV or Excel for the accountant.
 
@@ -99,7 +99,7 @@ Backup and restore use SQLite’s native copy operation. Restore stages a verifi
 The dashboard shows today's revenue, active tables, today's orders, parcel count and the last five orders. There is no way to look further back.
 
 - [ ] **P1 – Order history.** A screen listing all orders with search and filters (date range, type, status, payment method), opening any bill read-only, with reprint.
-- [ ] **P1 – Fix "Active tables".** The dashboard counts every table that is not Available, so Reserved tables are counted as active. Count only Occupied, and show Reserved separately.
+- [x] **P1 – Fix "Active tables".** Occupied and reserved tables have separate counts.
 - [ ] **P1 – Daily summary and end-of-day close.** Totals by payment method, tax collected, discounts given, cancelled orders, and a printable end-of-day report.
 - [ ] **P2 – Sales reports.** Revenue by day, week and month, best-selling items, and sales by category.
 - [ ] **P2 – Open orders list.** Show unpaid orders on the dashboard so none are left behind at closing.
@@ -110,8 +110,8 @@ The dashboard shows today's revenue, active tables, today's orders, parcel count
 The project builds a Windows executable, but nothing yet turns it into something a restaurant can install and keep running.
 
 - [ ] **P1 – Installer.** Produce a per-user installer (MSIX or Inno Setup) that installs the app and creates a shortcut, with data kept in `%LocalAppData%\ServeX` so updates never touch it.
-- [ ] **P1 – Self-contained publish.** Publish for win-x64 with the .NET runtime included, so the till PC needs nothing installed first.
-- [ ] **P1 – Version number.** Set an assembly version in the project file and show it in Settings, so support knows which build is running.
+- [x] **P1 – Self-contained publish.** The Windows x64 publish profile includes the .NET desktop runtime. Launch on Windows is still part of acceptance testing.
+- [x] **P1 – Version number.** The project declares its version and Settings displays it.
 - [ ] **P1 – App icon and title.** The project file sets no application icon. Add one and use the restaurant name in window titles.
 - [ ] **P1 – First-run check.** On start, confirm the data folder is writable and a printer exists, and say clearly if not.
 - [ ] **P2 – Update path.** Decide how new versions reach the till (installer download or auto-update), and make sure the pre-migration backup runs on update.
@@ -122,13 +122,13 @@ The project builds a Windows executable, but nothing yet turns it into something
 The repository holds 1,280 tracked files, most of them build output, and it has no tests.
 
 - [ ] **P0 – Add a `.gitignore` and untrack build output.** `bin/`, `obj/`, `.codex-build/`, `.dotnet/` and `.nuget/` are committed, including DLLs and the local `servex.db` (a live copy with its -wal and -shm files, plus `logs.txt`, is tracked under `bin/Debug`). Remove them from the index and ignore them. That database likely holds the admin password in plain text, so open it, change that password, and purge the files from git history.
-- [ ] **P1 – Write the README.** It is currently one line. Cover what the app does, requirements, how to build and run, where data and logs live, and how to back up.
-- [ ] **P1 – Add a test project.** Start with the billing maths (subtotal, tax, discount limits, rounding), order save rules, table delete guard, and login. Use an in-memory SQLite database.
-- [ ] **P1 – Share one tax and rounding routine.** The tax lookup is copied across `OrderService`, `BillingService`, `ApplicationSettingsService` and the seed code. Put it in one place so a rate change cannot drift.
-- [ ] **P1 – Share one database access pattern.** Every service creates its own `ServeXDbContext` and its own `LogService`. Pass them in so services can be tested.
+- [x] **P1 – Write the README.** It covers requirements, build, run, storage, backups, and publishing.
+- [x] **P1 – Add a test project.** Real SQLite tests cover initialization, login, orders, billing, and recoverability using isolated temporary databases.
+- [x] **P1 – Share one tax and rounding routine.** Order, billing, settings, and their previews use shared lookup and rounding code.
+- [x] **P1 – Share one database access pattern.** Services use an injected runtime context factory and logger.
 - [ ] **P1 – Turn on nullable reference types.** The models use `string` and navigation properties that can be null with no annotations. Enable them to catch null bugs at build time.
-- [ ] **P2 – Build in CI.** A Windows build and test run on every push.
-- [ ] **P2 – Git history.** Only one commit was visible in this shallow clone. Keep commits small and described so progress can be tracked from the log.
+- [x] **P2 – Build in CI.** GitHub Actions is configured for Windows build and tests on pushes and pull requests.
+- [x] **P2 – Git history.** Project changes are tracked in descriptive commits.
 
 ## Control-by-control test list
 

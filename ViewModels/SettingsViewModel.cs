@@ -26,6 +26,7 @@ namespace ServeX.ViewModels
         private bool _isBusy;
         private bool _isLoaded;
         private string _restaurantName = string.Empty;
+        private string _address = string.Empty;
         private string _phone = string.Empty;
         private string _taxPercentageInput = "5";
         private string _statusMessage = string.Empty;
@@ -48,6 +49,8 @@ namespace ServeX.ViewModels
             RestoreDatabaseCommand = new AsyncRelayCommand(_ => RestoreDatabaseAsync(), _ => !IsBusy);
         }
 
+        public string AppVersion => typeof(SettingsViewModel).Assembly.GetName().Version.ToString(3);
+
         public string DatabasePath => _location.FilePath;
 
         public string DatabaseFileName => Path.GetFileName(DatabasePath);
@@ -67,6 +70,15 @@ namespace ServeX.ViewModels
                 {
                     NotifyValidationState();
                 }
+            }
+        }
+
+        public string Address
+        {
+            get => _address;
+            set
+            {
+                if (SetProperty(ref _address, value)) NotifyValidationState();
             }
         }
 
@@ -155,6 +167,11 @@ namespace ServeX.ViewModels
 
                         return string.Empty;
 
+                    case nameof(Address):
+                        if (string.IsNullOrWhiteSpace(Address)) return "Restaurant address is required.";
+                        if (Address.Trim().Length > 250) return "Restaurant address must be 250 characters or fewer.";
+                        return string.Empty;
+
                     case nameof(Phone):
                         if (string.IsNullOrWhiteSpace(Phone))
                         {
@@ -233,7 +250,7 @@ namespace ServeX.ViewModels
                 var updatedSettings = await _applicationSettingsService.UpdateSettingsAsync(
                     RestaurantName,
                     Phone,
-                    taxPercentage);
+                    taxPercentage, Address);
 
                 ApplySettings(updatedSettings);
                 RestaurantNameSaved?.Invoke(updatedSettings.RestaurantName);
@@ -263,7 +280,16 @@ namespace ServeX.ViewModels
             await ExecuteBusyActionAsync(async () =>
             {
                 var backupPath = await _databaseBackupService.BackupAsync(destinationFilePath);
-                SetStatus("Backup created successfully at " + backupPath, false);
+                var size = new FileInfo(backupPath).Length;
+                try
+                {
+                    _saveFileDialogService.RememberBackupFolder(backupPath);
+                }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+                {
+                    _logService.LogError("Could not remember the backup folder", exception);
+                }
+                SetStatus($"Backup saved to {backupPath} ({size:N0} bytes).", false);
             }, "The database backup could not be created.");
         }
 
@@ -319,6 +345,7 @@ namespace ServeX.ViewModels
             var safeSettings = settings ?? CreateDefaultSettings();
 
             RestaurantName = safeSettings.RestaurantName ?? string.Empty;
+            Address = safeSettings.Address ?? string.Empty;
             Phone = safeSettings.Phone ?? string.Empty;
             TaxPercentageInput = safeSettings.TaxPercentage.ToString("0.##", CultureInfo.CurrentCulture);
         }
@@ -338,6 +365,7 @@ namespace ServeX.ViewModels
         private bool IsFormValid()
         {
             return string.IsNullOrEmpty(this[nameof(RestaurantName)]) &&
+                   string.IsNullOrEmpty(this[nameof(Address)]) &&
                    string.IsNullOrEmpty(this[nameof(Phone)]) &&
                    string.IsNullOrEmpty(this[nameof(TaxPercentageInput)]);
         }
@@ -347,6 +375,7 @@ namespace ServeX.ViewModels
             var errors = new[]
             {
                 this[nameof(RestaurantName)],
+                this[nameof(Address)],
                 this[nameof(Phone)],
                 this[nameof(TaxPercentageInput)]
             }
@@ -367,6 +396,7 @@ namespace ServeX.ViewModels
         private void TouchValidation()
         {
             OnPropertyChanged(nameof(RestaurantName));
+            OnPropertyChanged(nameof(Address));
             OnPropertyChanged(nameof(Phone));
             OnPropertyChanged(nameof(TaxPercentageInput));
             NotifyValidationState();

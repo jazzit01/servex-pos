@@ -31,6 +31,30 @@ public class OrderBillingTests
         Assert.Equal("Desserts", saved.Single(item => item.Id == second.Id).Category);
     }
 
+    [Fact]
+    public async Task CancellationPreservesHistoryReleasesTheTableAndBlocksPayment()
+    {
+        using var db = new TestDatabase();
+        var ids = await db.SeedCustomerAsync();
+        var orders = db.Services.GetRequiredService<OrderService>();
+        var items = new[] { new OrderSaveItem { MenuItemId = ids.MenuId, Quantity = 1, Price = 19.99m } };
+        var order = await orders.SaveTableOrderAsync(ids.TableId, items);
+        await orders.CancelOrderAsync(order.Id);
+        var cancelled = await orders.GetOrderAsync(order.Id);
+
+        Assert.Equal(OrderStatus.Cancelled, cancelled.Status);
+        Assert.Single(cancelled.Items);
+        Assert.Equal(TableStatus.Available, (await orders.GetTableAsync(ids.TableId)).Status);
+        Assert.Null(await orders.GetActiveOrderForTableAsync(ids.TableId));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => orders.SaveTableOrderAsync(ids.TableId, items, order.Id));
+        var billing = db.Services.GetRequiredService<BillingService>();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => billing.ConfirmPaymentAsync(order.Id, 0, PaymentMethod.Cash));
+
+        var parcel = await orders.SaveParcelOrderAsync(null, "Customer", items);
+        await billing.ConfirmPaymentAsync(parcel.Id, 0, PaymentMethod.Cash);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => orders.CancelOrderAsync(parcel.Id));
+    }
+
     [Theory]
     [InlineData(19.99, 2, 5, 39.98, 2.00, 41.98)]
     [InlineData(10.10, 1, 5, 10.10, 0.50, 10.60)]
@@ -69,12 +93,17 @@ public class OrderBillingTests
         Assert.NotNull(bill.PaidAt);
         Assert.Equal(method, bill.PaymentMethod);
         using var context = db.Context();
-        Assert.Equal(OrderStatus.Billed, (await context.Orders.SingleAsync()).Status);
+        Assert.Equal(OrderStatus.Paid, (await context.Orders.SingleAsync()).Status);
         Assert.Equal(TableStatus.Available, (await context.Tables.SingleAsync()).Status);
         Assert.Equal(40m, (await context.Bills.SingleAsync()).Total);
         await Assert.ThrowsAsync<InvalidOperationException>(() => billing.ConfirmPaymentAsync(saved.Id, 0, method));
         Assert.Single(await context.Bills.ToListAsync());
+        await db.Services.GetRequiredService<ApplicationSettingsService>()
+            .UpdateSettingsAsync("Updated Restaurant", "555", 5m, " 12 Main Road ");
         var receipt = billing.CreateReceiptData(await billing.GetBillingOrderAsync(saved.Id));
+        Assert.Equal("Updated Restaurant", receipt.RestaurantName);
+        Assert.Equal("12 Main Road", receipt.RestaurantAddress);
+        Assert.Equal("555", receipt.RestaurantPhone);
         Assert.Equal(bill.Total, receipt.Total);
         Assert.Equal(39.98m, Assert.Single(receipt.Items).LineTotal);
         Assert.Equal("Customer T1", receipt.TableNumber);

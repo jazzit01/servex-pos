@@ -38,9 +38,7 @@ namespace ServeX.Services
                     ActiveOrders = await context.Orders.CountAsync(order => order.Status == OrderStatus.Open ||
                         order.Status == OrderStatus.Preparing || order.Status == OrderStatus.Served),
 
-                    ActiveTables = await context.Tables
-                        .AsNoTracking()
-                        .CountAsync(table => table.Status != TableStatus.Available),
+                    ReservedTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Reserved),
 
                     TotalOrdersToday = await context.Orders
                         .AsNoTracking()
@@ -77,7 +75,7 @@ namespace ServeX.Services
                 {
                     OrderId = order.Id,
                     Type = order.Type,
-                    Status = order.Status,
+                    Status = order.Status == OrderStatus.Billed && order.Bill?.PaidAt != null ? OrderStatus.Paid : order.Status,
                     CreatedAt = order.CreatedAt,
                     Total = order.Bill?.Total ?? (order.Items ?? Array.Empty<OrderItem>()).Select(item => item.Price * item.Quantity).DefaultIfEmpty(0m).Sum(),
                     ReferenceLabel = GetReferenceLabel(order, tableMap)
