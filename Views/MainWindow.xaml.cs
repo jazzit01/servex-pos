@@ -36,7 +36,13 @@ namespace ServeX.Views
             Loaded += (_, _) => { UpdateClock(); _clock.Start(); };
             Closed += (_, _) => _clock.Stop();
         }
-        private void UpdateClock() =>
-            HeaderClock.Text = DateTime.Now.ToString("MMM'/'dd HH:mm:ss", CultureInfo.InvariantCulture);
+        private void UpdateClock()
+        {
+            var now = DateTime.Now;
+            var culture = CultureInfo.CurrentCulture;
+            var date = now.ToString("ddd, dd MMM yyyy", culture);
+            if (HeaderDate.Text != date) HeaderDate.Text = date;
+            HeaderClock.Text = now.ToString("HH':'mm':'ss", culture);
+        }
     }
 }
