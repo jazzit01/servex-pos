@@ -20,21 +20,8 @@
         </Grid>
         <TextBlock Text="Address" Style="{StaticResource FieldLabelStyle}"/>
         <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Address" Text="{Binding Address, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="64"/>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="16"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <StackPanel>
-                <TextBlock Text="Tax percentage" Style="{StaticResource FieldLabelStyle}"/>
-                <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Tax percentage" Text="{Binding TaxPercentageInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
-            </StackPanel>
-            <StackPanel Grid.Column="2">
-                <TextBlock Text="License key" Style="{StaticResource FieldLabelStyle}"/>
-                <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="License key" Text="{Binding LicenseKey, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
-            </StackPanel>
-        </Grid>
+        <TextBlock Text="Tax percentage" Style="{StaticResource FieldLabelStyle}"/>
+        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Tax percentage" Text="{Binding TaxPercentageInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
         <TextBlock Text="Administrator account" Style="{StaticResource SectionTitleTextStyle}" Margin="0,24,0,0"/>
         <Grid>
             <Grid.ColumnDefinitions>

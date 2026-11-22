@@ -18,8 +18,6 @@
                         <TextBlock Text="Tax percentage" Style="{StaticResource FieldLabelStyle}"/>
                         <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Tax percentage" Text="{Binding TaxPercentageInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
                         <TextBlock Text="Tax changes apply to subsequent calculations. Review the configured percentage before saving." Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,8,0,0"/>
-                        <TextBlock Text="License key" Style="{StaticResource FieldLabelStyle}"/>
-                        <TextBox Text="{Binding LicenseKey, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Configured license key"/>
                         <Button Content="Save settings" Command="{Binding SaveSettingsCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,20,0,0"/>
                     </StackPanel>
                 </Border>

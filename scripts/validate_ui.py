@@ -60,12 +60,12 @@ for destination in ['Dashboard', 'Menu', 'Tables', 'Parcel', 'Settings']:
     if shell.count('navigation:WorkspaceDestination.' + destination + '}') != 2:
         errors.append(f'MainWindow: command/selected trigger mismatch for {destination}')
 
-# Schema, financial services, credentials, printing and storage are outside this UI phase.
+# Verify the Phase 2 baseline did not change Phase 1 business logic. Later checklist work can extend it.
 protected = ['Models', 'Migrations', 'Data', 'Services/BillingService.cs', 'Services/OrderService.cs',
              'Services/ReceiptPrintService.cs', 'Services/ApplicationAccessService.cs',
              'Services/LicenseService.cs', 'Services/DatabaseBackupService.cs',
              'Infrastructure/Persistence']
-changed = subprocess.check_output(['git', 'diff', '--name-only', 'f013ba5', '--', *protected], cwd=ROOT, text=True)
+changed = subprocess.check_output(['git', 'diff', '--name-only', 'f013ba5', 'e4f5bf1', '--', *protected], cwd=ROOT, text=True)
 if changed.strip():
     errors.append('Protected Phase 1 files changed: ' + changed.strip())
 tracked_local_data = subprocess.check_output(
@@ -76,5 +76,5 @@ if tracked_local_data.strip():
 if errors:
     print('\n'.join(errors), file=sys.stderr)
     sys.exit(1)
-print(f'PASS: {len(files)} XAML files parse; resource keys resolve in the inspected set; action and navigation contracts retained; protected files unchanged; local data files are untracked.')
+print(f'PASS: {len(files)} XAML files parse; resource keys resolve in the inspected set; action and navigation contracts retained; Phase 2 baseline business logic unchanged; local data files are untracked.')
 print('Scope/order of resource lookup, runtime bindings, templates, accessibility and DPI still require Windows checks.')

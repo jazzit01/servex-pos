@@ -14,7 +14,6 @@ namespace ServeX.Application
             services.AddSingleton(location);
             services.AddSingleton<IDbContextFactory<ServeXDbContext>, RuntimeDbContextFactory>();
             services.AddSingleton(new LogService(Path.Combine(Path.GetDirectoryName(location.FilePath), "servex.log")));
-            services.AddSingleton<LicenseService>();
             services.AddSingleton<DatabaseBackupService>();
             services.AddSingleton<DatabaseInitializationService>();
             services.AddTransient<DemoDataService>();

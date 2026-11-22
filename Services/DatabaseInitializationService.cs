@@ -31,10 +31,24 @@ namespace ServeX.Services
             if (pending.Length > 0)
                 _log.LogInfo("Applied forward database migrations: " + string.Join(", ", pending));
 
+            // Earlier versions stored plaintext in Password. Convert all legacy accounts
+            // before login, and save hashes and markers together so a failed write can retry.
+            await context.Database.OpenConnectionAsync();
+            var legacyUsers = await context.Users.Where(user => !user.IsPasswordHashed).ToListAsync();
+            foreach (var user in legacyUsers)
+            {
+                user.Password = PasswordHash.Create(user.Password);
+                user.IsPasswordHashed = true;
+            }
+            if (legacyUsers.Count > 0)
+            {
+                await context.Database.ExecuteSqlRawAsync("PRAGMA secure_delete = ON;");
+                await context.SaveChangesAsync();
+            }
+
             // The historic AddTableAreaSupport migration used an empty string default.
             // EF cannot materialize that value as TableArea. Repair only that legacy default,
             // preserving every table ID, status and relationship, with a backup first.
-            await context.Database.OpenConnectionAsync();
             using var command = context.Database.GetDbConnection().CreateCommand();
             command.CommandText = "SELECT COUNT(*) FROM Tables WHERE Area = '';";
             if (Convert.ToInt64(await command.ExecuteScalarAsync()) > 0)

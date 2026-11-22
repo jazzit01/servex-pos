@@ -25,11 +25,11 @@ This pass moves table orders and billing into the main workspace, caps the log w
 
 Six problems should be fixed before the app touches real customers or real sales data.
 
-- [ ] **Hash passwords.** `User.Password` is stored and compared as plain text (`ApplicationAccessService`). Store a salted hash (PBKDF2 or BCrypt), verify by hash, and migrate the existing admin row.
-- [ ] **Stop seeding demo data on fresh installs.** `DatabaseInitializationService` adds Classic Burger, Caesar Salad, tables T1/T2, rooms R101/R102 and a fake open order for T1 before setup runs. This inflates order counts and leaves T1 occupied. Seed only in a debug build or behind an explicit "load sample data" option.
+- [x] **Hash passwords.** New credentials use salted PBKDF2-SHA256. Startup upgrades existing accounts before login and preserves their passwords.
+- [x] **Stop seeding demo data on fresh installs.** Sample records are available only through explicit Debug demo mode.
 - [ ] **Move the database out of the install folder.** `servex.db` lives in `AppContext.BaseDirectory/Data`, so it is lost on reinstall and unwritable under Program Files. Use `%LocalAppData%\ServeX` and migrate any existing file on first start.
 - [x] **Move and cap the log file.** `logs.txt` also sits in the install folder and never rotates. Runtime logs now live next to the active database and rotate at 2 MiB with one previous file retained.
-- [ ] **Replace the license stub.** `LicenseService.IsValid` always returns true. Either implement real validation or remove the license field and screen text until it is real.
+- [x] **Remove the license stub.** Setup and Settings no longer ask for or display a key. Existing database values are preserved.
 - [x] **Stop showing raw exception text to staff.** Startup, dashboard, and global error messages display staff-facing guidance. Detailed errors go to the log, including failures caught by the `AppDomain` and `TaskScheduler` handlers.
 
 ## Orders and billing workflow
@@ -38,7 +38,7 @@ Orders can be created and billed, but several states and controls the data model
 
 - [ ] **P1 – Cancel order.** `OrderStatus.Cancelled` exists, but no screen or command cancels an order. Add a Cancel button with a confirmation, free the table, and keep the order for history.
 - [ ] **P1 – Set "Paid" after payment.** `BillingService.ConfirmPaymentAsync` sets the status to `Billed` and never uses `Paid`. Decide on one meaning for each, then update the dashboard and guards to match.
-- [ ] **P1 – Block billing of cancelled or already-paid orders.** The current guard only checks `Billed` and `PaidAt`.
+- [x] **P1 – Block billing of cancelled or already-paid orders.** The service rejects cancelled orders and orders already marked billed or paid.
 - [ ] **P1 – Release the table after a closed bill.** The table goes straight to Available. `TableStatus.Cleaning` is never set, so add a "mark clean" step if you want it.
 - [ ] **P2 – Kitchen flow.** `Preparing` and `Served` are never set. Add a send-to-kitchen action, a kitchen ticket print, and a mark-served control, or delete the unused statuses.
 - [ ] **P2 – Merge items instead of overwriting.** Saving a table or parcel order deletes all items and re-adds them. Two terminals saving at once will overwrite each other. Add a row version or lock the order while it is open.
@@ -51,7 +51,7 @@ Orders can be created and billed, but several states and controls the data model
 
 Table and menu screens work for adding and editing, but deletes are unsafe or unhelpful, and Rooms have no screen at all.
 
-- [ ] **P0 – Block deleting a table that has an open order.** `TableService.DeleteTableAsync` removes the table without checking. `Order.ReferenceId` has no foreign key, so the order is orphaned and its bill then labels itself "Parcel". Refuse the delete and say why.
+- [x] **Block deleting a table that has an open order.** The service refuses deletion for any table with order history.
 - [ ] **P1 – Archive menu items instead of failing to delete.** Items that were ever ordered cannot be deleted (foreign key is `Restrict`), and staff only see a generic error. Add an archived flag, hide archived items from ordering, and keep them in old bills.
 - [ ] **P1 – Menu validation.** Check for duplicate item names within a category, and a price above zero.
 - [ ] **P1 – Reserved tables.** `Reserved` can only be set by hand in the edit panel. Add a reserve and release action on the floor view, and block new orders on a reserved table unless confirmed.
@@ -91,7 +91,7 @@ Backup uses SQLite's own copy routine, which is safe while the app runs. Nothing
 - [ ] **P0 – Restore from backup.** Add a Restore action in Settings: pick a file, confirm, validate that it is a ServeX database, close open connections, replace the live file, and restart the app. Keep a copy of the replaced database first.
 - [ ] **P1 – Automatic backups.** Create a dated backup on every start or close and keep the last N, in a folder outside the install directory.
 - [ ] **P1 – Backup location and result.** Remember the last folder used, and show the saved path and file size after a successful backup.
-- [ ] **P1 – Migration safety.** `MigrateAsync` runs on every start. Back up the database automatically before applying a new migration, and show a readable message if it fails.
+- [x] **P1 – Migration safety.** Startup creates an integrity-checked backup before applying pending migrations to an existing database.
 - [ ] **P2 – Export data.** Export orders, bills and menu to CSV or Excel for the accountant.
 
 ## Dashboard, history and reports

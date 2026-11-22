@@ -76,7 +76,7 @@ public class StorageBackupTests
         Assert.Equal("Committed WAL item", (await check.MenuItems.SingleAsync()).Name);
         Assert.Equal("Customer Restaurant", (await check.Settings.SingleAsync()).RestaurantName);
         Assert.Single(await check.Users.ToListAsync());
-        Assert.Equal(5, (await check.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(await context.Database.GetAppliedMigrationsAsync(), await check.Database.GetAppliedMigrationsAsync());
         Assert.True(File.Exists(db.Location.FilePath));
     }
 

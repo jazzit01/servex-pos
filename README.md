@@ -74,11 +74,11 @@ See the
 [storage, migration and recovery procedure](docs/database-operations.md) before
 moving an installation or restoring a backup.
 
-Initialization applies the five existing **forward** EF migrations. Before changing
+Initialization applies the **forward** EF migrations. Before changing
 an existing schema it creates an integrity-checked backup beside the selected
 DB in `Backups`. A failed backup blocks migration. The historical empty table-area
 default is repaired to `Indoor` after a backup; IDs, statuses and relationships stay
-intact. No new schema migration, database reset, deletion or recreation is used.
+intact. Startup preserves existing users and business records.
 
 ## Tests and verification
 
@@ -121,9 +121,7 @@ inventory, actual commands/results and remaining gates. No Phase 3/4 work is inc
 
 - Windows interactive authentication, bindings, dialogs, all POS workflows and
   physical receipt printing require the documented manual acceptance pass.
-- Legacy passwords remain plaintext and license validation remains disabled.
-  These existing security issues need a separate compatible credential/license
-  migration before production deployment; Phase 1 does not hardcode new credentials.
+- Startup converts legacy passwords to salted PBKDF2 hashes. Pre-upgrade backups may contain the original credentials, so restrict access to those backups. The app does not ask for a license key.
 - Only one process per Windows session is guarded. Shared-database/multi-session
   or multi-terminal concurrency is unsupported; payment concurrency is not solved
   by this phase. Use a single Windows account/session per installation.
