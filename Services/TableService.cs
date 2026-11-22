@@ -95,13 +95,14 @@ namespace ServeX.Services
             {
                 using (var context = _contexts.CreateDbContext())
                 {
-                    var normalizedTableNumber = NormalizeTableNumber(table.TableNumber);
+                    var area = NormalizeArea(table.Area);
+                    var normalizedTableNumber = FormatNewTableNumber(table.TableNumber, area);
                     await EnsureUniqueTableNumberAsync(context, normalizedTableNumber);
 
                     var entity = new Table
                     {
                         TableNumber = normalizedTableNumber,
-                        Area = NormalizeArea(table?.Area ?? TableArea.Indoor),
+                        Area = area,
                         Status = NormalizeStatus(table?.Status ?? TableStatus.Available)
                     };
 
@@ -207,6 +208,17 @@ namespace ServeX.Services
             return table;
         }
 
+        public static string FormatNewTableNumber(string tableNumber, TableArea area)
+        {
+            var name = NormalizeTableNumber(tableNumber);
+            if (name.Length == 0 || name.Any(character => character is < '0' or > '9'))
+                return name;
+
+            var digits = name.TrimStart('0');
+            var prefix = area == TableArea.Outdoor ? "OUT-" : "IN-";
+            return prefix + (digits.Length == 0 ? "0" : digits);
+        }
+
         private static string NormalizeTableNumber(string tableNumber)
         {
             return string.IsNullOrWhiteSpace(tableNumber)
@@ -220,6 +232,9 @@ namespace ServeX.Services
             {
                 throw new System.InvalidOperationException("Table number is required.");
             }
+
+            if (tableNumber.Length > 20)
+                throw new System.InvalidOperationException("Table number must be 20 characters or fewer.");
 
             var normalizedTableNumber = tableNumber.Trim().ToLower();
             var duplicateExists = await context.Tables
