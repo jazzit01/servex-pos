@@ -13,7 +13,7 @@ namespace ServeX.ViewModels
     {
         private readonly LogService _logService;
         private readonly DashboardService _dashboardService;
-        private readonly OrderWindowService _orderWindowService;
+        private readonly OrderWorkspaceService _orderWorkspaceService;
         private readonly Action _goToTables;
         private readonly Action _goToMenu;
         public Func<Task> RefreshWorkspace { private get; set; } = () => Task.CompletedTask;
@@ -30,12 +30,12 @@ namespace ServeX.ViewModels
 
         public DashboardViewModel(
             DashboardService dashboardService,
-            OrderWindowService orderWindowService,
+            OrderWorkspaceService orderWorkspaceService,
             WorkspaceNavigation navigation, LogService logService)
         {
             _logService = logService;
             _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
-            _orderWindowService = orderWindowService ?? throw new ArgumentNullException(nameof(orderWindowService));
+            _orderWorkspaceService = orderWorkspaceService ?? throw new ArgumentNullException(nameof(orderWorkspaceService));
             _goToTables = () => navigation.Navigate(WorkspaceDestination.Tables);
             _goToMenu = () => navigation.Navigate(WorkspaceDestination.Menu);
 
@@ -138,7 +138,7 @@ namespace ServeX.ViewModels
                     return;
                 }
 
-                await _orderWindowService.ShowForTableAsync(table);
+                await _orderWorkspaceService.ShowForTableAsync(table);
                 await RefreshWorkspace();
                 await LoadSnapshotAsync();
                 ClearStatus();
@@ -166,7 +166,7 @@ namespace ServeX.ViewModels
             catch (Exception exception)
             {
                 _logService.LogError(fallbackMessage, exception);
-                SetStatus(fallbackMessage + " " + exception.Message, true);
+                SetStatus(fallbackMessage, true);
             }
             finally
             {

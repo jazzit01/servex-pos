@@ -66,7 +66,7 @@ namespace ServeX
                     catch (Exception exception)
                     {
                         _logService.LogError("Database initialization failed", exception);
-                        if (MessageBox.Show("The database could not be initialized. No replacement database will be used.\n\nCheck disk space, folder access and database availability, then choose Yes to retry.\nDiagnostics: " + LogService.LogFilePath,
+                        if (MessageBox.Show("The database could not be initialized. No replacement database will be used.\n\nCheck disk space, folder access and database availability, then choose Yes to retry.\nDiagnostics: " + _logService.FilePath,
                             "ServeX Database", MessageBoxButton.YesNo, MessageBoxImage.Error) != MessageBoxResult.Yes)
                         { Shutdown(-1); return; }
                     }
@@ -111,7 +111,7 @@ namespace ServeX
             catch (Exception exception)
             {
                 _logService.LogError("ServeX startup failed", exception);
-                MessageBox.Show("ServeX could not start.\n\n" + exception.Message + "\n\nDiagnostics: " + LogService.LogFilePath,
+                MessageBox.Show("ServeX could not start. Check that the data folder is accessible, then try again.\n\nDiagnostics: " + _logService.FilePath,
                     "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown(-1);
             }
@@ -121,7 +121,7 @@ namespace ServeX
         {
             _logService.LogError("Unhandled UI exception; shutting down", e.Exception);
             e.Handled = true;
-            MessageBox.Show("An unexpected error occurred. ServeX will close to avoid further operations in an uncertain state.\nRestart ServeX and check your last operation before retrying.\n\nDiagnostics: " + LogService.LogFilePath,
+            MessageBox.Show("An unexpected error occurred. ServeX will close to avoid further operations in an uncertain state.\nRestart ServeX and check your last operation before retrying.\n\nDiagnostics: " + _logService.FilePath,
                 "ServeX Error", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(-1);
         }

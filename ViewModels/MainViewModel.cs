@@ -28,16 +28,19 @@ namespace ServeX.ViewModels
         private readonly System.ComponentModel.PropertyChangedEventHandler _navigationChanged;
         private bool _refreshing;
         private bool _refreshAgain;
+        private ViewModelBase _detail;
+        private readonly DialogService _dialogs;
 
         public MainViewModel(AppSetting settings, User currentUser, DashboardViewModel dashboard,
             MenuViewModel menu, TablesViewModel tables, ParcelViewModel parcel, SettingsViewModel settingsViewModel,
-            WorkspaceNavigation navigation, WorkspaceSummaryService summaryService, LogService logService)
+            WorkspaceNavigation navigation, WorkspaceSummaryService summaryService, LogService logService, DialogService dialogs)
         {
             _restaurantName = settings?.RestaurantName ?? "ServeX";
             _currentUsername = currentUser?.Username ?? "Admin";
             _navigation = navigation;
             _summaryService = summaryService;
             _logService = logService;
+            _dialogs = dialogs;
             Dashboard = dashboard;
             Menu = menu;
             Tables = tables;
@@ -48,12 +51,23 @@ namespace ServeX.ViewModels
             _workspaceChanged = async (sender, args) => await RefreshAfterChangeAsync();
             Menu.MenuItemsChanged += _workspaceChanged;
             Tables.TablesChanged += _workspaceChanged;
-            _navigateCommand = new AsyncRelayCommand(NavigateToAsync);
-            _goBackCommand = new RelayCommand(_ => _navigation.GoBack(), _ => CanGoBack);
+            _navigateCommand = new AsyncRelayCommand(NavigateToAsync, _ => CanLeaveDetail);
+            _goBackCommand = new RelayCommand(_ => GoBack(), _ => CanGoBack && CanLeaveDetail);
             _navigationChanged = (sender, args) =>
             {
-                if (args.PropertyName != nameof(WorkspaceNavigation.Current)) return;
-                OnPropertyChanged(nameof(SelectedDestination));
+                if (args.PropertyName == nameof(WorkspaceNavigation.Detail))
+                {
+                    if (_detail != null) _detail.PropertyChanged -= OnDetailPropertyChanged;
+                    _detail = _navigation.Detail;
+                    if (_detail != null) _detail.PropertyChanged += OnDetailPropertyChanged;
+                    OnPropertyChanged(nameof(BackButtonLabel));
+                    RefreshNavigationCommands();
+                }
+                else if (args.PropertyName == nameof(WorkspaceNavigation.Current))
+                {
+                    OnPropertyChanged(nameof(SelectedDestination));
+                }
+                else return;
                 OnPropertyChanged(nameof(CurrentWorkspace));
                 OnPropertyChanged(nameof(CurrentSectionTitle));
                 OnPropertyChanged(nameof(CurrentSectionSubtitle));
@@ -110,6 +124,7 @@ namespace ServeX.ViewModels
         {
             get
             {
+                if (_detail != null) return _detail;
                 switch (SelectedDestination)
                 {
                     case WorkspaceDestination.Menu:
@@ -187,6 +202,8 @@ namespace ServeX.ViewModels
         {
             get
             {
+                if (_detail is OrderViewModel order) return order.WindowTitle;
+                if (_detail is BillingViewModel billing) return billing.WindowTitle;
                 switch (SelectedDestination)
                 {
                     case WorkspaceDestination.Menu:
@@ -207,6 +224,8 @@ namespace ServeX.ViewModels
         {
             get
             {
+                if (_detail is OrderViewModel order) return $"Table service · {order.TableStatus}";
+                if (_detail is BillingViewModel billing) return billing.TableNumber;
                 switch (SelectedDestination)
                 {
                     case WorkspaceDestination.Menu:
@@ -243,7 +262,41 @@ namespace ServeX.ViewModels
             }
         }
 
-        public bool CanGoBack => _navigation.CanGoBack;
+        public bool CanGoBack => _detail != null || _navigation.CanGoBack;
+
+        public string BackButtonLabel => _detail != null ? "Back" : "Back to dashboard";
+
+        private bool CanLeaveDetail => _detail switch
+        {
+            OrderViewModel order => !order.IsBusy,
+            BillingViewModel billing => !billing.IsBusy,
+            _ => true
+        };
+
+        private void OnDetailPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(OrderViewModel.IsBusy)) RefreshNavigationCommands();
+            if (args.PropertyName == nameof(OrderViewModel.WindowTitle)) OnPropertyChanged(nameof(CurrentSectionTitle));
+            if (args.PropertyName is nameof(OrderViewModel.TableStatus) or nameof(BillingViewModel.TableNumber))
+                OnPropertyChanged(nameof(CurrentSectionSubtitle));
+        }
+
+        private void RefreshNavigationCommands()
+        {
+            _navigateCommand.RaiseCanExecuteChanged();
+            _goBackCommand.RaiseCanExecuteChanged();
+        }
+
+        private bool ConfirmLeavingDetail() =>
+            _detail is not OrderViewModel { HasUnsavedChanges: true } ||
+            _dialogs.Confirm("Leave this order?", "Unsaved changes to this order will be discarded.");
+
+        private void GoBack()
+        {
+            if (!ConfirmLeavingDetail()) return;
+            if (_detail != null) _navigation.CloseDetail();
+            else _navigation.GoBack();
+        }
 
         public async Task LoadAsync()
         {
@@ -314,6 +367,8 @@ namespace ServeX.ViewModels
         private async Task NavigateToAsync(object parameter)
         {
             if (parameter is not WorkspaceDestination destination || !System.Enum.IsDefined(destination)) return;
+            if (!ConfirmLeavingDetail()) return;
+            _navigation.CloseDetails();
             if (destination == SelectedDestination) return;
 
             try
@@ -357,6 +412,8 @@ namespace ServeX.ViewModels
         public void Dispose()
         {
             _navigation.PropertyChanged -= _navigationChanged;
+            if (_detail != null) _detail.PropertyChanged -= OnDetailPropertyChanged;
+            _navigation.CloseDetails();
             Menu.MenuItemsChanged -= _workspaceChanged;
             Tables.TablesChanged -= _workspaceChanged;
             Settings.RestaurantNameSaved -= UpdateRestaurantName;

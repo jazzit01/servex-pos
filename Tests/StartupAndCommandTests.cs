@@ -84,6 +84,64 @@ public class StartupAndCommandTests
     }
 
     [Fact]
+    public void LogRotatesAndKeepsOnlyThePreviousFile()
+    {
+        using var db = new TestDatabase();
+        var path = Path.Combine(db.DirectoryPath, "rotation.log");
+        var log = new LogService(path);
+        var maxBytes = 2L * 1024 * 1024;
+
+        using (var file = File.Create(path)) file.SetLength(maxBytes);
+        log.LogInfo("first after rotation");
+        Assert.Equal(maxBytes, new FileInfo(path + ".1").Length);
+        Assert.Contains("first after rotation", File.ReadAllText(path));
+
+        using (var file = File.OpenWrite(path)) file.SetLength(maxBytes);
+        log.LogInfo("second after rotation");
+        Assert.Equal(maxBytes, new FileInfo(path + ".1").Length);
+        using var previous = File.OpenText(path + ".1");
+        Assert.Contains("first after rotation", previous.ReadLine());
+        Assert.Contains("second after rotation", File.ReadAllText(path));
+    }
+
+    private sealed class DetailPage : ViewModelBase { }
+
+    [Fact]
+    public async Task ClosingBillingReturnsToTheSameOrderAndCompletesOnlyTheChild()
+    {
+        var navigation = new WorkspaceNavigation();
+        navigation.Navigate(WorkspaceDestination.Tables);
+        var order = new DetailPage();
+        var billing = new DetailPage();
+        var orderClosed = navigation.OpenDetailAsync(order);
+        var billingClosed = navigation.OpenDetailAsync(billing);
+
+        Assert.Same(billing, navigation.Detail);
+        navigation.CloseDetail();
+        await billingClosed;
+        Assert.Same(order, navigation.Detail);
+        Assert.False(orderClosed.IsCompleted);
+
+        navigation.CloseDetail();
+        await orderClosed;
+        Assert.Null(navigation.Detail);
+        Assert.Equal(WorkspaceDestination.Tables, navigation.Current);
+    }
+
+    [Fact]
+    public async Task LeavingTheWorkspaceCompletesBothOpenDetailPages()
+    {
+        var navigation = new WorkspaceNavigation();
+        var orderClosed = navigation.OpenDetailAsync(new DetailPage());
+        var billingClosed = navigation.OpenDetailAsync(new DetailPage());
+
+        navigation.CloseDetails();
+
+        await Task.WhenAll(orderClosed, billingClosed);
+        Assert.Null(navigation.Detail);
+    }
+
+    [Fact]
     public async Task AsyncCommandRejectsReentryAndReenablesAfterCompletion()
     {
         var gate = new TaskCompletionSource();

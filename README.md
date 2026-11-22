@@ -20,11 +20,8 @@ dotnet test Tests/ServeX.Tests.csproj -c Release --no-build --no-restore -p:Test
 dotnet run --project ServeX.csproj
 ```
 
-The repository historically tracks binaries and a SQLite database under `bin/`.
-These are retained for compatibility and data preservation. A normal Debug run from
-this checkout can detect that database as a legacy installation. For an isolated
-first-launch check, publish to a **new directory** and use a separate Windows test
-user/profile, or use the explicit Debug demo action:
+Build output and local databases are ignored. For an isolated first-launch check,
+use the explicit Debug demo action:
 
 ```powershell
 dotnet run --project ServeX.csproj -- --demo
@@ -70,7 +67,10 @@ Fresh installations use `%LOCALAPPDATA%\ServeX\Data\servex.db`. Existing
 `<executable directory>\Data\servex.db` installations stay at their original path.
 The selected path is pinned in `%LOCALAPPDATA%\ServeX\database-location.txt`.
 A missing pinned file, conflicting legacy/local files, inaccessible storage, or
-corrupt database stops startup; no replacement database is selected. See the
+corrupt database stops startup; no replacement database is selected. Runtime logs
+are written beside the active database and rotate at 2 MiB with one retained
+copy. Failures before database selection use the Local App Data fallback log.
+See the
 [storage, migration and recovery procedure](docs/database-operations.md) before
 moving an installation or restoring a backup.
 

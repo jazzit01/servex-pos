@@ -16,7 +16,7 @@ namespace ServeX.ViewModels
         private readonly DialogService _dialogs;
         private readonly LogService _logService;
         private readonly OrderService _orderService;
-        private readonly BillingWindowService _billingWindowService;
+        private readonly BillingWorkspaceService _billingWorkspaceService;
         private string _searchText = string.Empty;
         public string SearchText
         {
@@ -33,12 +33,12 @@ namespace ServeX.ViewModels
         private bool _isStatusError;
         private decimal _taxPercentage = 5m;
 
-        public ParcelViewModel(OrderService orderService, BillingWindowService billingWindowService, LogService logService, DialogService dialogs)
+        public ParcelViewModel(OrderService orderService, BillingWorkspaceService billingWorkspaceService, LogService logService, DialogService dialogs)
         {
             _dialogs = dialogs;
             _logService = logService;
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
-            _billingWindowService = billingWindowService ?? throw new ArgumentNullException(nameof(billingWindowService));
+            _billingWorkspaceService = billingWorkspaceService ?? throw new ArgumentNullException(nameof(billingWorkspaceService));
 
             Categories = new ObservableCollection<string>();
             MenuItems = new ObservableCollection<MenuItem>();
@@ -282,7 +282,7 @@ namespace ServeX.ViewModels
 
             await ExecuteBusyActionAsync(async () =>
             {
-                await _billingWindowService.ShowAsync(order.Id);
+                await _billingWorkspaceService.ShowAsync(order.Id);
 
                 var refreshedOrder = await _orderService.GetOrderAsync(order.Id);
                 if (refreshedOrder != null && refreshedOrder.Status == OrderStatus.Billed)

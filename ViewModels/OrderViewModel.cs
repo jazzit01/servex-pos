@@ -15,7 +15,7 @@ namespace ServeX.ViewModels
     {
         private readonly LogService _logService;
         private readonly OrderService _orderService;
-        private readonly BillingWindowService _billingWindowService;
+        private readonly BillingWorkspaceService _billingWorkspaceService;
         private readonly int _tableId;
         private string _searchText = string.Empty;
         public string SearchText
@@ -28,6 +28,7 @@ namespace ServeX.ViewModels
         private bool _isBusy;
         private bool _hasBlockingError;
         private int? _orderId;
+        private (int MenuItemId, int Quantity)[] _savedItems = Array.Empty<(int, int)>();
         private string _tableNumber = string.Empty;
         private TableStatus _tableStatus = TableStatus.Available;
         private string _selectedCategory = "All";
@@ -35,11 +36,11 @@ namespace ServeX.ViewModels
         private bool _isStatusError;
         private decimal _taxPercentage = 5m;
 
-        public OrderViewModel(OrderService orderService, BillingWindowService billingWindowService, int tableId, LogService logService)
+        public OrderViewModel(OrderService orderService, BillingWorkspaceService billingWorkspaceService, int tableId, LogService logService)
         {
             _logService = logService;
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
-            _billingWindowService = billingWindowService ?? throw new ArgumentNullException(nameof(billingWindowService));
+            _billingWorkspaceService = billingWorkspaceService ?? throw new ArgumentNullException(nameof(billingWorkspaceService));
             _tableId = tableId;
 
             Categories = new ObservableCollection<string>();
@@ -147,6 +148,11 @@ namespace ServeX.ViewModels
 
         public bool CanSaveOrder => !IsBusy && OrderItems.Count > 0;
 
+        private (int MenuItemId, int Quantity)[] CurrentItems() =>
+            OrderItems.Select(item => (item.MenuItemId, item.Quantity)).OrderBy(item => item.MenuItemId).ToArray();
+
+        public bool HasUnsavedChanges => !_savedItems.SequenceEqual(CurrentItems());
+
         public bool CanGenerateBill => !IsBusy && OrderItems.Count > 0;
 
         public bool HasBlockingError
@@ -239,6 +245,7 @@ namespace ServeX.ViewModels
                     ClearStatus();
                 }
 
+                _savedItems = CurrentItems();
                 NotifyTotalsChanged();
             }, "The order screen could not be loaded.");
 
@@ -334,7 +341,7 @@ namespace ServeX.ViewModels
 
             await ExecuteBusyActionAsync(async () =>
             {
-                await _billingWindowService.ShowAsync(order.Id);
+                await _billingWorkspaceService.ShowAsync(order.Id);
             }, "The billing screen could not be opened.");
             await LoadAsync();
         }
@@ -487,6 +494,7 @@ namespace ServeX.ViewModels
             {
                 savedOrder = await _orderService.SaveTableOrderAsync(_tableId, items);
                 _orderId = savedOrder.Id;
+                _savedItems = CurrentItems();
                 TableStatus = TableStatus.Occupied;
 
                 if (showSuccessMessage)

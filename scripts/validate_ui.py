@@ -64,12 +64,17 @@ for destination in ['Dashboard', 'Menu', 'Tables', 'Parcel', 'Settings']:
 protected = ['Models', 'Migrations', 'Data', 'Services/BillingService.cs', 'Services/OrderService.cs',
              'Services/ReceiptPrintService.cs', 'Services/ApplicationAccessService.cs',
              'Services/LicenseService.cs', 'Services/DatabaseBackupService.cs',
-             'Infrastructure/Persistence', 'bin/Debug/net8.0-windows/Data/servex.db']
+             'Infrastructure/Persistence']
 changed = subprocess.check_output(['git', 'diff', '--name-only', 'f013ba5', '--', *protected], cwd=ROOT, text=True)
 if changed.strip():
     errors.append('Protected Phase 1 files changed: ' + changed.strip())
+tracked_local_data = subprocess.check_output(
+    ['git', 'ls-files', '--', '*.db', '*.db-wal', '*.db-shm', '*.log', '*.log.1'],
+    cwd=ROOT, text=True)
+if tracked_local_data.strip():
+    errors.append('Local databases or logs are tracked: ' + tracked_local_data.strip())
 if errors:
     print('\n'.join(errors), file=sys.stderr)
     sys.exit(1)
-print(f'PASS: {len(files)} XAML files parse; resource keys resolve in the inspected set; action and navigation contracts retained; protected files unchanged.')
+print(f'PASS: {len(files)} XAML files parse; resource keys resolve in the inspected set; action and navigation contracts retained; protected files unchanged; local data files are untracked.')
 print('Scope/order of resource lookup, runtime bindings, templates, accessibility and DPI still require Windows checks.')
