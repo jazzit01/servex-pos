@@ -118,6 +118,10 @@ namespace ServeX.ViewModels
 
         public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
 
+        public bool HasOpenOrders => OpenOrders?.Count > 0;
+
+        public bool IsOpenOrdersEmpty => !HasOpenOrders;
+
         public bool HasRecentOrders => RecentOrders.Count > 0;
 
         public bool IsRecentOrdersEmpty => RecentOrders.Count == 0;
@@ -207,6 +211,8 @@ namespace ServeX.ViewModels
             ActiveOrders = snapshot.ActiveOrders;
             OpenOrders = snapshot.OpenOrders;
             OnPropertyChanged(nameof(OpenOrders));
+            OnPropertyChanged(nameof(HasOpenOrders));
+            OnPropertyChanged(nameof(IsOpenOrdersEmpty));
             TotalOrdersToday = snapshot.TotalOrdersToday;
             ParcelOrdersCount = snapshot.ParcelOrdersCount;
 

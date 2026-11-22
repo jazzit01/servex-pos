@@ -17,7 +17,7 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="{TemplateBinding Tag}" FontFamily="Segoe MDL2 Assets" FontSize="17" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center"/>
-                            <ContentPresenter x:Name="NavLabel" Grid.Column="1" RecognizesAccessKey="True" VerticalAlignment="Center"/>
+                            <ContentPresenter x:Name="NavLabel" Grid.Column="1" TextElement.Foreground="{TemplateBinding Foreground}" RecognizesAccessKey="True" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>

@@ -13,8 +13,8 @@
     <SolidColorBrush x:Key="BorderBrushWarm" Color="#D7DFE8"/>
     <SolidColorBrush x:Key="TextBrush" Color="#172B3A"/>
     <SolidColorBrush x:Key="MutedTextBrush" Color="#526579"/>
-    <SolidColorBrush x:Key="PrimaryBrush" Color="#087E8B"/>
-    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#066570"/>
+    <SolidColorBrush x:Key="PrimaryBrush" Color="#08636B"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#07545C"/>
     <SolidColorBrush x:Key="PrimarySoftBrush" Color="#E5F3F4"/>
     <SolidColorBrush x:Key="AccentBrush" Color="#335C81"/>
     <SolidColorBrush x:Key="AccentSoftBrush" Color="#EBF1F8"/>
@@ -29,7 +29,7 @@
     <!-- Semantic tokens; legacy keys above remain compatible with every existing view. -->
     <SolidColorBrush x:Key="SidebarBrush" Color="#EEF4EF"/>
     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#CCDAD0"/>
-    <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#C7E5D4"/>
+    <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#245B47"/>
     <SolidColorBrush x:Key="SidebarTextBrush" Color="#18382B"/>
     <SolidColorBrush x:Key="SidebarMutedBrush" Color="#426356"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="#335C81"/>
@@ -114,7 +114,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Root" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource RadiusMedium}" ClipToBounds="True" Padding="{TemplateBinding Padding}">
-                        <ContentPresenter RecognizesAccessKey="True" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+                        <ContentPresenter RecognizesAccessKey="True" TextElement.Foreground="{TemplateBinding Foreground}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
