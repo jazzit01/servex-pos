@@ -102,11 +102,38 @@ namespace ServeX.Services
         {
             using (var context = _contexts.CreateDbContext())
             {
-                return await GetTaxPercentageAsync(context);
+                return await OrderPricing.GetTaxPercentageAsync(context);
             }
         }
 
-        public async Task<Order> SaveTableOrderAsync(int tableId, IEnumerable<OrderSaveItem> items)
+        public async Task CancelOrderAsync(int orderId)
+        {
+            using var context = _contexts.CreateDbContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
+            var order = await context.Orders.Include(item => item.Bill).SingleOrDefaultAsync(item => item.Id == orderId);
+            if (order == null || order.Status is not (OrderStatus.Open or OrderStatus.Preparing or OrderStatus.Served) ||
+                order.Bill?.PaidAt != null)
+                throw new InvalidOperationException("Only an open, unpaid order can be cancelled.");
+
+            order.Status = OrderStatus.Cancelled;
+            if (order.Type == OrderType.Table)
+            {
+                var otherOpenOrder = await context.Orders.AnyAsync(item => item.Id != orderId &&
+                    item.Type == OrderType.Table && item.ReferenceId == order.ReferenceId &&
+                    (item.Status == OrderStatus.Open || item.Status == OrderStatus.Preparing || item.Status == OrderStatus.Served));
+                if (!otherOpenOrder)
+                {
+                    var table = await context.Tables.FindAsync(order.ReferenceId);
+                    if (table?.Status == TableStatus.Occupied) table.Status = TableStatus.Available;
+                }
+            }
+
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            _logService.LogInfo($"Order #{orderId} cancelled");
+        }
+
+        public async Task<Order> SaveTableOrderAsync(int tableId, IEnumerable<OrderSaveItem> items, int? expectedOrderId = null)
         {
             var orderItems = items?
                 .Where(item => item.Quantity > 0)
@@ -121,6 +148,7 @@ namespace ServeX.Services
             {
                 using (var context = _contexts.CreateDbContext())
                 {
+                    using var transaction = await context.Database.BeginTransactionAsync();
                     var table = await context.Tables.FirstOrDefaultAsync(item => item.Id == tableId);
                     if (table == null)
                     {
@@ -138,6 +166,9 @@ namespace ServeX.Services
                             item.Status != OrderStatus.Cancelled)
                         .OrderByDescending(item => item.CreatedAt)
                         .FirstOrDefaultAsync();
+
+                    if (expectedOrderId.HasValue && order?.Id != expectedOrderId)
+                        throw new InvalidOperationException("The table order changed. Reopen it before saving.");
 
                     if (order == null)
                     {
@@ -164,13 +195,13 @@ namespace ServeX.Services
                         {
                             MenuItemId = item.MenuItemId,
                             Quantity = item.Quantity,
-                            Price = decimal.Round(item.Price, 2)
+                            Price = OrderPricing.Round(item.Price)
                         });
                     }
 
-                    var taxRate = await GetTaxRateAsync(context);
-                    var subtotal = decimal.Round(orderItems.Sum(item => item.Price * item.Quantity), 2);
-                    var tax = decimal.Round(subtotal * taxRate, 2);
+                    var taxPercentage = await OrderPricing.GetTaxPercentageAsync(context);
+                    var subtotal = OrderPricing.Round(orderItems.Sum(item => item.Price * item.Quantity));
+                    var tax = OrderPricing.Tax(subtotal, taxPercentage);
                     var total = subtotal + tax;
 
                     if (order.Bill == null)
@@ -186,6 +217,7 @@ namespace ServeX.Services
                     table.Status = TableStatus.Occupied;
 
                     await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
                     _logService.LogInfo(string.Format("Order saved for table {0} with {1} items", table.TableNumber, orderItems.Count));
                     return order;
                 }
@@ -216,6 +248,7 @@ namespace ServeX.Services
             {
                 using (var context = _contexts.CreateDbContext())
                 {
+                    using var transaction = await context.Database.BeginTransactionAsync();
                     Order order = null;
                     if (orderId.HasValue)
                     {
@@ -262,13 +295,13 @@ namespace ServeX.Services
                         {
                             MenuItemId = item.MenuItemId,
                             Quantity = item.Quantity,
-                            Price = decimal.Round(item.Price, 2)
+                            Price = OrderPricing.Round(item.Price)
                         });
                     }
 
-                    var taxRate = await GetTaxRateAsync(context);
-                    var subtotal = decimal.Round(orderItems.Sum(item => item.Price * item.Quantity), 2);
-                    var tax = decimal.Round(subtotal * taxRate, 2);
+                    var taxPercentage = await OrderPricing.GetTaxPercentageAsync(context);
+                    var subtotal = OrderPricing.Round(orderItems.Sum(item => item.Price * item.Quantity));
+                    var tax = OrderPricing.Tax(subtotal, taxPercentage);
                     var total = subtotal + tax;
 
                     if (order.Bill == null)
@@ -282,6 +315,7 @@ namespace ServeX.Services
                     order.Bill.Total = total;
 
                     await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
                     _logService.LogInfo(string.Format("Parcel order saved for customer {0} with {1} items", normalizedCustomerName, orderItems.Count));
                     return order;
                 }
@@ -293,19 +327,5 @@ namespace ServeX.Services
             }
         }
 
-        private static async Task<decimal> GetTaxPercentageAsync(ServeXDbContext context)
-        {
-            var configuredTax = await context.Settings
-                .AsNoTracking()
-                .Select(setting => (decimal?)setting.TaxPercentage)
-                .FirstOrDefaultAsync();
-
-            return configuredTax ?? 5m;
-        }
-
-        private static async Task<decimal> GetTaxRateAsync(ServeXDbContext context)
-        {
-            return await GetTaxPercentageAsync(context) / 100m;
-        }
     }
 }

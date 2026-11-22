@@ -13,13 +13,13 @@ namespace ServeX.ViewModels
     {
         private readonly LogService _logService;
         private readonly DashboardService _dashboardService;
-        private readonly OrderWindowService _orderWindowService;
+        private readonly OrderWorkspaceService _orderWorkspaceService;
         private readonly Action _goToTables;
         private readonly Action _goToMenu;
         public Func<Task> RefreshWorkspace { private get; set; } = () => Task.CompletedTask;
         private bool _isBusy;
         private decimal _todayRevenue;
-        private int _activeTables;
+        private int _reservedTables;
         private int _occupiedTables;
         private int _availableTables;
         private int _activeOrders;
@@ -30,12 +30,12 @@ namespace ServeX.ViewModels
 
         public DashboardViewModel(
             DashboardService dashboardService,
-            OrderWindowService orderWindowService,
+            OrderWorkspaceService orderWorkspaceService,
             WorkspaceNavigation navigation, LogService logService)
         {
             _logService = logService;
             _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
-            _orderWindowService = orderWindowService ?? throw new ArgumentNullException(nameof(orderWindowService));
+            _orderWorkspaceService = orderWorkspaceService ?? throw new ArgumentNullException(nameof(orderWorkspaceService));
             _goToTables = () => navigation.Navigate(WorkspaceDestination.Tables);
             _goToMenu = () => navigation.Navigate(WorkspaceDestination.Menu);
 
@@ -72,10 +72,10 @@ namespace ServeX.ViewModels
             private set => SetProperty(ref _todayRevenue, value);
         }
 
-        public int ActiveTables
+        public int ReservedTables
         {
-            get => _activeTables;
-            private set => SetProperty(ref _activeTables, value);
+            get => _reservedTables;
+            private set => SetProperty(ref _reservedTables, value);
         }
 
         public int OccupiedTables { get => _occupiedTables; private set => SetProperty(ref _occupiedTables, value); }
@@ -138,7 +138,7 @@ namespace ServeX.ViewModels
                     return;
                 }
 
-                await _orderWindowService.ShowForTableAsync(table);
+                await _orderWorkspaceService.ShowForTableAsync(table);
                 await RefreshWorkspace();
                 await LoadSnapshotAsync();
                 ClearStatus();
@@ -166,7 +166,7 @@ namespace ServeX.ViewModels
             catch (Exception exception)
             {
                 _logService.LogError(fallbackMessage, exception);
-                SetStatus(fallbackMessage + " " + exception.Message, true);
+                SetStatus(fallbackMessage, true);
             }
             finally
             {
@@ -197,7 +197,7 @@ namespace ServeX.ViewModels
         {
             var snapshot = await _dashboardService.GetSnapshotAsync();
             TodayRevenue = snapshot.TodayRevenue;
-            ActiveTables = snapshot.ActiveTables;
+            ReservedTables = snapshot.ReservedTables;
             OccupiedTables = snapshot.OccupiedTables;
             AvailableTables = snapshot.AvailableTables;
             ActiveOrders = snapshot.ActiveOrders;

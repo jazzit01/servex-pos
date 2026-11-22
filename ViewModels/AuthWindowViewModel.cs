@@ -66,7 +66,7 @@ namespace ServeX.ViewModels
         {
             WindowTitle = "ServeX Setup";
             PanelTitle = "First-time setup";
-            PanelSubtitle = "Configure your restaurant and create the admin account. License is optional in local development.";
+            PanelSubtitle = "Configure your restaurant and create the admin account.";
             CurrentViewModel = _factory.CreateSetup(OnSetupCompletedAsync);
         }
 

@@ -14,8 +14,9 @@ namespace ServeX.ViewModels
     public class OrderViewModel : ViewModelBase
     {
         private readonly LogService _logService;
+        private readonly DialogService _dialogs;
         private readonly OrderService _orderService;
-        private readonly BillingWindowService _billingWindowService;
+        private readonly BillingWorkspaceService _billingWorkspaceService;
         private readonly int _tableId;
         private string _searchText = string.Empty;
         public string SearchText
@@ -28,6 +29,7 @@ namespace ServeX.ViewModels
         private bool _isBusy;
         private bool _hasBlockingError;
         private int? _orderId;
+        private (int MenuItemId, int Quantity)[] _savedItems = Array.Empty<(int, int)>();
         private string _tableNumber = string.Empty;
         private TableStatus _tableStatus = TableStatus.Available;
         private string _selectedCategory = "All";
@@ -35,11 +37,12 @@ namespace ServeX.ViewModels
         private bool _isStatusError;
         private decimal _taxPercentage = 5m;
 
-        public OrderViewModel(OrderService orderService, BillingWindowService billingWindowService, int tableId, LogService logService)
+        public OrderViewModel(OrderService orderService, BillingWorkspaceService billingWorkspaceService, int tableId, LogService logService, DialogService dialogs)
         {
             _logService = logService;
+            _dialogs = dialogs;
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
-            _billingWindowService = billingWindowService ?? throw new ArgumentNullException(nameof(billingWindowService));
+            _billingWorkspaceService = billingWorkspaceService ?? throw new ArgumentNullException(nameof(billingWorkspaceService));
             _tableId = tableId;
 
             Categories = new ObservableCollection<string>();
@@ -53,6 +56,7 @@ namespace ServeX.ViewModels
             DecreaseQuantityCommand = new RelayCommand(item => DecreaseQuantity(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             RemoveItemCommand = new RelayCommand(item => RemoveItem(item as OrderLineItemViewModel), item => !IsBusy && item is OrderLineItemViewModel);
             SaveOrderCommand = new AsyncRelayCommand(async _ => await SaveOrderAsync(), _ => CanSaveOrder);
+            CancelOrderCommand = new AsyncRelayCommand(_ => CancelOrderAsync(), _ => !IsBusy && _orderId.HasValue);
             GenerateBillCommand = new AsyncRelayCommand(async _ => await GenerateBillAsync(), _ => CanGenerateBill);
         }
 
@@ -73,6 +77,8 @@ namespace ServeX.ViewModels
         public RelayCommand RemoveItemCommand { get; }
 
         public AsyncRelayCommand SaveOrderCommand { get; }
+
+        public AsyncRelayCommand CancelOrderCommand { get; }
 
         public AsyncRelayCommand GenerateBillCommand { get; }
 
@@ -147,6 +153,11 @@ namespace ServeX.ViewModels
 
         public bool CanSaveOrder => !IsBusy && OrderItems.Count > 0;
 
+        private (int MenuItemId, int Quantity)[] CurrentItems() =>
+            OrderItems.Select(item => (item.MenuItemId, item.Quantity)).OrderBy(item => item.MenuItemId).ToArray();
+
+        public bool HasUnsavedChanges => !_savedItems.SequenceEqual(CurrentItems());
+
         public bool CanGenerateBill => !IsBusy && OrderItems.Count > 0;
 
         public bool HasBlockingError
@@ -155,7 +166,7 @@ namespace ServeX.ViewModels
             private set => SetProperty(ref _hasBlockingError, value);
         }
 
-        public decimal Subtotal => decimal.Round(OrderItems.Sum(item => item.LineTotal), 2);
+        public decimal Subtotal => OrderPricing.Round(OrderItems.Sum(item => item.LineTotal));
 
         public decimal TaxPercentage
         {
@@ -172,7 +183,7 @@ namespace ServeX.ViewModels
 
         public string TaxLabel => string.Format("Tax ({0:0.##}%)", TaxPercentage);
 
-        public decimal Tax => decimal.Round(Subtotal * (TaxPercentage / 100m), 2);
+        public decimal Tax => OrderPricing.Tax(Subtotal, TaxPercentage);
 
         public decimal Total => Subtotal + Tax;
 
@@ -239,6 +250,7 @@ namespace ServeX.ViewModels
                     ClearStatus();
                 }
 
+                _savedItems = CurrentItems();
                 NotifyTotalsChanged();
             }, "The order screen could not be loaded.");
 
@@ -319,6 +331,24 @@ namespace ServeX.ViewModels
             NotifyTotalsChanged();
         }
 
+        private async Task CancelOrderAsync()
+        {
+            if (_orderId is not int orderId || !_dialogs.Confirm("Cancel order?",
+                $"Cancel order #{orderId}? The order will remain in the records, and unsaved changes will be discarded."))
+                return;
+
+            await ExecuteBusyActionAsync(async () =>
+            {
+                await _orderService.CancelOrderAsync(orderId);
+                _orderId = null;
+                OrderItems.Clear();
+                _savedItems = CurrentItems();
+                TableStatus = (await _orderService.GetTableAsync(_tableId))?.Status ?? TableStatus;
+                NotifyTotalsChanged();
+                SetStatus($"Order #{orderId} cancelled.", false);
+            }, "This order could not be cancelled. Reopen it to check its current status.");
+        }
+
         private async Task SaveOrderAsync()
         {
             await PersistOrderAsync(true);
@@ -334,7 +364,7 @@ namespace ServeX.ViewModels
 
             await ExecuteBusyActionAsync(async () =>
             {
-                await _billingWindowService.ShowAsync(order.Id);
+                await _billingWorkspaceService.ShowAsync(order.Id);
             }, "The billing screen could not be opened.");
             await LoadAsync();
         }
@@ -427,6 +457,7 @@ namespace ServeX.ViewModels
             RemoveItemCommand.RaiseCanExecuteChanged();
             SaveOrderCommand.RaiseCanExecuteChanged();
             GenerateBillCommand.RaiseCanExecuteChanged();
+            CancelOrderCommand.RaiseCanExecuteChanged();
         }
 
         private void SetStatus(string message, bool isError)
@@ -485,8 +516,9 @@ namespace ServeX.ViewModels
             Order savedOrder = null;
             await ExecuteBusyActionAsync(async () =>
             {
-                savedOrder = await _orderService.SaveTableOrderAsync(_tableId, items);
+                savedOrder = await _orderService.SaveTableOrderAsync(_tableId, items, _orderId);
                 _orderId = savedOrder.Id;
+                _savedItems = CurrentItems();
                 TableStatus = TableStatus.Occupied;
 
                 if (showSuccessMessage)

@@ -2,22 +2,10 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <StackPanel>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <HeaderedContentControl Header="{Binding TableNumber}" Content="{Binding TableStatus}" ContentStringFormat="Table service · {0}" Style="{StaticResource PageHeaderStyle}"/>
-                </StackPanel>
-            </Grid>
-        </StackPanel>
-        <ContentControl Grid.Row="1" Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
-        <Grid Grid.Row="2">
+        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="16"/>
