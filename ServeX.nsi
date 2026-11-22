@@ -9,6 +9,7 @@ RequestExecutionLevel user
 SetCompressor /SOLID lzma
 
 !define MUI_ICON "${APPICON}"
+!define MUI_UNICON "${APPICON}"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\ServeX.exe"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
