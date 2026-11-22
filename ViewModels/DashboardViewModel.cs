@@ -43,14 +43,18 @@ namespace ServeX.ViewModels
 
             NewTableOrderCommand = new AsyncRelayCommand(async _ => await OpenNewTableOrderAsync(), _ => !IsBusy);
             GoToTablesCommand = new RelayCommand(_ => _goToTables(), _ => !IsBusy);
-            GoToMenuCommand = new RelayCommand(_ => _goToMenu(), _ => !IsBusy);
+            GoToMenuCommand = new RelayCommand(_ => _goToMenu(), _ => !IsBusy && CanManageMenu);
         }
+
+        public System.Collections.Generic.IList<HistoryRow> OpenOrders { get; private set; }
 
         public ObservableCollection<DashboardRecentOrder> RecentOrders { get; }
 
         public AsyncRelayCommand NewTableOrderCommand { get; }
 
         public RelayCommand GoToTablesCommand { get; }
+
+        public bool CanManageMenu { get; set; } = true;
 
         public RelayCommand GoToMenuCommand { get; }
 
@@ -201,6 +205,8 @@ namespace ServeX.ViewModels
             OccupiedTables = snapshot.OccupiedTables;
             AvailableTables = snapshot.AvailableTables;
             ActiveOrders = snapshot.ActiveOrders;
+            OpenOrders = snapshot.OpenOrders;
+            OnPropertyChanged(nameof(OpenOrders));
             TotalOrdersToday = snapshot.TotalOrdersToday;
             ParcelOrdersCount = snapshot.ParcelOrdersCount;
 

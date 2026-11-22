@@ -5,6 +5,9 @@ namespace ServeX.ViewModels
     public class OrderLineItemViewModel : ViewModelBase
     {
         private int _quantity;
+        private decimal _unitPrice;
+
+        public bool TaxExempt { get; set; }
 
         public event EventHandler QuantityChanged;
 
@@ -14,7 +17,14 @@ namespace ServeX.ViewModels
 
         public string Category { get; set; }
 
-        public decimal UnitPrice { get; set; }
+        public decimal UnitPrice
+        {
+            get => _unitPrice;
+            set
+            {
+                if (SetProperty(ref _unitPrice, value)) OnPropertyChanged(nameof(LineTotal));
+            }
+        }
 
         public int Quantity
         {

@@ -66,6 +66,8 @@ namespace ServeX.Data
                 entity.Property(setting => setting.RestaurantName).IsRequired().HasMaxLength(120);
                 entity.Property(setting => setting.Address).IsRequired().HasMaxLength(250);
                 entity.Property(setting => setting.Phone).IsRequired().HasMaxLength(30);
+                entity.Property(setting => setting.Locale).IsRequired();
+                entity.Property(setting => setting.TaxName).IsRequired();
                 entity.Property(setting => setting.TaxPercentage).HasPrecision(5, 2);
                 entity.Property(setting => setting.LicenseKey).IsRequired().HasMaxLength(80);
             });

@@ -22,7 +22,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Item" Binding="{Binding Name}" Width="*" MinWidth="130"/>
                             <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="125"/>
-                            <DataGridTextColumn Header="Price" Binding="{Binding Price, StringFormat=Rs. {0:N2}}" Width="130" ElementStyle="{StaticResource FinancialTextStyle}"/>
+                            <DataGridTextColumn Header="Price" Binding="{Binding Price, StringFormat=C2}" Width="130" ElementStyle="{StaticResource FinancialTextStyle}"/>
                             <DataGridTemplateColumn Header="Availability" Width="110">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -48,7 +48,7 @@
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
                                             <Button Content="Edit" Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}" Padding="10,8" Margin="0,0,6,0"/>
-                                            <Button Content="Delete" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource DangerActionButtonStyle}" Padding="10,8"/>
+                                            <Button Content="Archive" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource DangerActionButtonStyle}" Padding="10,8"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -65,10 +65,11 @@
                         <TextBlock Text="Item name" Style="{StaticResource FieldLabelStyle}"/>
                         <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Item name" Text="{Binding EditorName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
                         <TextBlock Text="Category" Style="{StaticResource FieldLabelStyle}"/>
-                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Category" Text="{Binding EditorCategory, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
-                        <TextBlock Text="Price (Rs.)" Style="{StaticResource FieldLabelStyle}"/>
-                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Price (Rs.)" Text="{Binding EditorPrice, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <ComboBox Style="{StaticResource FormComboBoxStyle}" IsEditable="True" ItemsSource="{Binding CategoryChoices}" AutomationProperties.Name="Category" Text="{Binding EditorCategory, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <TextBlock Text="Price" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Price" Text="{Binding EditorPrice, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
                         <CheckBox Content="Available for ordering" IsChecked="{Binding EditorIsAvailable}" MinHeight="44" Margin="0,12,0,0" AutomationProperties.Name="Item availability"/>
+                        <CheckBox Content="Tax-exempt" IsChecked="{Binding EditorTaxExempt}" MinHeight="34" AutomationProperties.Name="Tax-exempt menu item"/>
                         <WrapPanel Margin="0,16,0,0">
                             <Button Content="Save item" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,8,8"/>
                             <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,0,8"/>

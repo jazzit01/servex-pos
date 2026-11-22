@@ -25,7 +25,8 @@ public class WindowsCompositionTests
         {
             (WorkspaceDestination.Dashboard, main.Dashboard), (WorkspaceDestination.Menu, main.Menu),
             (WorkspaceDestination.Tables, main.Tables), (WorkspaceDestination.Parcel, main.Parcel),
-            (WorkspaceDestination.Settings, main.Settings)
+            (WorkspaceDestination.Settings, main.Settings), (WorkspaceDestination.Rooms, main.Rooms),
+            (WorkspaceDestination.History, main.History)
         };
         foreach (var (destination, expected) in destinations)
         {
@@ -104,6 +105,8 @@ public class WindowsCompositionTests
                     (new ServeX.Views.TablesView(), main.Tables),
                     (new ServeX.Views.ParcelView(), main.Parcel),
                     (new ServeX.Views.SettingsView(), main.Settings),
+                    (new ServeX.Views.RoomsView(), main.Rooms),
+                    (new ServeX.Views.HistoryView(), main.History),
                     (new ServeX.Views.OrderView(), order),
                     (new ServeX.Views.BillingView(), services.GetRequiredService<Func<int, BillingViewModel>>()(1)),
                     (new ServeX.Views.LoginView(), auth.CurrentViewModel),

@@ -21,8 +21,8 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Item" Binding="{Binding Name}" Width="*" MinWidth="140"/>
                             <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="65"/>
-                            <DataGridTextColumn Header="Unit price" Binding="{Binding UnitPrice, StringFormat=Rs. {0:N2}}" Width="120" ElementStyle="{StaticResource FinancialTextStyle}"/>
-                            <DataGridTextColumn Header="Line total" Binding="{Binding LineTotal, StringFormat=Rs. {0:N2}}" Width="135" ElementStyle="{StaticResource FinancialTextStyle}"/>
+                            <DataGridTextColumn Header="Unit price" Binding="{Binding UnitPrice, StringFormat=C2}" Width="120" ElementStyle="{StaticResource FinancialTextStyle}"/>
+                            <DataGridTextColumn Header="Line total" Binding="{Binding LineTotal, StringFormat=C2}" Width="135" ElementStyle="{StaticResource FinancialTextStyle}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -37,7 +37,7 @@
                                 <ColumnDefinition Width="2*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Subtotal" Margin="0,0,12,0"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat=C2}" Style="{StaticResource FinancialTextStyle}"/>
                         </Grid>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -45,7 +45,7 @@
                                 <ColumnDefinition Width="2*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="{Binding TaxLabel}" Margin="0,0,12,0"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Tax, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Tax, StringFormat=C2}" Style="{StaticResource FinancialTextStyle}"/>
                         </Grid>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -53,21 +53,37 @@
                                 <ColumnDefinition Width="2*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Discount" Margin="0,0,12,0"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Discount, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Discount, StringFormat=C2}" Style="{StaticResource FinancialTextStyle}"/>
                         </Grid>
                         <Border Background="{StaticResource PrimarySoftBrush}" CornerRadius="8" Padding="16" Margin="0,4,0,8">
                             <StackPanel>
                                 <TextBlock Text="Final payable amount" Foreground="{StaticResource PrimaryBrush}"/>
-                                <TextBlock Text="{Binding FinalTotal, StringFormat=Rs. {0:N2}}" FontSize="30" Margin="0,6,0,0" Style="{StaticResource FinancialTextStyle}"/>
+                                <TextBlock Text="{Binding FinalTotal, StringFormat=C2}" FontSize="30" Margin="0,6,0,0" Style="{StaticResource FinancialTextStyle}"/>
                             </StackPanel>
                         </Border>
-                        <TextBlock Text="Discount (Rs.)" Style="{StaticResource FieldLabelStyle}"/>
-                        <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Discount (Rs.)" Text="{Binding DiscountInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <TextBlock Text="Discount" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Style="{StaticResource FormTextBoxStyle}" IsEnabled="{Binding CanEditDiscount}" AutomationProperties.Name="Discount" Text="{Binding DiscountInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                        <CheckBox Content="Percentage discount" IsChecked="{Binding PercentDiscount}" IsEnabled="{Binding CanEditDiscount}" Margin="0,6,0,0"/>
+                        <TextBlock Text="Discount reason" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding DiscountReason, UpdateSourceTrigger=PropertyChanged}" MaxLength="120" IsEnabled="{Binding CanEditDiscount}" Style="{StaticResource FormTextBoxStyle}"/>
+                        <TextBlock Text="Administrator password for discounts above 20%" Style="{StaticResource FieldLabelStyle}" TextWrapping="Wrap"/>
+                        <PasswordBox x:Name="ManagerPasswordBox" IsEnabled="{Binding CanEditDiscount}" AutomationProperties.Name="Administrator discount password"/>
                         <TextBlock Text="Payment method" Style="{StaticResource FieldLabelStyle}"/>
-                        <ComboBox ItemsSource="{Binding PaymentOptions}" SelectedItem="{Binding SelectedPaymentMethod}" Style="{StaticResource FormComboBoxStyle}" AutomationProperties.Name="Payment method"/>
+                        <ComboBox ItemsSource="{Binding PaymentOptions}" IsEnabled="{Binding CanEditPayment}" SelectedItem="{Binding SelectedPaymentMethod}" Style="{StaticResource FormComboBoxStyle}" AutomationProperties.Name="Payment method"/>
+                        <TextBlock Text="Card or UPI reference (optional)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox IsEnabled="{Binding CanEditPayment}" Text="{Binding PaymentReference}" MaxLength="80" AutomationProperties.Name="Payment reference" Style="{StaticResource FormTextBoxStyle}"/>
+                        <CheckBox Content="Split payment" IsChecked="{Binding SplitPayment}" IsEnabled="{Binding CanEditPayment}" Margin="0,8,0,0"/>
+                        <TextBlock Text="Amount on first payment" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding FirstPaymentAmount, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditPayment}" Style="{StaticResource FormTextBoxStyle}"/>
+                        <TextBlock Text="Method for the remaining balance" Style="{StaticResource FieldLabelStyle}" TextWrapping="Wrap"/>
+                        <ComboBox ItemsSource="{Binding PaymentOptions}" IsEnabled="{Binding CanEditPayment}" SelectedItem="{Binding SecondPaymentMethod}" Style="{StaticResource FormComboBoxStyle}"/>
+                        <TextBox Text="{Binding SecondPaymentReference, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditPayment}" MaxLength="80" AutomationProperties.Name="Second payment reference" Style="{StaticResource FormTextBoxStyle}"/>
                         <TextBlock Text="Records Cash, Card or UPI received externally. ServeX does not process an online payment." FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,16"/>
-                        <Button Content="Confirm payment" Command="{Binding ConfirmPaymentCommand}" Style="{StaticResource PrimaryActionButtonStyle}" MinHeight="48"/>
-                        <Button Content="Print receipt" Command="{Binding PrintReceiptCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
+                        <Button Content="Confirm payment" Click="PrepareConfirmation" Command="{Binding ConfirmPaymentCommand}" Style="{StaticResource PrimaryActionButtonStyle}" MinHeight="48"/>
+                        <Button Content="Print receipt / PDF" Command="{Binding PrintReceiptCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
+                        <Button Content="Toggle receipt preview" Command="{Binding PreviewReceiptCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
+                        <TextBlock Text="{Binding ReceiptPreview}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="{Binding ShowReceiptPreview, Converter={StaticResource BoolToVisibility}}"/>
+                        <TextBlock Text="To save a PDF, choose Microsoft Print to PDF if installed." TextWrapping="Wrap" Margin="0,4,0,0"/>
                         <TextBlock Text="Confirm once payment has been received. Receipt printing is available after confirmation." FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="0,12,0,0"/>
                     </StackPanel>
                 </Border>

@@ -1,3 +1,5 @@
+#nullable enable
+
 namespace ServeX.Models
 {
     public class AppSetting
@@ -9,6 +11,11 @@ namespace ServeX.Models
         public string Address { get; set; } = string.Empty;
 
         public string Phone { get; set; } = string.Empty;
+
+        public string Locale { get; set; } = "en-IN";
+        public string TaxName { get; set; } = "Tax";
+        public string? TaxNumber { get; set; }
+        public int ReceiptWidth { get; set; } = 80;
 
         public decimal TaxPercentage { get; set; }
 

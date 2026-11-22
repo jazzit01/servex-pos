@@ -98,6 +98,7 @@
                             <TextBlock Text="{Binding SelectedGuestLabel}" FontWeight="SemiBold" Margin="0,8,0,0"/>
                             <TextBlock Text="{Binding SelectedServiceCaption}" Margin="0,4,0,16" Foreground="{StaticResource MutedTextBrush}"/>
                             <Button Content="Open selected order" Command="{Binding OpenSelectedOrderCommand}" Style="{StaticResource PrimaryActionButtonStyle}"/>
+                            <Button Content="{Binding FloorStatusAction}" Command="{Binding ChangeFloorStatusCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
                             <WrapPanel Margin="0,8,0,0">
                                 <Button Content="Edit" Command="{Binding EditSelectedCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,8,0"/>
                                 <Button Content="Delete" Command="{Binding DeleteSelectedCommand}" Style="{StaticResource DangerActionButtonStyle}"/>

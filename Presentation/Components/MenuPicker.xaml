@@ -32,7 +32,7 @@
                                         <StackPanel Margin="0,0,12,0">
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/>
                                             <TextBlock Text="{Binding Category}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,6"/>
-                                            <TextBlock Text="{Binding Price, StringFormat=Rs. {0:N2}}" Style="{StaticResource FinancialTextStyle}"/>
+                                            <TextBlock Text="{Binding Price, StringFormat=C2}" Style="{StaticResource FinancialTextStyle}"/>
                                             <TextBlock FontSize="12">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">

@@ -32,20 +32,28 @@ namespace ServeX.ViewModels
         private readonly DialogService _dialogs;
 
         public MainViewModel(AppSetting settings, User currentUser, DashboardViewModel dashboard,
-            MenuViewModel menu, TablesViewModel tables, ParcelViewModel parcel, SettingsViewModel settingsViewModel,
+            MenuViewModel menu, TablesViewModel tables, ParcelViewModel parcel, SettingsViewModel settingsViewModel, HistoryViewModel history, RoomsViewModel rooms,
             WorkspaceNavigation navigation, WorkspaceSummaryService summaryService, LogService logService, DialogService dialogs)
         {
             _restaurantName = settings?.RestaurantName ?? "ServeX";
+            MoneyLanguage = System.Windows.Markup.XmlLanguage.GetLanguage(ReceiptProfile.Culture(settings?.Locale).Name);
             _currentUsername = currentUser?.Username ?? "Admin";
             _navigation = navigation;
             _summaryService = summaryService;
             _logService = logService;
             _dialogs = dialogs;
+            CanManage = currentUser?.Role != UserRole.Cashier;
             Dashboard = dashboard;
+            Dashboard.CanManageMenu = CanManage;
             Menu = menu;
             Tables = tables;
+            Tables.CanDeleteTables = CanManage;
             Parcel = parcel;
             Settings = settingsViewModel;
+            History = history;
+            Rooms = rooms;
+            Settings.CurrentUserId = currentUser?.Id ?? 0;
+            SignOutCommand = new AsyncRelayCommand(_ => SignOutAsync());
             Dashboard.RefreshWorkspace = RefreshFromDashboardActionAsync;
             Settings.RestaurantNameSaved += UpdateRestaurantName;
             _workspaceChanged = async (sender, args) => await RefreshAfterChangeAsync();
@@ -77,6 +85,34 @@ namespace ServeX.ViewModels
             };
             _navigation.PropertyChanged += _navigationChanged;
         }
+
+        public System.Func<Task> SignOut { get; set; } = () => Task.CompletedTask;
+
+        public AsyncRelayCommand SignOutCommand { get; }
+
+        private async Task SignOutAsync()
+        {
+            if (_detail != null || Dashboard.IsBusy || Menu.IsBusy || Tables.IsBusy || Parcel.IsBusy || Settings.IsBusy)
+            {
+                SetStatus("Finish the current action and return to the workspace before signing out.", true);
+                return;
+            }
+
+            if (!_dialogs.Confirm("Sign out?", "Return to sign-in? Unsaved changes will be discarded.")) return;
+            try
+            {
+                await SignOut();
+            }
+            catch (System.Exception exception)
+            {
+                _logService.LogError("Sign-out failed", exception);
+                SetStatus("Could not return to sign-in. Try again.", true);
+            }
+        }
+
+        public bool CanManage { get; }
+
+        public System.Windows.Markup.XmlLanguage MoneyLanguage { get; private set; }
 
         public string Title => string.Format("{0} - ServeX", _restaurantName);
 
@@ -118,6 +154,10 @@ namespace ServeX.ViewModels
 
         public ParcelViewModel Parcel { get; }
 
+        public RoomsViewModel Rooms { get; }
+
+        public HistoryViewModel History { get; }
+
         public SettingsViewModel Settings { get; }
 
         public object CurrentWorkspace
@@ -133,6 +173,10 @@ namespace ServeX.ViewModels
                         return Tables;
                     case WorkspaceDestination.Parcel:
                         return Parcel;
+                    case WorkspaceDestination.Rooms:
+                        return Rooms;
+                    case WorkspaceDestination.History:
+                        return History;
                     case WorkspaceDestination.Settings:
                         return Settings;
                     default:
@@ -212,6 +256,10 @@ namespace ServeX.ViewModels
                         return "Dining floor";
                     case WorkspaceDestination.Parcel:
                         return "Parcel desk";
+                    case WorkspaceDestination.Rooms:
+                        return "Rooms";
+                    case WorkspaceDestination.History:
+                        return "Order history and sales";
                     case WorkspaceDestination.Settings:
                         return "Settings and backups";
                     default:
@@ -224,7 +272,7 @@ namespace ServeX.ViewModels
         {
             get
             {
-                if (_detail is OrderViewModel order) return $"Table service · {order.TableStatus}";
+                if (_detail is OrderViewModel order) return $"{order.LocationKind} service · {order.TableStatus}";
                 if (_detail is BillingViewModel billing) return billing.TableNumber;
                 switch (SelectedDestination)
                 {
@@ -234,6 +282,10 @@ namespace ServeX.ViewModels
                         return "Monitor indoor and outdoor tables, inspect live status, and move directly into orders.";
                     case WorkspaceDestination.Parcel:
                         return "Handle takeaway orders with the same speed, totals, and billing flow as the floor.";
+                    case WorkspaceDestination.Rooms:
+                        return "Manage room status and room service orders.";
+                    case WorkspaceDestination.History:
+                        return "Review past orders, reprint receipts, and check sales totals.";
                     case WorkspaceDestination.Settings:
                         return "Protect the database, confirm environment details, and keep day-to-day operations safe.";
                     default:
@@ -360,6 +412,8 @@ namespace ServeX.ViewModels
                 ? "ServeX"
                 : restaurantName;
 
+            MoneyLanguage = System.Windows.Markup.XmlLanguage.GetLanguage(ReceiptProfile.Culture(Settings.Locale).Name);
+            OnPropertyChanged(nameof(MoneyLanguage));
             OnPropertyChanged(nameof(RestaurantName));
             OnPropertyChanged(nameof(Title));
         }
@@ -367,6 +421,7 @@ namespace ServeX.ViewModels
         private async Task NavigateToAsync(object parameter)
         {
             if (parameter is not WorkspaceDestination destination || !System.Enum.IsDefined(destination)) return;
+            if (!CanManage && destination is WorkspaceDestination.Menu or WorkspaceDestination.Settings) return;
             if (!ConfirmLeavingDetail()) return;
             _navigation.CloseDetails();
             if (destination == SelectedDestination) return;
@@ -396,6 +451,8 @@ namespace ServeX.ViewModels
                 }
 
                 _navigation.Navigate(destination);
+                if (destination == WorkspaceDestination.History) await History.RefreshAsync();
+                if (destination == WorkspaceDestination.Rooms) await Rooms.LoadAsync();
             }
             catch (System.Exception exception)
             {

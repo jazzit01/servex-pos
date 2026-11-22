@@ -75,7 +75,7 @@ namespace ServeX.ViewModels
             var settings = await _applicationSettingsService.GetSettingsAsync();
             var restaurantName = settings?.RestaurantName ?? "ServeX";
 
-            WindowTitle = "ServeX Login";
+            WindowTitle = restaurantName + " - ServeX sign-in";
             PanelTitle = restaurantName;
             PanelSubtitle = "Sign in to continue managing service, orders, billing, and the live floor.";
             CurrentViewModel = _factory.CreateLogin(

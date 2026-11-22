@@ -8,6 +8,8 @@ namespace ServeX.Services
 
         public AppSetting Restaurant { get; set; }
 
+        public string RoomNumber { get; set; }
+
         public Table Table { get; set; }
     }
 }

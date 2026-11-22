@@ -65,17 +65,21 @@ namespace ServeX.ViewModels
 
             _beginAddCommand = new RelayCommand(_ => OpenAddPanel(), _ => !IsBusy);
             _editCommand = new RelayCommand(table => OpenEditPanel(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
-            _deleteCommand = new AsyncRelayCommand(async table => await DeleteAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
+            _deleteCommand = new AsyncRelayCommand(async table => await DeleteAsync(table as TableFloorItemViewModel), table => CanDeleteTables && !IsBusy && table is TableFloorItemViewModel);
             _saveCommand = new AsyncRelayCommand(async _ => await SaveAsync(), _ => CanSave);
             _cancelCommand = new RelayCommand(_ => CloseEditor(), _ => !IsBusy);
             _selectTableCommand = new RelayCommand(table => SelectTable(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
+            ChangeFloorStatusCommand = new AsyncRelayCommand(_ => ChangeFloorStatusAsync(),
+                _ => !IsBusy && SelectedTable?.Status is TableStatus.Available or TableStatus.Reserved or TableStatus.Cleaning);
             _openSelectedOrderCommand = new AsyncRelayCommand(async _ => await OpenOrderScreenAsync(SelectedTable), _ => !IsBusy && SelectedTable != null);
             _openFloorOrderCommand = new AsyncRelayCommand(async table => await OpenOrderScreenAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
             _editSelectedCommand = new RelayCommand(_ => OpenEditPanel(SelectedTable), _ => !IsBusy && SelectedTable != null);
-            _deleteSelectedCommand = new AsyncRelayCommand(async _ => await DeleteAsync(SelectedTable), _ => !IsBusy && SelectedTable != null);
+            _deleteSelectedCommand = new AsyncRelayCommand(async _ => await DeleteAsync(SelectedTable), _ => CanDeleteTables && !IsBusy && SelectedTable != null);
             _showIndoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Indoor, _ => !IsBusy);
             _showOutdoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Outdoor, _ => !IsBusy);
         }
+
+        public bool CanDeleteTables { get; set; } = true;
 
         public event EventHandler TablesChanged;
 
@@ -96,6 +100,15 @@ namespace ServeX.ViewModels
         public RelayCommand CancelCommand => _cancelCommand;
 
         public RelayCommand SelectTableCommand => _selectTableCommand;
+
+        public AsyncRelayCommand ChangeFloorStatusCommand { get; }
+
+        public string FloorStatusAction => SelectedTable?.Status switch
+        {
+            TableStatus.Reserved => "Release reservation",
+            TableStatus.Cleaning => "Mark clean",
+            _ => "Reserve table"
+        };
 
         public AsyncRelayCommand OpenSelectedOrderCommand => _openSelectedOrderCommand;
 
@@ -218,6 +231,8 @@ namespace ServeX.ViewModels
                     UpdateSelectionStates();
                     OnPropertyChanged(nameof(HasSelectedTable));
                     OnPropertyChanged(nameof(SelectedTableHeading));
+                    OnPropertyChanged(nameof(FloorStatusAction));
+                    ChangeFloorStatusCommand.RaiseCanExecuteChanged();
                     OnPropertyChanged(nameof(SelectedTableAreaLabel));
                     OnPropertyChanged(nameof(SelectedTableStatusLabel));
                     OnPropertyChanged(nameof(SelectedTableStatusDescription));
@@ -256,6 +271,8 @@ namespace ServeX.ViewModels
                 {
                     case TableStatus.Available:
                         return "Available and ready for the next guest.";
+                    case TableStatus.Cleaning:
+                        return "Payment is complete. Mark this table clean when it is ready.";
                     case TableStatus.Occupied:
                         return string.Format("Occupied and linked to {0}.", SelectedGuestLabel);
                     case TableStatus.Reserved:
@@ -422,6 +439,19 @@ namespace ServeX.ViewModels
                 SetStatus("Table deleted successfully.", false);
                 RaiseTablesChanged();
             }, "The table could not be deleted.");
+        }
+
+        private async Task ChangeFloorStatusAsync()
+        {
+            var table = SelectedTable;
+            if (table == null) return;
+            var next = table.Status == TableStatus.Available ? TableStatus.Reserved : TableStatus.Available;
+            await ExecuteBusyActionAsync(async () =>
+            {
+                await _tableService.ChangeFloorStatusAsync(table.Id, table.Status, next);
+                await RefreshAsync(table.TableNumber);
+                RaiseTablesChanged();
+            }, "Could not update the table status. Refresh the floor and try again.");
         }
 
         private async Task OpenOrderScreenAsync(TableFloorItemViewModel table)
@@ -600,7 +630,7 @@ namespace ServeX.ViewModels
                     Id = table.Id,
                     TableNumber = table.TableNumber,
                     Area = table.Area,
-                    Status = NormalizeEditableStatus(table.Status),
+                    Status = table.Status,
                     CustomerName = customerName,
                     HasActiveOrder = activeGuestNames != null && activeGuestNames.ContainsKey(table.Id)
                 });
@@ -665,6 +695,7 @@ namespace ServeX.ViewModels
             _deleteSelectedCommand.RaiseCanExecuteChanged();
             _showIndoorTablesCommand.RaiseCanExecuteChanged();
             _showOutdoorTablesCommand.RaiseCanExecuteChanged();
+            ChangeFloorStatusCommand.RaiseCanExecuteChanged();
         }
 
         private void NotifySummaryProperties()

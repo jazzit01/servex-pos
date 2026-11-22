@@ -4,7 +4,14 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
+        <StackPanel>
+            <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
+            <WrapPanel Margin="0,0,0,8" Visibility="{Binding CanTransfer, Converter={StaticResource BoolToVisibility}}">
+                <ComboBox ItemsSource="{Binding TransferTargets}" DisplayMemberPath="TableNumber" SelectedItem="{Binding TransferTarget}"
+                          AutomationProperties.Name="Destination table" Width="150" Margin="0,0,8,0"/>
+                <Button Content="Move or merge saved order" Command="{Binding TransferCommand}" Style="{StaticResource SecondaryActionButtonStyle}"/>
+            </WrapPanel>
+        </StackPanel>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>

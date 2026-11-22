@@ -44,6 +44,20 @@ namespace ServeX.Services
             return dialog.ShowDialog() == true ? dialog.FileName : null;
         }
 
+        public string PickZipPath(string title, string fileName)
+        {
+            var dialog = new SaveFileDialog
+            {
+                Title = title,
+                FileName = fileName,
+                Filter = "ZIP archive (*.zip)|*.zip",
+                DefaultExt = ".zip",
+                AddExtension = true,
+                OverwritePrompt = true
+            };
+            return dialog.ShowDialog() == true ? dialog.FileName : null;
+        }
+
         public string PickDatabaseBackupPath(string suggestedFileName)
         {
             var dialog = new SaveFileDialog

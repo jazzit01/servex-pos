@@ -19,7 +19,15 @@
                         <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Phone" Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
                         <TextBlock Text="Tax percentage" Style="{StaticResource FieldLabelStyle}"/>
                         <TextBox Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Tax percentage" Text="{Binding TaxPercentageInput, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
-                        <TextBlock Text="Tax changes apply to subsequent calculations. Review the configured percentage before saving." Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,8,0,0"/>
+                        <TextBlock Text="Open orders use the current tax rate when billed. Changing this rate can change totals for orders that are already open." Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,8,0,0"/>
+                        <TextBlock Text="Tax label" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding TaxName, UpdateSourceTrigger=PropertyChanged}" MaxLength="24" Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Tax label"/>
+                        <TextBlock Text="Tax registration number (optional)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding TaxNumber, UpdateSourceTrigger=PropertyChanged}" MaxLength="48" Style="{StaticResource FormTextBoxStyle}" AutomationProperties.Name="Tax registration number"/>
+                        <TextBlock Text="Currency and formatting locale" Style="{StaticResource FieldLabelStyle}"/>
+                        <ComboBox ItemsSource="{Binding CurrencyLocales}" SelectedItem="{Binding Locale}" AutomationProperties.Name="Currency and formatting locale"/>
+                        <TextBlock Text="Receipt width (mm)" Style="{StaticResource FieldLabelStyle}"/>
+                        <ComboBox ItemsSource="{Binding PaperWidths}" SelectedItem="{Binding ReceiptWidth}" AutomationProperties.Name="Receipt width"/>
                         <Button Content="Save settings" Command="{Binding SaveSettingsCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,20,0,0"/>
                     </StackPanel>
                 </Border>
@@ -34,12 +42,38 @@
                             <Button Content="Back up database" Command="{Binding BackupDatabaseCommand}" Style="{StaticResource PrimaryActionButtonStyle}"/>
                         </StackPanel>
                     </Border>
+                    <Border Padding="20" Style="{StaticResource SurfaceCardStyle}" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Change password" Style="{StaticResource SectionTitleTextStyle}"/>
+                            <TextBlock Text="Current password" Style="{StaticResource FieldLabelStyle}"/>
+                            <PasswordBox x:Name="CurrentPasswordBox" AutomationProperties.Name="Current password"/>
+                            <TextBlock Text="New password" Style="{StaticResource FieldLabelStyle}"/>
+                            <PasswordBox x:Name="NewPasswordBox" AutomationProperties.Name="New password"/>
+                            <TextBlock Text="Confirm new password" Style="{StaticResource FieldLabelStyle}"/>
+                            <PasswordBox x:Name="ConfirmPasswordBox" AutomationProperties.Name="Confirm new password"/>
+                            <Button Content="Change password" Click="ChangePasswordOnClick" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,12,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Padding="20" Style="{StaticResource SurfaceCardStyle}" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Add staff account" Style="{StaticResource SectionTitleTextStyle}"/>
+                            <TextBlock Text="Username" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding NewStaffName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Staff username" Style="{StaticResource FormTextBoxStyle}"/>
+                            <TextBlock Text="Role" Style="{StaticResource FieldLabelStyle}"/>
+                            <ComboBox ItemsSource="{Binding StaffRoles}" SelectedItem="{Binding NewStaffRole}" AutomationProperties.Name="Staff role"/>
+                            <TextBlock Text="Initial password" Style="{StaticResource FieldLabelStyle}"/>
+                            <PasswordBox x:Name="StaffPasswordBox" AutomationProperties.Name="Staff initial password"/>
+                            <Button Content="Add staff" Click="AddStaffOnClick" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,12,0,0"/>
+                        </StackPanel>
+                    </Border>
                     <Border Padding="20" Style="{StaticResource SoftPanelStyle}" Margin="0,16,0,0">
                         <StackPanel>
                             <TextBlock Text="Recovery and storage" Style="{StaticResource SectionTitleTextStyle}"/>
                             <TextBlock Text="{Binding AppVersion, StringFormat=ServeX version {0}}" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0"/>
                             <TextBlock Text="ServeX restarts to apply a backup and keeps a copy of the current database." Margin="0,12,0,0" Foreground="{StaticResource MutedTextBrush}"/>
                             <Button Content="Restore from backup…" Command="{Binding RestoreDatabaseCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,16,0,0"/>
+                            <Button Content="Export orders, bills, and menu" Command="{Binding ExportDataCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
+                            <Button Content="Create support bundle" Command="{Binding SupportBundleCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
