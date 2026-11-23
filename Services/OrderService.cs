@@ -118,6 +118,13 @@ namespace ServeX.Services
             }
         }
 
+        public async Task<Order> GetOpenParcelAsync(int orderId)
+        {
+            var order = await GetOrderAsync(orderId);
+            return order?.Type == OrderType.Parcel && order.Bill?.PaidAt == null &&
+                order.Status is OrderStatus.Open or OrderStatus.Preparing or OrderStatus.Served ? order : null;
+        }
+
         public async Task<decimal> GetTaxPercentageAsync()
         {
             using (var context = _contexts.CreateDbContext())

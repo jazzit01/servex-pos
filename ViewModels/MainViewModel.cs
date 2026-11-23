@@ -51,6 +51,16 @@ namespace ServeX.ViewModels
             Parcel = parcel;
             Settings = settingsViewModel;
             History = history;
+            History.ResumeParcel = async orderId =>
+            {
+                if (!await Parcel.ResumeSavedOrderAsync(orderId)) return false;
+                if (SelectedDestination == WorkspaceDestination.History)
+                {
+                    ClearStatus();
+                    _navigation.Navigate(WorkspaceDestination.Parcel);
+                }
+                return true;
+            };
             Rooms = rooms;
             Settings.CurrentUserId = currentUser?.Id ?? 0;
             SignOutCommand = new AsyncRelayCommand(_ => SignOutAsync());
@@ -471,6 +481,7 @@ namespace ServeX.ViewModels
             _navigation.PropertyChanged -= _navigationChanged;
             if (_detail != null) _detail.PropertyChanged -= OnDetailPropertyChanged;
             _navigation.CloseDetails();
+            History.ResumeParcel = _ => Task.FromResult(false);
             Menu.MenuItemsChanged -= _workspaceChanged;
             Tables.TablesChanged -= _workspaceChanged;
             Settings.RestaurantNameSaved -= UpdateRestaurantName;

@@ -104,10 +104,11 @@ namespace ServeX.Services
                     if (discount < 0 || (discountOptions?.IsPercentage == true && discount > 100))
                         throw new InvalidOperationException("Enter a valid discount.");
                     if (discountOptions?.IsPercentage == true)
-                        discount = OrderPricing.Round(grossTotal * discount / 100m);
+                        discount = grossTotal * discount / 100m;
                     if (discount > grossTotal)
                         throw new InvalidOperationException("Discount cannot exceed the bill total.");
 
+                    discount = OrderPricing.Round(discount);
                     var reason = discountOptions?.Reason?.Trim();
                     if (reason?.Length > 120 || (discount > 0 && _session.ActiveUser != null && string.IsNullOrWhiteSpace(reason)))
                         throw new InvalidOperationException("Enter a discount reason up to 120 characters.");
@@ -133,7 +134,7 @@ namespace ServeX.Services
                     order.Bill.RecordedTaxName = settings?.TaxName ?? "Tax";
                     order.Bill.RecordedTaxNumber = settings?.TaxNumber;
                     order.Bill.RecordedLocale = settings?.Locale ?? "en-IN";
-                    order.Bill.Discount = OrderPricing.Round(discount);
+                    order.Bill.Discount = discount;
                     order.Bill.Total = finalAmount;
                     order.Bill.DiscountReason = reason;
                     order.Bill.PaymentBreakdown = split == null ? null : JsonSerializer.Serialize(payments);
@@ -187,7 +188,7 @@ namespace ServeX.Services
                 TaxRate = orderData.Order.Bill.RecordedTaxRate,
                 TaxName = orderData.Order.Bill.RecordedTaxName ?? "Tax",
                 TaxNumber = orderData.Order.Bill.RecordedTaxNumber,
-                Locale = orderData.Order.Bill.RecordedLocale ?? orderData.Restaurant?.Locale ?? "en-IN",
+                Locale = orderData.Order.Bill.RecordedLocale ?? "en-IN",
                 PaperWidth = orderData.Restaurant?.ReceiptWidth ?? 80,
                 TableNumber = orderData.Order.Type == OrderType.Parcel
                     ? GetParcelLabel(orderData.Order.CustomerName)

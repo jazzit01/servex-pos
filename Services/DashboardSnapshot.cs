@@ -2,9 +2,15 @@ using System.Collections.Generic;
 
 namespace ServeX.Services
 {
+    public sealed record DashboardSalesTotal(string Locale, decimal Amount)
+    {
+        public string Currency => ReceiptProfile.CurrencyCode(Locale);
+        public string DisplayAmount => ReceiptProfile.FormatAmount(Amount, Locale);
+    }
+
     public class DashboardSnapshot
     {
-        public decimal TodayRevenue { get; set; }
+        public IList<DashboardSalesTotal> TodaySales { get; set; } = new List<DashboardSalesTotal>();
 
         public int ReservedTables { get; set; }
         public int OccupiedTables { get; set; }

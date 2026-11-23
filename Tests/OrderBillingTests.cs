@@ -9,6 +9,67 @@ namespace ServeX.Tests;
 public class OrderBillingTests
 {
     [Fact]
+    public async Task ReportsAndDashboardNeverAddSalesFromDifferentCurrencies()
+    {
+        using var db = new TestDatabase();
+        var ids = await db.SeedCustomerAsync();
+        var settings = db.Services.GetRequiredService<ApplicationSettingsService>();
+        var orders = db.Services.GetRequiredService<OrderService>();
+        var billing = db.Services.GetRequiredService<BillingService>();
+        var items = new[] { new OrderSaveItem { MenuItemId = ids.MenuId, Quantity = 1 } };
+        var first = await orders.SaveParcelOrderAsync(null, null, items);
+        var inr = await billing.ConfirmPaymentAsync(first.Id, 0, PaymentMethod.Cash);
+        await settings.UpdateSettingsAsync("Test", "123", 5m, "Address", new ReceiptProfile("en-US", "Tax", null, 80));
+        var second = await orders.SaveParcelOrderAsync(null, null, items);
+        var usd = await billing.ConfirmPaymentAsync(second.Id, 0, PaymentMethod.Cash);
+
+        var history = db.Services.GetRequiredService<OrderHistoryService>();
+        var report = await history.GetReportAsync(DateTime.Today, DateTime.Today, "Summary");
+        var totals = report.Where(row => row.Label == "Total revenue").ToDictionary(row => row.Currency, row => row.Amount);
+        Assert.Equal(2, totals.Count);
+        Assert.Equal(inr.Total, totals["INR"]);
+        Assert.Equal(usd.Total, totals["USD"]);
+        var dashboard = await db.Services.GetRequiredService<DashboardService>().GetSnapshotAsync();
+        Assert.Equal(2, dashboard.TodaySales.Count);
+        Assert.Equal(inr.Total, dashboard.TodaySales.Single(row => row.Currency == "INR").Amount);
+        Assert.Equal(usd.Total, dashboard.TodaySales.Single(row => row.Currency == "USD").Amount);
+    }
+
+    [Fact]
+    public async Task SavedParcelCanBeResumedUntilItIsPaid()
+    {
+        using var db = new TestDatabase();
+        var ids = await db.SeedCustomerAsync();
+        var orders = db.Services.GetRequiredService<OrderService>();
+        var request = new[] { new OrderSaveItem { MenuItemId = ids.MenuId, Quantity = 2 } };
+        var parcel = await orders.SaveParcelOrderAsync(null, "Guest Name", request);
+        var seat = await orders.SaveTableOrderAsync(ids.TableId, request);
+        Assert.Null(await orders.GetOpenParcelAsync(seat.Id));
+        var resumed = await orders.GetOpenParcelAsync(parcel.Id);
+        Assert.Equal("Guest Name", resumed.CustomerName);
+        Assert.Equal(parcel.Revision, resumed.Revision);
+        Assert.Equal(2, Assert.Single(resumed.Items).Quantity);
+        await db.Services.GetRequiredService<BillingService>().ConfirmPaymentAsync(parcel.Id, 0, PaymentMethod.Upi);
+        Assert.Null(await orders.GetOpenParcelAsync(parcel.Id));
+    }
+
+    [Fact]
+    public async Task FractionalDiscountCannotMakeBillTotalDisagreeWithRecordedDiscount()
+    {
+        using var db = new TestDatabase();
+        var ids = await db.SeedCustomerAsync();
+        var orders = db.Services.GetRequiredService<OrderService>();
+        var order = await orders.SaveParcelOrderAsync(null, null,
+            new[] { new OrderSaveItem { MenuItemId = ids.MenuId, Quantity = 1 } });
+        var billing = db.Services.GetRequiredService<BillingService>();
+        var bill = await billing.ConfirmPaymentAsync(order.Id, 0.005m, PaymentMethod.Cash);
+        Assert.Equal(20.99m, bill.Subtotal + bill.Tax);
+        Assert.Equal(0m, bill.Discount);
+        Assert.Equal(bill.Subtotal + bill.Tax - bill.Discount, bill.Total);
+        Assert.Equal(bill.Total, Assert.Single(BillingService.ReadPayments(bill)).Amount);
+    }
+
+    [Fact]
     public async Task UnnamedParcelRemainsUnnamedInStorageAndReceipts()
     {
         using var db = new TestDatabase();
@@ -155,6 +216,8 @@ public class OrderBillingTests
         var billing = db.Services.GetRequiredService<BillingService>();
         await billing.ConfirmPaymentAsync(order.Id, 0m, PaymentMethod.Cash);
         Assert.Equal("203", billing.CreateReceiptData(await billing.GetBillingOrderAsync(order.Id)).TableNumber);
+        var dashboard = await db.Services.GetRequiredService<DashboardService>().GetSnapshotAsync();
+        Assert.Equal("203", Assert.Single(dashboard.RecentOrders).ReferenceLabel);
         Assert.Equal(RoomStatus.Available, (await rooms.ListAsync()).Single(item => item.Id == room.Id).Status);
         await Assert.ThrowsAsync<InvalidOperationException>(() => rooms.DeleteAsync(room.Id));
         var unused = (await rooms.ListAsync()).Single(item => item.Id != room.Id);

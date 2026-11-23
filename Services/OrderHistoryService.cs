@@ -10,11 +10,16 @@ using ServeX.Models;
 namespace ServeX.Services
 {
     public sealed record HistoryRow(int Id, OrderType Type, OrderStatus Status, DateTime CreatedLocal, string Reference,
-        IReadOnlyList<PaymentMethod> Methods, decimal Total)
+        IReadOnlyList<PaymentMethod> Methods, decimal Total, string Locale)
     {
+        public string DisplayTotal => ReceiptProfile.FormatAmount(Total, Locale);
         public string PaymentDisplay => string.Join(" / ", Methods);
     }
-    public sealed record ReportRow(string Label, int Units, decimal Amount);
+    public sealed record ReportRow(string Label, int Units, decimal Amount, string Locale = null)
+    {
+        public string Currency => Locale == null ? string.Empty : ReceiptProfile.CurrencyCode(Locale);
+        public string DisplayAmount => Locale == null ? string.Empty : ReceiptProfile.FormatAmount(Amount, Locale);
+    }
 
     public sealed class OrderHistoryService
     {
@@ -36,6 +41,8 @@ namespace ServeX.Services
             var orders = await query.OrderByDescending(order => order.CreatedAt).ThenByDescending(order => order.Id).ToListAsync();
             var tables = await context.Tables.AsNoTracking().ToDictionaryAsync(table => table.Id, table => table.TableNumber);
             var rooms = await context.Rooms.AsNoTracking().ToDictionaryAsync(room => room.Id, room => room.RoomNumber);
+            var locale = await context.Settings.AsNoTracking().OrderBy(setting => setting.Id)
+                .Select(setting => setting.Locale).FirstOrDefaultAsync();
             return orders.Select(order => new HistoryRow(order.Id, order.Type,
                 order.Status == OrderStatus.Billed && order.Bill?.PaidAt != null ? OrderStatus.Paid : order.Status,
                 BusinessTime.ToLocalTime(order.CreatedAt),
@@ -46,7 +53,8 @@ namespace ServeX.Services
                     _ => rooms.TryGetValue(order.ReferenceId, out var room) ? room : $"Room #{order.ReferenceId}"
                 },
                 order.Bill?.PaidAt != null ? BillingService.ReadPayments(order.Bill).Select(payment => payment.Method).Distinct().ToArray() :
-                    Array.Empty<PaymentMethod>(), order.Bill?.Total ?? 0m)).ToList();
+                    Array.Empty<PaymentMethod>(), order.Bill?.Total ?? 0m,
+                order.Bill?.PaidAt != null ? order.Bill.RecordedLocale ?? "en-IN" : locale)).ToList();
         }
 
         public async Task<IReadOnlyList<ReportRow>> GetReportAsync(DateTime start, DateTime end, string grouping)
@@ -58,30 +66,43 @@ namespace ServeX.Services
                 .Include(bill => bill.Order).ThenInclude(order => order.Items).ThenInclude(line => line.MenuItem)
                 .ToListAsync();
 
+            var rows = new List<ReportRow>();
+            foreach (var currency in paid.GroupBy(bill => ReceiptProfile.CurrencyCode(bill.RecordedLocale)).OrderBy(group => group.Key))
+            {
+                var locale = currency.First().RecordedLocale ?? "en-IN";
+                if (grouping == "Summary")
+                {
+                    rows.AddRange(currency.SelectMany(BillingService.ReadPayments).GroupBy(payment => payment.Method)
+                        .Select(method => new ReportRow(method.Key.ToString(), method.Count(), method.Sum(payment => payment.Amount), locale)));
+                    rows.Add(new ReportRow("Total revenue", currency.Count(), currency.Sum(bill => bill.Total), locale));
+                    rows.Add(new ReportRow("Tax collected", currency.Count(), currency.Sum(bill => bill.Tax), locale));
+                    rows.Add(new ReportRow("Discounts", currency.Count(bill => bill.Discount > 0), currency.Sum(bill => bill.Discount), locale));
+                }
+                else if (grouping is "Items" or "Categories")
+                {
+                    rows.AddRange(currency.SelectMany(bill => bill.Order.Items)
+                        .GroupBy(line => grouping == "Items" ? line.MenuItem.Name : line.MenuItem.Category)
+                        .Select(group => new ReportRow(group.Key, group.Sum(line => line.Quantity),
+                            group.Sum(line => line.Price * line.Quantity), locale))
+                        .OrderByDescending(row => row.Units));
+                }
+                else
+                {
+                    rows.AddRange(currency.GroupBy(bill => Period(BusinessTime.ToLocalTime(bill.PaidAt.Value), grouping))
+                        .OrderBy(group => group.Key)
+                        .Select(group => new ReportRow(group.Key, group.Count(), group.Sum(bill => bill.Total), locale)));
+                }
+            }
+
             if (grouping == "Summary")
             {
-                var totals = paid.SelectMany(BillingService.ReadPayments).GroupBy(payment => payment.Method)
-                    .Select(method => new ReportRow(method.Key.ToString(), method.Count(), method.Sum(payment => payment.Amount)))
-                    .ToList();
-                totals.Add(new ReportRow("Total revenue", paid.Count, paid.Sum(bill => bill.Total)));
-                totals.Add(new ReportRow("Tax collected", paid.Count, paid.Sum(bill => bill.Tax)));
-                totals.Add(new ReportRow("Discounts", paid.Count(bill => bill.Discount > 0), paid.Sum(bill => bill.Discount)));
                 var cancelled = await context.Orders.CountAsync(order =>
                     order.Status == OrderStatus.Cancelled && (order.CancelledAt ?? order.CreatedAt) >= from &&
                     (order.CancelledAt ?? order.CreatedAt) < until);
-                totals.Add(new ReportRow("Cancelled orders", cancelled, 0m));
-                return totals;
+                rows.Add(new ReportRow("Cancelled orders", cancelled, 0m));
             }
 
-            if (grouping is "Items" or "Categories")
-                return paid.SelectMany(bill => bill.Order.Items)
-                    .GroupBy(line => grouping == "Items" ? line.MenuItem.Name : line.MenuItem.Category)
-                    .Select(group => new ReportRow(group.Key, group.Sum(line => line.Quantity), group.Sum(line => line.Price * line.Quantity)))
-                    .OrderByDescending(row => row.Units).ToList();
-
-            return paid.GroupBy(bill => Period(BusinessTime.ToLocalTime(bill.PaidAt.Value), grouping))
-                .OrderBy(group => group.Key)
-                .Select(group => new ReportRow(group.Key, group.Count(), group.Sum(bill => bill.Total))).ToList();
+            return rows;
         }
 
         private static string Period(DateTime day, string grouping) => grouping switch

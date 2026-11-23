@@ -42,7 +42,7 @@ public class StorageBackupTests
         Assert.Equal(Path.Combine(local, "ServeX", "Data", "servex.db"), location.FilePath);
         Assert.Equal(location.FilePath, DatabaseLocation.Resolve(app, local).FilePath);
         File.Delete(location.FilePath);
-        Assert.Throws<InvalidOperationException>(() => DatabaseLocation.Resolve(app, local));
+        Assert.Throws<DatabaseSelectionException>(() => DatabaseLocation.Resolve(app, local));
         Assert.False(File.Exists(location.FilePath));
     }
 
@@ -97,10 +97,10 @@ public class StorageBackupTests
         var fresh = DatabaseLocation.Resolve(app, local).FilePath;
         Directory.CreateDirectory(Path.GetDirectoryName(legacy));
         File.WriteAllBytes(legacy, new byte[] { 1 });
-        Assert.Throws<InvalidOperationException>(() => DatabaseLocation.Resolve(app, local));
+        Assert.Throws<DatabaseSelectionException>(() => DatabaseLocation.Resolve(app, local));
         Assert.Equal(legacy, DatabaseLocation.Resolve(app, local, legacy).FilePath);
-        Assert.Throws<InvalidOperationException>(() => DatabaseLocation.Resolve(app, local, Path.Combine(db.DirectoryPath, "missing.db")));
-        Assert.Throws<InvalidOperationException>(() => DatabaseLocation.Resolve(app, local, "relative.db"));
+        Assert.Throws<DatabaseSelectionException>(() => DatabaseLocation.Resolve(app, local, Path.Combine(db.DirectoryPath, "missing.db")));
+        Assert.Throws<DatabaseSelectionException>(() => DatabaseLocation.Resolve(app, local, "relative.db"));
         Assert.True(File.Exists(fresh));
         Assert.True(File.Exists(legacy));
     }

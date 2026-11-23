@@ -38,10 +38,14 @@
                     <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="*"/>
                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
                     <DataGridTextColumn Header="Payment" Binding="{Binding PaymentDisplay}" Width="100"/>
-                    <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2}" Width="100"/>
+                    <DataGridTextColumn Header="Total" Binding="{Binding DisplayTotal}" Width="100"/>
                 </DataGrid.Columns>
             </DataGrid>
-            <Button Content="View order or reprint receipt" Command="{Binding OpenOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}" HorizontalAlignment="Left" Margin="0,8,0,20"/>
+            <WrapPanel Margin="0,8,0,20">
+                <Button Content="Resume parcel" Command="{Binding ResumeParcelCommand}" Style="{StaticResource PrimaryActionButtonStyle}"
+                        Visibility="{Binding CanResumeParcel, Converter={StaticResource BoolToVisibility}}" Margin="0,0,8,0"/>
+                <Button Content="View order or reprint receipt" Command="{Binding OpenOrderCommand}" Style="{StaticResource SecondaryActionButtonStyle}"/>
+            </WrapPanel>
             <Border Style="{StaticResource SurfaceCardStyle}" Padding="16">
                 <StackPanel>
                     <TextBlock Text="Sales report" Style="{StaticResource SectionTitleTextStyle}"/>
@@ -56,7 +60,8 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Metric" Binding="{Binding Label}" Width="*"/>
                             <DataGridTextColumn Header="Count" Binding="{Binding Units}" Width="100"/>
-                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=C2}" Width="130"/>
+                            <DataGridTextColumn Header="Currency" Binding="{Binding Currency}" Width="90"/>
+                            <DataGridTextColumn Header="Amount" Binding="{Binding DisplayAmount}" Width="130"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>

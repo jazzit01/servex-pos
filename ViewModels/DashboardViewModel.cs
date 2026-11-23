@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections.ObjectModel;
 using System.Runtime.Versioning;
@@ -18,7 +19,7 @@ namespace ServeX.ViewModels
         private readonly Action _goToMenu;
         public Func<Task> RefreshWorkspace { private get; set; } = () => Task.CompletedTask;
         private bool _isBusy;
-        private decimal _todayRevenue;
+        private string _todaySalesDisplay = string.Empty;
         private int _reservedTables;
         private int _occupiedTables;
         private int _availableTables;
@@ -70,10 +71,10 @@ namespace ServeX.ViewModels
             }
         }
 
-        public decimal TodayRevenue
+        public string TodaySalesDisplay
         {
-            get => _todayRevenue;
-            private set => SetProperty(ref _todayRevenue, value);
+            get => _todaySalesDisplay;
+            private set => SetProperty(ref _todaySalesDisplay, value);
         }
 
         public int ReservedTables
@@ -204,7 +205,9 @@ namespace ServeX.ViewModels
         private async Task LoadSnapshotAsync()
         {
             var snapshot = await _dashboardService.GetSnapshotAsync();
-            TodayRevenue = snapshot.TodayRevenue;
+            TodaySalesDisplay = snapshot.TodaySales.Count == 1
+                ? snapshot.TodaySales[0].DisplayAmount
+                : string.Join(System.Environment.NewLine, snapshot.TodaySales.Select(total => $"{total.Currency} {total.DisplayAmount}"));
             ReservedTables = snapshot.ReservedTables;
             OccupiedTables = snapshot.OccupiedTables;
             AvailableTables = snapshot.AvailableTables;

@@ -15,6 +15,10 @@ namespace ServeX.Services
 
         public decimal Total { get; set; }
 
+        public string Locale { get; set; }
+
+        public string DisplayTotal => ReceiptProfile.FormatAmount(Total, Locale);
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime CreatedAtLocal => BusinessTime.ToLocalTime(CreatedAt);
