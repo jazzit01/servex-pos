@@ -26,15 +26,23 @@ namespace ServeX.Services
 
             using (var context = _contexts.CreateDbContext())
             {
+                var locale = await context.Settings.AsNoTracking().OrderBy(setting => setting.Id)
+                    .Select(setting => setting.Locale).FirstOrDefaultAsync();
                 var todayBillTotals = await context.Bills
                     .AsNoTracking()
                     .Where(bill => bill.PaidAt.HasValue && bill.PaidAt.Value >= startUtc && bill.PaidAt.Value < endUtc)
-                    .Select(bill => bill.Total)
+                    .Select(bill => new { bill.Total, bill.RecordedLocale })
                     .ToListAsync();
+
+                var todaySales = todayBillTotals.GroupBy(bill => ReceiptProfile.CurrencyCode(bill.RecordedLocale))
+                    .OrderBy(group => group.Key)
+                    .Select(group => new DashboardSalesTotal(group.First().RecordedLocale, group.Sum(bill => bill.Total)))
+                    .ToList();
+                if (todaySales.Count == 0) todaySales.Add(new DashboardSalesTotal(locale, 0m));
 
                 var snapshot = new DashboardSnapshot
                 {
-                    TodayRevenue = todayBillTotals.DefaultIfEmpty(0m).Sum(),
+                    TodaySales = todaySales,
                     OccupiedTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Occupied),
                     AvailableTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Available),
                     ReservedTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Reserved),
@@ -70,14 +78,21 @@ namespace ServeX.Services
                     .Where(table => tableIds.Contains(table.Id))
                     .ToDictionaryAsync(table => table.Id, table => table.TableNumber);
 
+                var roomIds = recentOrders.Where(order => order.Type == OrderType.Room)
+                    .Select(order => order.ReferenceId).Distinct().ToList();
+                var roomMap = await context.Rooms.AsNoTracking()
+                    .Where(room => roomIds.Contains(room.Id))
+                    .ToDictionaryAsync(room => room.Id, room => room.RoomNumber);
+
                 snapshot.RecentOrders = recentOrders.Select(order => new DashboardRecentOrder
                 {
                     OrderId = order.Id,
                     Type = order.Type,
                     Status = order.Status == OrderStatus.Billed && order.Bill?.PaidAt != null ? OrderStatus.Paid : order.Status,
                     CreatedAt = order.CreatedAt,
+                    Locale = order.Bill?.PaidAt != null ? order.Bill.RecordedLocale ?? "en-IN" : locale,
                     Total = order.Bill?.Total ?? (order.Items ?? Array.Empty<OrderItem>()).Select(item => item.Price * item.Quantity).DefaultIfEmpty(0m).Sum(),
-                    ReferenceLabel = GetReferenceLabel(order, tableMap)
+                    ReferenceLabel = GetReferenceLabel(order, tableMap, roomMap)
                 }).ToList();
 
                 snapshot.OpenOrders = await _history.GetOrdersAsync(startLocal, startLocal, unpaidOnly: true);
@@ -98,7 +113,8 @@ namespace ServeX.Services
             }
         }
 
-        private static string GetReferenceLabel(Order order, System.Collections.Generic.IDictionary<int, string> tableMap)
+        private static string GetReferenceLabel(Order order, System.Collections.Generic.IDictionary<int, string> tableMap,
+            System.Collections.Generic.IDictionary<int, string> roomMap)
         {
             switch (order.Type)
             {
@@ -111,7 +127,7 @@ namespace ServeX.Services
                     return string.Format("Table #{0}", order.ReferenceId);
 
                 case OrderType.Room:
-                    return string.Format("Room #{0}", order.ReferenceId);
+                    return roomMap.TryGetValue(order.ReferenceId, out var roomNumber) ? roomNumber : $"Room #{order.ReferenceId}";
 
                 case OrderType.Parcel:
                     return BillingService.GetParcelLabel(order.CustomerName);

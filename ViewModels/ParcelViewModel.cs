@@ -171,6 +171,38 @@ namespace ServeX.ViewModels
 
         public decimal Total => Subtotal + Tax;
 
+        public async Task<bool> ResumeSavedOrderAsync(int orderId)
+        {
+            if (IsBusy) return false;
+            if ((OrderItems.Count > 0 || !string.IsNullOrWhiteSpace(CustomerName)) &&
+                !_dialogs.Confirm("Load saved parcel?", "Replace the current parcel draft with the saved order? Unsaved changes will be discarded."))
+                return false;
+
+            var resumed = false;
+            await ExecuteBusyActionAsync(async () =>
+            {
+                var order = await _orderService.GetOpenParcelAsync(orderId);
+                if (order == null)
+                {
+                    SetStatus("This parcel is no longer open. Refresh order history.", true);
+                    return;
+                }
+
+                TaxPercentage = await _orderService.GetTaxPercentageAsync();
+                _orderId = order.Id;
+                _revision = order.Revision;
+                CustomerName = order.CustomerName ?? string.Empty;
+                OrderItems.Clear();
+                foreach (var item in order.Items)
+                    OrderItems.Add(CreateLineItem(item.MenuItemId, item.MenuItem?.Name ?? "Menu item",
+                        item.MenuItem?.Category ?? string.Empty, item.Price, item.Quantity, item.TaxExempt));
+                NotifyTotalsChanged();
+                SetStatus($"Resumed parcel order #{order.Id}.", false);
+                resumed = true;
+            }, "Could not reopen the parcel order.");
+            return resumed;
+        }
+
         public async Task LoadAsync()
         {
             await ExecuteBusyActionAsync(async () =>

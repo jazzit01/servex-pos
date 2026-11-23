@@ -3,7 +3,7 @@
         <StackPanel Margin="20">
             <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
             <UniformGrid Columns="4">
-                <HeaderedContentControl Margin="0,0,12,12" Background="{StaticResource PrimaryBrush}" BorderBrush="{StaticResource SidebarHoverBrush}" Header="Today's sales" Tag="Confirmed payments today" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding TodayRevenue, StringFormat=C2}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
+                <HeaderedContentControl Margin="0,0,12,12" Background="{StaticResource PrimaryBrush}" BorderBrush="{StaticResource SidebarHoverBrush}" Header="Today's sales" Tag="Confirmed payments today" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding TodaySalesDisplay}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
                 <HeaderedContentControl Margin="0,0,12,12" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" Header="Active orders" Tag="Open, preparing or served" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding ActiveOrders}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
                 <HeaderedContentControl Margin="0,0,12,12" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" Header="Occupied tables" Tag="Currently occupied" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding OccupiedTables}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
                 <HeaderedContentControl Margin="0,0,12,12" Background="{StaticResource PrimarySoftBrush}" BorderBrush="{StaticResource BorderBrush}" Header="Available tables" Tag="Ready for service" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding AvailableTables}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
@@ -31,7 +31,7 @@
                             <DataGridTextColumn Header="Order" Binding="{Binding Id}" Width="80"/>
                             <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="*"/>
                             <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
-                            <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2}" Width="100"/>
+                            <DataGridTextColumn Header="Total" Binding="{Binding DisplayTotal}" Width="100"/>
                         </DataGrid.Columns>
                     </DataGrid>
                     <TextBlock Text="No unpaid orders." Foreground="{StaticResource MutedTextBrush}"
@@ -47,7 +47,7 @@
                             <DataGridTextColumn Header="Guest / reference" Binding="{Binding ReferenceLabel}" Width="*" MinWidth="150"/>
                             <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="85"/>
                             <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
-                            <DataGridTextColumn Header="Amount" Binding="{Binding Total, StringFormat=C2}" Width="160" ElementStyle="{StaticResource FinancialTextStyle}"/>
+                            <DataGridTextColumn Header="Amount" Binding="{Binding DisplayTotal}" Width="160" ElementStyle="{StaticResource FinancialTextStyle}"/>
                             <DataGridTextColumn Header="Created (local)" Binding="{Binding CreatedAtLocal, StringFormat={}{0:dd MMM HH:mm}}" Width="135"/>
                         </DataGrid.Columns>
                     </DataGrid>

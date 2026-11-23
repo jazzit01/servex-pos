@@ -12,6 +12,27 @@ namespace ServeX.Tests;
 public class WindowsCompositionTests
 {
     [Fact]
+    public async Task HistoryResumesSavedParcelInTheEditableWorkspace()
+    {
+        using var db = new TestDatabase();
+        var ids = await db.SeedCustomerAsync();
+        using var services = CompositionRoot.Build(db.Location);
+        var order = await services.GetRequiredService<OrderService>().SaveParcelOrderAsync(null, "Guest",
+            new[] { new OrderSaveItem { MenuItemId = ids.MenuId, Quantity = 2 } });
+        var settings = await services.GetRequiredService<ApplicationSettingsService>().GetSettingsAsync();
+        using var main = services.GetRequiredService<PresentationFactory>().CreateMain(settings, new User { Username = "test-user" });
+        await main.LoadAsync();
+
+        await main.NavigateCommand.ExecuteAsync(WorkspaceDestination.History);
+        main.History.Selected = Assert.Single(main.History.Orders, row => row.Id == order.Id);
+        await main.History.ResumeParcelCommand.ExecuteAsync();
+
+        Assert.Same(main.Parcel, main.CurrentWorkspace);
+        Assert.Equal("Guest", main.Parcel.CustomerName);
+        Assert.Equal(2, Assert.Single(main.Parcel.OrderItems).Quantity);
+    }
+
+    [Fact]
     public async Task FullCompositionResolvesRuntimeViewModelsAndPreservesWorkspaceInstances()
     {
         using var db = new TestDatabase();

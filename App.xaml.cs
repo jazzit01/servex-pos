@@ -107,7 +107,10 @@ namespace ServeX
             catch (Exception exception)
             {
                 _logService.LogError("ServeX startup failed", exception);
-                MessageBox.Show("ServeX could not start. Check that the data folder is accessible, then try again.\n\nDiagnostics: " + _logService.FilePath,
+                var message = exception is DatabaseSelectionException
+                    ? exception.Message
+                    : "ServeX could not start. Check that the data folder is accessible, then try again.";
+                MessageBox.Show(message + "\n\nDiagnostics: " + _logService.FilePath,
                     "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown(-1);
             }

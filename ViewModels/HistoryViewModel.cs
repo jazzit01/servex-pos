@@ -32,6 +32,7 @@ namespace ServeX.ViewModels
             _log = log;
             _settings = settings;
             RefreshCommand = new AsyncRelayCommand(_ => RefreshAsync());
+            ResumeParcelCommand = new AsyncRelayCommand(_ => ResumeSelectedParcelAsync(), _ => CanResumeParcel);
             OpenOrderCommand = new AsyncRelayCommand(_ => OpenOrderAsync(), _ => Selected != null);
             PrintReportCommand = new AsyncRelayCommand(_ => PrintReportAsync(), _ => Report.Count > 0);
         }
@@ -48,6 +49,10 @@ namespace ServeX.ViewModels
         public string[] Methods => new[] { "All" }.Concat(Enum.GetNames<PaymentMethod>()).ToArray();
         public string[] Groupings { get; } = new[] { "Summary", "Day", "Week", "Month", "Items", "Categories" };
         public AsyncRelayCommand RefreshCommand { get; }
+        public Func<int, Task<bool>> ResumeParcel { private get; set; } = _ => Task.FromResult(false);
+        public bool CanResumeParcel => Selected?.Type == OrderType.Parcel &&
+            Selected.Status is OrderStatus.Open or OrderStatus.Preparing or OrderStatus.Served;
+        public AsyncRelayCommand ResumeParcelCommand { get; }
         public AsyncRelayCommand OpenOrderCommand { get; }
         public AsyncRelayCommand PrintReportCommand { get; }
         public IReadOnlyList<HistoryRow> Orders => _orders;
@@ -56,7 +61,13 @@ namespace ServeX.ViewModels
         public HistoryRow Selected
         {
             get => _selected;
-            set { if (SetProperty(ref _selected, value)) OpenOrderCommand.RaiseCanExecuteChanged(); }
+            set
+            {
+                if (!SetProperty(ref _selected, value)) return;
+                OpenOrderCommand.RaiseCanExecuteChanged();
+                ResumeParcelCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(CanResumeParcel));
+            }
         }
 
         public async Task RefreshAsync()
@@ -93,6 +104,14 @@ namespace ServeX.ViewModels
             }
         }
 
+        private async Task ResumeSelectedParcelAsync()
+        {
+            var selected = Selected;
+            if (selected == null || !CanResumeParcel) return;
+            if (!await ResumeParcel(selected.Id))
+                Message = "Parcel was not reopened. Refresh history if the order status changed.";
+        }
+
         private async Task OpenOrderAsync()
         {
             try { if (Selected != null) await _billing.ShowAsync(Selected.Id, readOnly: true); }
@@ -108,14 +127,13 @@ namespace ServeX.ViewModels
             try
             {
                 var settings = await _settings.GetSettingsAsync();
-                var culture = ReceiptProfile.Culture(settings?.Locale);
                 var dialog = new PrintDialog();
                 if (dialog.ShowDialog() != true) return;
                 var document = new FlowDocument { PagePadding = new System.Windows.Thickness(28), ColumnWidth = double.PositiveInfinity };
                 var title = _reportGrouping == "Summary" && _reportStart.Date == _reportEnd.Date ? "End-of-day report" : "Sales report";
                 document.Blocks.Add(new Paragraph(new Run($"{settings?.RestaurantName ?? "ServeX"} · {title} | {_reportStart:d} to {_reportEnd:d}")));
                 foreach (var row in Report)
-                    document.Blocks.Add(new Paragraph(new Run($"{row.Label}   {row.Units:N0}   {row.Amount.ToString("C2", culture)}")));
+                    document.Blocks.Add(new Paragraph(new Run($"{row.Label}   {row.Units:N0}   {row.Currency} {row.DisplayAmount}")));
                 dialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, "ServeX report");
             }
             catch (Exception exception)
