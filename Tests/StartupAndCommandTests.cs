@@ -34,6 +34,40 @@ public class StartupAndCommandTests
     }
 
     [Fact]
+    public async Task FloorMovesKeepGapsSwapTablesAndSurviveReload()
+    {
+        using var db = new TestDatabase();
+        await db.Initialize();
+        var service = db.Services.GetRequiredService<TableService>();
+        var first = await service.AddTableAsync(new Table { TableNumber = "T1" });
+        var second = await service.AddTableAsync(new Table { TableNumber = "T2", Status = TableStatus.Reserved });
+        var third = await service.AddTableAsync(new Table { TableNumber = "T3" });
+        var outdoor = await service.AddTableAsync(new Table { TableNumber = "T4", Area = TableArea.Outdoor });
+
+        Assert.Null(first.FloorSlot);
+        var moved = await service.MoveOnFloorAsync(first.Id, TableArea.Indoor, TableFloorLayout.Columns + 2);
+        await service.MoveOnFloorAsync(second.Id, TableArea.Indoor, moved[first.Id]);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.MoveOnFloorAsync(outdoor.Id, TableArea.Indoor, 0));
+
+        var saved = (await service.GetTablesAsync()).ToDictionary(table => table.Id);
+        Assert.Equal(1, saved[first.Id].FloorSlot);
+        Assert.Equal(TableFloorLayout.Columns + 2, saved[second.Id].FloorSlot);
+        Assert.Equal(TableStatus.Reserved, saved[second.Id].Status);
+        Assert.Equal(2, saved[third.Id].FloorSlot);
+        Assert.Null(saved[outdoor.Id].FloorSlot);
+
+        var fourth = await service.AddTableAsync(new Table { TableNumber = "T5" });
+        var positions = TableFloorLayout.GetPositions((await service.GetTablesAsync())
+            .Where(table => table.Area == TableArea.Indoor));
+        Assert.Equal(0, positions[fourth.Id]);
+
+        saved[second.Id].Area = TableArea.Outdoor;
+        await service.UpdateTableAsync(saved[second.Id]);
+        Assert.Null((await service.GetTablesAsync()).Single(table => table.Id == second.Id).FloorSlot);
+    }
+
+    [Fact]
     public void RememberedUsernameCanBeSavedAndCleared()
     {
         using var db = new TestDatabase();

@@ -138,7 +138,10 @@ namespace ServeX.Services
                     }
 
                     entity.TableNumber = normalizedTableNumber;
-                    entity.Area = NormalizeArea(table.Area);
+                    var area = NormalizeArea(table.Area);
+                    if (entity.Area != area)
+                        entity.FloorSlot = null;
+                    entity.Area = area;
                     if (entity.Status != TableStatus.Cleaning) entity.Status = NormalizeStatus(table.Status);
 
                     await context.SaveChangesAsync();
@@ -150,6 +153,29 @@ namespace ServeX.Services
                 _logService.LogError("Table update failed", exception);
                 throw;
             }
+        }
+
+        public async Task<Dictionary<int, int>> MoveOnFloorAsync(int tableId, TableArea area, int destination)
+        {
+            using var context = _contexts.CreateDbContext();
+            using var transaction = await context.Database.BeginTransactionAsync();
+            var tables = await context.Tables.Where(table => table.Area == area).ToListAsync();
+            var positions = TableFloorLayout.GetPositions(tables);
+            if (!positions.TryGetValue(tableId, out var source) ||
+                destination < 0 || destination >= TableFloorLayout.GetRowCount(positions.Values) * TableFloorLayout.Columns)
+                throw new System.InvalidOperationException("The floor has changed. Refresh and try again.");
+
+            var other = tables.FirstOrDefault(table => positions[table.Id] == destination);
+            if (other != null)
+                positions[other.Id] = source;
+            positions[tableId] = destination;
+
+            foreach (var table in tables)
+                table.FloorSlot = positions[table.Id];
+
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return positions;
         }
 
         public async Task ChangeFloorStatusAsync(int tableId, TableStatus expected, TableStatus next)

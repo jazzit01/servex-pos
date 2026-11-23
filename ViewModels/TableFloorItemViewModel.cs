@@ -5,6 +5,27 @@ namespace ServeX.ViewModels
     public class TableFloorItemViewModel : ViewModelBase
     {
         private bool _isSelected;
+        private int _floorSlot;
+
+        public const int CellWidth = 146;
+        public const int CellHeight = 178;
+
+        public int FloorSlot
+        {
+            get => _floorSlot;
+            set
+            {
+                if (SetProperty(ref _floorSlot, value))
+                {
+                    OnPropertyChanged(nameof(FloorLeft));
+                    OnPropertyChanged(nameof(FloorTop));
+                }
+            }
+        }
+
+        public int FloorLeft => FloorSlot % TableFloorLayout.Columns * CellWidth + 4;
+
+        public int FloorTop => FloorSlot / TableFloorLayout.Columns * CellHeight + 4;
 
         public int Id { get; set; }
 

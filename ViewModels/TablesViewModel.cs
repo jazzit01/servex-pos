@@ -30,6 +30,8 @@ namespace ServeX.ViewModels
         private readonly RelayCommand _showIndoorTablesCommand;
         private readonly RelayCommand _showOutdoorTablesCommand;
         private readonly ObservableCollection<Table> _tables = new ObservableCollection<Table>();
+        private IReadOnlyDictionary<int, string> _activeGuestNames = new Dictionary<int, string>();
+        private bool _isArrangingFloor;
         private bool _isBusy;
         private bool _isEditorOpen;
         private int? _editingTableId;
@@ -63,7 +65,10 @@ namespace ServeX.ViewModels
                 TableStatus.Reserved
             };
 
-            _beginAddCommand = new RelayCommand(_ => OpenAddPanel(), _ => !IsBusy);
+            ArrangeFloorCommand = new RelayCommand(_ => IsArrangingFloor = !IsArrangingFloor,
+                _ => !IsBusy && !IsEditorOpen && !IsEmpty);
+
+            _beginAddCommand = new RelayCommand(_ => OpenAddPanel(), _ => !IsBusy && !IsArrangingFloor);
             _editCommand = new RelayCommand(table => OpenEditPanel(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
             _deleteCommand = new AsyncRelayCommand(async table => await DeleteAsync(table as TableFloorItemViewModel), table => CanDeleteTables && !IsBusy && table is TableFloorItemViewModel);
             _saveCommand = new AsyncRelayCommand(async _ => await SaveAsync(), _ => CanSave);
@@ -77,6 +82,49 @@ namespace ServeX.ViewModels
             _deleteSelectedCommand = new AsyncRelayCommand(async _ => await DeleteAsync(SelectedTable), _ => CanDeleteTables && !IsBusy && SelectedTable != null);
             _showIndoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Indoor, _ => !IsBusy);
             _showOutdoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Outdoor, _ => !IsBusy);
+        }
+
+        public RelayCommand ArrangeFloorCommand { get; }
+
+        public bool IsArrangingFloor
+        {
+            get => _isArrangingFloor;
+            private set
+            {
+                if (SetProperty(ref _isArrangingFloor, value))
+                {
+                    OnPropertyChanged(nameof(ArrangeFloorLabel));
+                    OnPropertyChanged(nameof(FloorHeight));
+                    OnPropertyChanged(nameof(FloorWidth));
+                    _beginAddCommand.RaiseCanExecuteChanged();
+                }
+            }
+        }
+
+        public string ArrangeFloorLabel => IsArrangingFloor ? "Done arranging" : "Arrange tables";
+
+        public int FloorWidth => TableFloorItemViewModel.CellWidth * (IsArrangingFloor
+            ? TableFloorLayout.Columns
+            : VisibleTables.Select(table => table.FloorSlot % TableFloorLayout.Columns + 1).DefaultIfEmpty(0).Max());
+
+        public int FloorHeight => IsEmpty ? 0 :
+            (TableFloorLayout.GetRowCount(VisibleTables.Select(table => table.FloorSlot)) -
+                (IsArrangingFloor ? 0 : 1)) * TableFloorItemViewModel.CellHeight;
+
+        public Task MoveTableAsync(TableFloorItemViewModel table, int destination)
+        {
+            if (!IsArrangingFloor || !VisibleTables.Contains(table) || table.FloorSlot == destination)
+                return Task.CompletedTask;
+
+            return ExecuteBusyActionAsync(async () =>
+            {
+                var positions = await _tableService.MoveOnFloorAsync(table.Id, table.Area, destination);
+                foreach (var item in _tables.Where(item => positions.ContainsKey(item.Id)))
+                    item.FloorSlot = positions[item.Id];
+
+                ApplyAreaFilter(table.Id);
+                ClearStatus();
+            }, "The table position could not be saved. Try arranging it again.");
         }
 
         public bool CanDeleteTables { get; set; } = true;
@@ -143,6 +191,7 @@ namespace ServeX.ViewModels
             {
                 if (SetProperty(ref _selectedAreaFilter, value))
                 {
+                    IsArrangingFloor = false;
                     ApplyAreaFilter();
                     OnPropertyChanged(nameof(IsIndoorFilterSelected));
                     OnPropertyChanged(nameof(IsOutdoorFilterSelected));
@@ -165,6 +214,7 @@ namespace ServeX.ViewModels
                 if (SetProperty(ref _isEditorOpen, value))
                 {
                     OnPropertyChanged(nameof(EditorTitle));
+                    ArrangeFloorCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -569,7 +619,7 @@ namespace ServeX.ViewModels
             try
             {
                 var items = await _tableService.GetTablesAsync() ?? new List<Table>();
-                var activeGuestNames = await _tableService.GetActiveGuestNamesByTableAsync() ?? new Dictionary<int, string>();
+                _activeGuestNames = await _tableService.GetActiveGuestNamesByTableAsync() ?? new Dictionary<int, string>();
                 var previousSelectionId = SelectedTable?.Id;
                 var preferredTableNumber = selectedTableNumber;
 
@@ -579,7 +629,7 @@ namespace ServeX.ViewModels
                     _tables.Add(item);
                 }
 
-                ApplyAreaFilter(previousSelectionId, preferredTableNumber, activeGuestNames);
+                ApplyAreaFilter(previousSelectionId, preferredTableNumber);
             }
             catch (Exception exception)
             {
@@ -624,16 +674,16 @@ namespace ServeX.ViewModels
             OnPropertyChanged(nameof(EditorTitle));
         }
 
-        private void ApplyAreaFilter(int? preferredSelectionId = null, string preferredTableNumber = null, IReadOnlyDictionary<int, string> activeGuestNames = null)
+        private void ApplyAreaFilter(int? preferredSelectionId = null, string preferredTableNumber = null)
         {
             var selectionId = preferredSelectionId ?? SelectedTable?.Id;
             VisibleTables.Clear();
 
-            foreach (var table in _tables
-                         .Where(item => item.Area == SelectedAreaFilter)
-                         .OrderBy(item => item.TableNumber))
+            var areaTables = _tables.Where(item => item.Area == SelectedAreaFilter).ToList();
+            var positions = TableFloorLayout.GetPositions(areaTables);
+            foreach (var table in areaTables.OrderBy(item => positions[item.Id]))
             {
-                var customerName = activeGuestNames != null && activeGuestNames.TryGetValue(table.Id, out var activeGuestName)
+                var customerName = _activeGuestNames.TryGetValue(table.Id, out var activeGuestName)
                     ? activeGuestName
                     : string.Empty;
 
@@ -642,9 +692,10 @@ namespace ServeX.ViewModels
                     Id = table.Id,
                     TableNumber = table.TableNumber,
                     Area = table.Area,
+                    FloorSlot = positions[table.Id],
                     Status = table.Status,
                     CustomerName = customerName,
-                    HasActiveOrder = activeGuestNames != null && activeGuestNames.ContainsKey(table.Id)
+                    HasActiveOrder = _activeGuestNames.ContainsKey(table.Id)
                 });
             }
 
@@ -695,6 +746,7 @@ namespace ServeX.ViewModels
 
         private void NotifyCommandStates()
         {
+            ArrangeFloorCommand.RaiseCanExecuteChanged();
             _beginAddCommand.RaiseCanExecuteChanged();
             _editCommand.RaiseCanExecuteChanged();
             _deleteCommand.RaiseCanExecuteChanged();
@@ -713,6 +765,9 @@ namespace ServeX.ViewModels
         private void NotifySummaryProperties()
         {
             OnPropertyChanged(nameof(IsEmpty));
+            OnPropertyChanged(nameof(FloorHeight));
+            OnPropertyChanged(nameof(FloorWidth));
+            ArrangeFloorCommand.RaiseCanExecuteChanged();
             OnPropertyChanged(nameof(VisibleTablesCount));
             OnPropertyChanged(nameof(AvailableCount));
             OnPropertyChanged(nameof(OccupiedCount));
