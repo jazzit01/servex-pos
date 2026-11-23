@@ -41,7 +41,7 @@
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsAvailable}" Value="True">
                                                                 <Setter Property="Text" Value="Available"/>
-                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>

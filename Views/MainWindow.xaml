@@ -90,7 +90,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Dashboard}">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
                                     </DataTrigger>
@@ -104,7 +104,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Menu}">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
                                     </DataTrigger>
@@ -118,7 +118,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Tables}">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
                                     </DataTrigger>
@@ -132,7 +132,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Parcel}">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
                                     </DataTrigger>
@@ -146,7 +146,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Rooms}">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -159,7 +159,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.History}">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                         <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
                                     </DataTrigger>
@@ -173,7 +173,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Settings}">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
                                     </DataTrigger>

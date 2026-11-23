@@ -57,7 +57,7 @@
                         </Grid>
                         <Border Background="{StaticResource PrimarySoftBrush}" CornerRadius="8" Padding="16" Margin="0,4,0,8">
                             <StackPanel>
-                                <TextBlock Text="Final payable amount" Foreground="{StaticResource PrimaryBrush}"/>
+                                <TextBlock Text="Final payable amount" Foreground="{StaticResource TextBrush}"/>
                                 <TextBlock Text="{Binding FinalTotal, StringFormat=C2}" FontSize="30" Margin="0,6,0,0" Style="{StaticResource FinancialTextStyle}"/>
                             </StackPanel>
                         </Border>

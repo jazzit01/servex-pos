@@ -13,7 +13,7 @@
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsIndoorFilterSelected}" Value="True">
                                 <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -25,7 +25,7 @@
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsOutdoorFilterSelected}" Value="True">
                                 <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -33,9 +33,9 @@
             </Button>
             <Button Content="Add table" Command="{Binding BeginAddCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="8,0,0,8"/>
             <TextBlock Text="{Binding VisibleTablesCount, Mode=OneWay, StringFormat=Tables: {0}}" Margin="20,12,12,8"/>
-            <TextBlock Text="{Binding AvailableCount, Mode=OneWay, StringFormat=Available: {0}}" Margin="0,12,12,8" Foreground="{StaticResource SuccessBrush}"/>
-            <TextBlock Text="{Binding OccupiedCount, Mode=OneWay, StringFormat=Occupied: {0}}" Margin="0,12,12,8" Foreground="{StaticResource DangerBrush}"/>
-            <TextBlock Text="{Binding ReservedCount, Mode=OneWay, StringFormat=Reserved: {0}}" Margin="0,12,0,8" Foreground="{StaticResource WarningBrush}"/>
+            <TextBlock Text="{Binding AvailableCount, Mode=OneWay, StringFormat=Available: {0}}" Margin="0,12,12,8" Foreground="{StaticResource TextBrush}"/>
+            <TextBlock Text="{Binding OccupiedCount, Mode=OneWay, StringFormat=Occupied: {0}}" Margin="0,12,12,8" Foreground="{StaticResource TextBrush}"/>
+            <TextBlock Text="{Binding ReservedCount, Mode=OneWay, StringFormat=Reserved: {0}}" Margin="0,12,0,8" Foreground="{StaticResource TextBrush}"/>
         </WrapPanel>
         <Grid Grid.Row="2" Margin="0,8,0,0">
             <Grid.ColumnDefinitions>
