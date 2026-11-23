@@ -76,9 +76,7 @@ namespace ServeX.Services
                                     .Select(order => order.CustomerName)
                                     .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name));
 
-                                return string.IsNullOrWhiteSpace(customerName)
-                                    ? "Atithi"
-                                    : customerName.Trim();
+                                return customerName?.Trim() ?? string.Empty;
                             });
                 }
             }
@@ -215,7 +213,7 @@ namespace ServeX.Services
                 return name;
 
             var digits = name.TrimStart('0');
-            var prefix = area == TableArea.Outdoor ? "OUT-" : "IN-";
+            var prefix = area == TableArea.Outdoor ? "O-" : "I-";
             return prefix + (digits.Length == 0 ? "0" : digits);
         }
 

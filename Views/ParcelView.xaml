@@ -21,11 +21,8 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Customer name" Margin="0,0,12,0" VerticalAlignment="Center"/>
-                <StackPanel Grid.Column="1">
-                    <TextBox Style="{StaticResource FormTextBoxStyle}" Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Parcel customer name"/>
-                    <TextBlock Text="{Binding CustomerNameDisplay, StringFormat=Bill to: {0}}" Margin="0,4,0,0" Foreground="{StaticResource MutedTextBrush}"/>
-                </StackPanel>
+                <TextBlock Text="Customer name (optional)" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                <TextBox Grid.Column="1" Style="{StaticResource FormTextBoxStyle}" Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Parcel customer name"/>
             </Grid>
         </StackPanel>
         <ContentControl Grid.Row="1" Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>

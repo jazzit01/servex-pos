@@ -264,7 +264,7 @@ namespace ServeX.ViewModels
 
         public string SelectedTableStatusLabel => SelectedTable?.StatusLabel ?? "Waiting";
 
-        public string SelectedGuestLabel => SelectedTable?.CustomerDisplayName ?? "Atithi";
+        public string SelectedGuestLabel => SelectedTable?.CustomerDisplayName ?? string.Empty;
 
         public string SelectedServiceCaption => SelectedTable?.ServiceCaption ?? "Choose a table from the floor to continue.";
 
@@ -284,9 +284,9 @@ namespace ServeX.ViewModels
                     case TableStatus.Cleaning:
                         return "Payment is complete. Mark this table clean when it is ready.";
                     case TableStatus.Occupied:
-                        return string.Format("Occupied and linked to {0}.", SelectedGuestLabel);
+                        return string.IsNullOrEmpty(SelectedGuestLabel) ? "Occupied." : $"Occupied by {SelectedGuestLabel}.";
                     case TableStatus.Reserved:
-                        return string.Format("Reserved and being held for {0}.", SelectedGuestLabel);
+                        return string.IsNullOrEmpty(SelectedGuestLabel) ? "Reserved." : $"Reserved for {SelectedGuestLabel}.";
                     default:
                         return "Status is being tracked for this table.";
                 }
@@ -635,7 +635,7 @@ namespace ServeX.ViewModels
             {
                 var customerName = activeGuestNames != null && activeGuestNames.TryGetValue(table.Id, out var activeGuestName)
                     ? activeGuestName
-                    : "Atithi";
+                    : string.Empty;
 
                 VisibleTables.Add(new TableFloorItemViewModel
                 {

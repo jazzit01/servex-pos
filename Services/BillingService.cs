@@ -243,7 +243,7 @@ namespace ServeX.Services
         public static string GetParcelLabel(string customerName)
         {
             return string.IsNullOrWhiteSpace(customerName)
-                ? "Parcel - Atithi"
+                ? "Parcel"
                 : "Parcel - " + customerName.Trim();
         }
 

@@ -189,7 +189,7 @@ Every command bound in the screens is listed below with the result to expect. Ru
 
 ### Parcel
 
-- [ ] **Customer name:** blank saves as "Atithi".
+- [ ] **Customer name:** blank is stored without a customer name and the receipt uses “Parcel”.
 - [ ] **Add, increase, decrease, remove item:** same behaviour as the table order workspace.
 - [ ] **Save order:** creates a parcel order with no table; it can be reopened and edited until billed.
 - [ ] **Generate bill:** opens billing for the parcel.
