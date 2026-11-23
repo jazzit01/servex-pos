@@ -5,36 +5,37 @@
     <CornerRadius x:Key="RadiusMedium">6</CornerRadius>
     <CornerRadius x:Key="RadiusLarge">8</CornerRadius>
     <CornerRadius x:Key="RadiusXLarge">10</CornerRadius>
-    <SolidColorBrush x:Key="CanvasBrush" Color="#F3F5F8"/>
-    <SolidColorBrush x:Key="ShellBrush" Color="#F3F5F8"/>
-    <SolidColorBrush x:Key="PanelBrush" Color="#EEF2F6"/>
+    <SolidColorBrush x:Key="CanvasBrush" Color="#F6F8F4"/>
+    <SolidColorBrush x:Key="ShellBrush" Color="#F6F8F4"/>
+    <SolidColorBrush x:Key="PanelBrush" Color="#E8EFE4"/>
     <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#F8FAFC"/>
-    <SolidColorBrush x:Key="BorderBrushWarm" Color="#D7DFE8"/>
-    <SolidColorBrush x:Key="TextBrush" Color="#172B3A"/>
-    <SolidColorBrush x:Key="MutedTextBrush" Color="#526579"/>
-    <SolidColorBrush x:Key="PrimaryBrush" Color="#08636B"/>
-    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#07545C"/>
-    <SolidColorBrush x:Key="PrimarySoftBrush" Color="#E5F3F4"/>
-    <SolidColorBrush x:Key="AccentBrush" Color="#335C81"/>
-    <SolidColorBrush x:Key="AccentSoftBrush" Color="#EBF1F8"/>
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#FAFBF8"/>
+    <SolidColorBrush x:Key="BorderBrushWarm" Color="#C5D1C3"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#000000"/>
+    <SolidColorBrush x:Key="MutedTextBrush" Color="#000000"/>
+    <SolidColorBrush x:Key="PrimaryBrush" Color="#AEC5A8"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#9DB797"/>
+    <SolidColorBrush x:Key="FocusBrush" Color="#4B6949"/>
+    <SolidColorBrush x:Key="PrimarySoftBrush" Color="#ECF3E9"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#5D7459"/>
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#EDF3EA"/>
     <SolidColorBrush x:Key="SuccessBrush" Color="#176B46"/>
-    <SolidColorBrush x:Key="SuccessSoftBrush" Color="#E8F5ED"/>
+    <SolidColorBrush x:Key="SuccessSoftBrush" Color="#EAF3E6"/>
     <SolidColorBrush x:Key="DangerBrush" Color="#B42332"/>
     <SolidColorBrush x:Key="DangerSoftBrush" Color="#FDECEE"/>
     <SolidColorBrush x:Key="WarningBrush" Color="#875B08"/>
     <SolidColorBrush x:Key="WarningSoftBrush" Color="#FFF4D6"/>
-    <SolidColorBrush x:Key="InfoBrush" Color="#245C98"/>
-    <SolidColorBrush x:Key="InfoSoftBrush" Color="#EAF2FC"/>
+    <SolidColorBrush x:Key="InfoBrush" Color="#56744F"/>
+    <SolidColorBrush x:Key="InfoSoftBrush" Color="#EFF4EC"/>
     <!-- Semantic tokens; legacy keys above remain compatible with every existing view. -->
-    <SolidColorBrush x:Key="SidebarBrush" Color="#EEF4EF"/>
-    <SolidColorBrush x:Key="SidebarHoverBrush" Color="#CCDAD0"/>
-    <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#245B47"/>
-    <SolidColorBrush x:Key="SidebarTextBrush" Color="#18382B"/>
-    <SolidColorBrush x:Key="SidebarMutedBrush" Color="#426356"/>
-    <SolidColorBrush x:Key="SecondaryBrush" Color="#335C81"/>
-    <SolidColorBrush x:Key="NeutralBrush" Color="#526579"/>
-    <SolidColorBrush x:Key="BorderBrush" Color="#D7DFE8"/>
+    <SolidColorBrush x:Key="SidebarBrush" Color="#E4EDE1"/>
+    <SolidColorBrush x:Key="SidebarHoverBrush" Color="#C4D3C0"/>
+    <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#AEC5A8"/>
+    <SolidColorBrush x:Key="SidebarTextBrush" Color="#000000"/>
+    <SolidColorBrush x:Key="SidebarMutedBrush" Color="#000000"/>
+    <SolidColorBrush x:Key="SecondaryBrush" Color="#647B60"/>
+    <SolidColorBrush x:Key="NeutralBrush" Color="#000000"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="#C5D1C3"/>
     <Thickness x:Key="PagePadding">20</Thickness>
     <Thickness x:Key="CardPadding">16</Thickness>
     <Thickness x:Key="ControlPadding">14,10</Thickness>
@@ -46,7 +47,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Rectangle Margin="-3" Stroke="{StaticResource PrimaryBrush}" StrokeThickness="2" StrokeDashArray="2,1" RadiusX="4" RadiusY="4"/>
+                    <Rectangle Margin="-3" Stroke="{StaticResource FocusBrush}" StrokeThickness="2" StrokeDashArray="2,1" RadiusX="4" RadiusY="4"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -101,7 +102,7 @@
     <Style x:Key="PrimaryActionButtonStyle" TargetType="Button">
         <Setter Property="Padding" Value="16,10"/>
         <Setter Property="MinHeight" Value="44"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -143,12 +144,12 @@
         <Setter Property="BorderThickness" Value="1"/>
     </Style>
     <Style x:Key="GhostActionButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryActionButtonStyle}">
-        <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource PrimarySoftBrush}"/>
     </Style>
     <Style x:Key="DangerActionButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryActionButtonStyle}">
-        <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         <Setter Property="Background" Value="{StaticResource DangerSoftBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource DangerSoftBrush}"/>
     </Style>
@@ -206,7 +207,7 @@
         <Setter Property="Padding" Value="16,10"/>
     </Style>
     <Style x:Key="SelectedSegmentedTabButtonStyle" TargetType="Button" BasedOn="{StaticResource SegmentedTabButtonStyle}">
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
     </Style>
@@ -238,7 +239,7 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Root" Property="Background" Value="{StaticResource PrimaryBrush}"/>
                             <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
-                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Root" Property="Background" Value="{StaticResource SurfaceBrush}"/>
@@ -314,7 +315,7 @@
                             <Setter Property="Opacity" Value="0.55"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="InputRoot" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                            <Setter TargetName="InputRoot" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
                             <Setter TargetName="InputRoot" Property="BorderThickness" Value="2"/>
                         </Trigger>
                         <Trigger Property="Validation.HasError" Value="True">
@@ -358,7 +359,7 @@
                             <Setter Property="Opacity" Value="0.55"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="PasswordRoot" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                            <Setter TargetName="PasswordRoot" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
                             <Setter TargetName="PasswordRoot" Property="BorderThickness" Value="2"/>
                         </Trigger>
                         <Trigger Property="Validation.HasError" Value="True">
@@ -525,7 +526,7 @@
     <Style x:Key="BusyIndicatorStyle" TargetType="ProgressBar">
         <Setter Property="Height" Value="3"/>
         <Setter Property="IsIndeterminate" Value="True"/>
-        <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
         <Setter Property="AutomationProperties.Name" Value="Operation in progress"/>
     </Style>
