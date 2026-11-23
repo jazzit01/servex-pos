@@ -78,7 +78,17 @@
                                                 <TextBlock Text="{Binding StatusLabel}" HorizontalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
-                                        <TextBlock Text="{Binding CustomerDisplayName}" Margin="0,10,0,2"/>
+                                        <TextBlock Text="{Binding CustomerDisplayName}" Margin="0,10,0,2">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CustomerDisplayName}" Value="">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                         <TextBlock Text="{Binding ServiceCaption}" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
                                         <Button Content="Manage table" Margin="0,12,0,0" Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}"/>
                                     </StackPanel>
@@ -95,7 +105,17 @@
                         <StackPanel>
                             <HeaderedContentControl Header="{Binding SelectedTableHeading}" Content="{Binding SelectedTableStatusDescription}" Style="{StaticResource PageHeaderStyle}"/>
                             <TextBlock Text="{Binding SelectedTableAreaLabel}" Foreground="{StaticResource MutedTextBrush}"/>
-                            <TextBlock Text="{Binding SelectedGuestLabel}" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                            <TextBlock Text="{Binding SelectedGuestLabel}" FontWeight="SemiBold" Margin="0,8,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedGuestLabel}" Value="">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                             <TextBlock Text="{Binding SelectedServiceCaption}" Margin="0,4,0,16" Foreground="{StaticResource MutedTextBrush}"/>
                             <Button Content="Open selected order" Command="{Binding OpenSelectedOrderCommand}" Style="{StaticResource PrimaryActionButtonStyle}"/>
                             <Button Content="{Binding FloorStatusAction}" Command="{Binding ChangeFloorStatusCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,8,0,0"/>

@@ -321,7 +321,7 @@ namespace ServeX.Services
             }
 
             var normalizedCustomerName = string.IsNullOrWhiteSpace(customerName)
-                ? "Atithi"
+                ? null
                 : customerName.Trim();
 
             try

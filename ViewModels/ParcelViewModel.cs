@@ -106,14 +106,9 @@ namespace ServeX.ViewModels
             get => _customerName;
             set
             {
-                if (SetProperty(ref _customerName, value))
-                {
-                    OnPropertyChanged(nameof(CustomerNameDisplay));
-                }
+                SetProperty(ref _customerName, value);
             }
         }
-
-        public string CustomerNameDisplay => string.IsNullOrWhiteSpace(CustomerName) ? "Atithi" : CustomerName.Trim();
 
         public string SelectedCategory
         {
@@ -467,7 +462,7 @@ namespace ServeX.ViewModels
             Order savedOrder = null;
             await ExecuteBusyActionAsync(async () =>
             {
-                savedOrder = await _orderService.SaveParcelOrderAsync(_orderId, CustomerNameDisplay, items, _revision);
+                savedOrder = await _orderService.SaveParcelOrderAsync(_orderId, CustomerName, items, _revision);
                 _orderId = savedOrder.Id;
                 _revision = savedOrder.Revision;
                 foreach (var savedItem in savedOrder.Items)
@@ -479,11 +474,11 @@ namespace ServeX.ViewModels
                     matching[0].Quantity = savedItem.Quantity;
                 }
                 NotifyTotalsChanged();
-                CustomerName = savedOrder.CustomerName;
+                CustomerName = savedOrder.CustomerName ?? string.Empty;
 
                 if (showSuccessMessage)
                 {
-                    SetStatus(string.Format("Parcel order #{0} saved successfully for {1}.", savedOrder.Id, CustomerNameDisplay), false);
+                    SetStatus($"Parcel order #{savedOrder.Id} saved.", false);
                 }
             }, "The parcel order could not be saved.");
 

@@ -9,6 +9,20 @@ namespace ServeX.Tests;
 public class OrderBillingTests
 {
     [Fact]
+    public async Task UnnamedParcelRemainsUnnamedInStorageAndReceipts()
+    {
+        using var db = new TestDatabase();
+        var ids = await db.SeedCustomerAsync();
+        var orders = db.Services.GetRequiredService<OrderService>();
+        var order = await orders.SaveParcelOrderAsync(null, "  ",
+            new[] { new OrderSaveItem { MenuItemId = ids.MenuId, Quantity = 1 } });
+        Assert.Null((await orders.GetOrderAsync(order.Id)).CustomerName);
+        var billing = db.Services.GetRequiredService<BillingService>();
+        await billing.ConfirmPaymentAsync(order.Id, 0, PaymentMethod.Cash);
+        Assert.Equal("Parcel", billing.CreateReceiptData(await billing.GetBillingOrderAsync(order.Id)).TableNumber);
+    }
+
+    [Fact]
     public async Task MenuRejectsDuplicateNamesInTheSameCategoryAndPricesThatRoundToZero()
     {
         using var db = new TestDatabase();

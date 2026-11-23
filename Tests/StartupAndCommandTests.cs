@@ -26,11 +26,11 @@ public class StartupAndCommandTests
         var indoor = await service.AddTableAsync(new Table { TableNumber = " 006 ", Area = TableArea.Indoor });
         var outdoor = await service.AddTableAsync(new Table { TableNumber = "6", Area = TableArea.Outdoor });
         var named = await service.AddTableAsync(new Table { TableNumber = "T6", Area = TableArea.Indoor });
-        Assert.Equal("IN-6", indoor.TableNumber);
-        Assert.Equal("OUT-6", outdoor.TableNumber);
+        Assert.Equal("I-6", indoor.TableNumber);
+        Assert.Equal("O-6", outdoor.TableNumber);
         Assert.Equal("T6", named.TableNumber);
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.AddTableAsync(new Table { TableNumber = "in-6", Area = TableArea.Indoor }));
+            service.AddTableAsync(new Table { TableNumber = "i-6", Area = TableArea.Indoor }));
     }
 
     [Fact]
@@ -72,16 +72,16 @@ public class StartupAndCommandTests
         using var db = new TestDatabase();
         await db.Initialize();
         var tables = db.Services.GetRequiredService<TableService>();
-        await tables.AddTableAsync(new Table { TableNumber = "OUT-1", Area = TableArea.Indoor });
+        await tables.AddTableAsync(new Table { TableNumber = "O-1", Area = TableArea.Indoor });
         await db.Services.GetRequiredService<ApplicationAccessService>().SaveInitialSetupAsync(new InitialSetupRequest
         {
             RestaurantName = "Test Restaurant", Address = "Address", Phone = "123",
             AdminUsername = "admin", AdminPassword = "test-password"
         });
         var all = await tables.GetTablesAsync();
-        Assert.Equal("OUT-1", Assert.Single(all, table => table.Area == TableArea.Indoor).TableNumber);
+        Assert.Equal("O-1", Assert.Single(all, table => table.Area == TableArea.Indoor).TableNumber);
         Assert.Equal(5, all.Count(table => table.Area == TableArea.Outdoor));
-        Assert.Contains(all, table => table.TableNumber == "OUT-6");
+        Assert.Contains(all, table => table.TableNumber == "O-6");
     }
 
     [Fact]

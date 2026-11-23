@@ -29,7 +29,7 @@ namespace ServeX.ViewModels
         public string StatusLabel => Status.ToString();
 
         public string CustomerDisplayName => string.IsNullOrWhiteSpace(CustomerName)
-            ? "Atithi"
+            ? string.Empty
             : CustomerName.Trim();
 
         public string ServiceCaption => HasActiveOrder
