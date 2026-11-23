@@ -59,6 +59,13 @@
                                 </Style.Triggers>
                             </Style>
                         </ItemsControl.Style>
+                        <ItemsControl.Template>
+                            <ControlTemplate TargetType="ItemsControl">
+                                <Border Background="{TemplateBinding Background}">
+                                    <ItemsPresenter/>
+                                </Border>
+                            </ControlTemplate>
+                        </ItemsControl.Template>
                         <ItemsControl.ItemContainerStyle>
                             <Style TargetType="ContentPresenter">
                                 <Setter Property="Canvas.Left" Value="{Binding FloorLeft}"/>
@@ -101,7 +108,7 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </StackPanel.Style>
-                                            <Button Command="{Binding DataContext.OpenFloorOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource GhostActionButtonStyle}" AutomationProperties.Name="{Binding Heading, StringFormat=Open order for {0}}">
+                                            <Button Command="{Binding DataContext.OpenFloorOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Padding="8,8" Style="{StaticResource GhostActionButtonStyle}" AutomationProperties.Name="{Binding Heading, StringFormat=Open order for {0}}">
                                                 <StackPanel>
                                                     <TextBlock Text="{Binding TableNumber}" TextTrimming="CharacterEllipsis" ToolTip="{Binding TableNumber}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
                                                     <TextBlock Text="{Binding StatusLabel}" HorizontalAlignment="Center"/>
@@ -119,7 +126,7 @@
                                                 </TextBlock.Style>
                                             </TextBlock>
                                             <TextBlock Text="{Binding ServiceCaption}" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
-                                            <Button Content="Manage table" Margin="0,6,0,0" Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}"/>
+                                            <Button Content="Manage table" Padding="6,8" Margin="0,6,0,0" Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}"/>
                                         </StackPanel>
                                         <Border Background="Transparent" Cursor="SizeAll" PreviewMouseLeftButtonDown="TableMouseDown"
                                                 PreviewMouseMove="TableMouseMove" PreviewMouseLeftButtonUp="TableMouseUp"
