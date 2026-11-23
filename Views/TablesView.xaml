@@ -32,6 +32,7 @@
                 </Button.Style>
             </Button>
             <Button Content="Add table" Command="{Binding BeginAddCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="8,0,0,8"/>
+            <Button Content="{Binding ArrangeFloorLabel}" Command="{Binding ArrangeFloorCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="8,0,0,8"/>
             <TextBlock Text="{Binding VisibleTablesCount, Mode=OneWay, StringFormat=Tables: {0}}" Margin="20,12,12,8"/>
             <TextBlock Text="{Binding AvailableCount, Mode=OneWay, StringFormat=Available: {0}}" Margin="0,12,12,8" Foreground="{StaticResource TextBrush}"/>
             <TextBlock Text="{Binding OccupiedCount, Mode=OneWay, StringFormat=Occupied: {0}}" Margin="0,12,12,8" Foreground="{StaticResource TextBrush}"/>
@@ -40,20 +41,45 @@
         <Grid Grid.Row="2" Margin="0,8,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="280"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,16,0">
+            <ScrollViewer x:Name="FloorScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,0,16,0">
                 <StackPanel>
                     <HeaderedContentControl Header="{Binding FloorLayoutTitle}" Content="{Binding FloorLayoutSubtitle}" Style="{StaticResource PageHeaderStyle}"/>
-                    <ItemsControl ItemsSource="{Binding VisibleTables}">
+                    <TextBlock Text="Drag tables into empty spaces or onto another table to swap. Changes save after each move." Margin="0,0,0,12"
+                               Visibility="{Binding IsArrangingFloor, Converter={StaticResource BoolToVisibility}}"/>
+                    <ItemsControl x:Name="FloorGrid" ItemsSource="{Binding VisibleTables}" Width="{Binding FloorWidth}" Height="{Binding FloorHeight}"
+                                  HorizontalAlignment="Left" AllowDrop="{Binding IsArrangingFloor}" DragOver="FloorDragOver" Drop="FloorDrop">
+                        <ItemsControl.Style>
+                            <Style TargetType="ItemsControl">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsArrangingFloor}" Value="True">
+                                        <Setter Property="Background" Value="{Binding FloorGridBrush, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ItemsControl.Style>
+                        <ItemsControl.Template>
+                            <ControlTemplate TargetType="ItemsControl">
+                                <Border Background="{TemplateBinding Background}">
+                                    <ItemsPresenter/>
+                                </Border>
+                            </ControlTemplate>
+                        </ItemsControl.Template>
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{Binding FloorLeft}"/>
+                                <Setter Property="Canvas.Top" Value="{Binding FloorTop}"/>
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel/>
+                                <Canvas/>
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Width="176" Margin="0,0,12,12" Padding="12">
+                                <Border Width="134" Height="166" Padding="8">
                                     <Border.Style>
                                         <Style TargetType="Border" BasedOn="{StaticResource SurfaceCardStyle}">
                                             <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}"/>
@@ -71,27 +97,41 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <StackPanel>
-                                        <Button Command="{Binding DataContext.OpenFloorOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource GhostActionButtonStyle}" AutomationProperties.Name="{Binding Heading, StringFormat=Open order for {0}}">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding TableNumber}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
-                                                <TextBlock Text="{Binding StatusLabel}" HorizontalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                        <TextBlock Text="{Binding CustomerDisplayName}" Margin="0,10,0,2">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
+                                    <Grid>
+                                        <StackPanel>
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding CustomerDisplayName}" Value="">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <DataTrigger Binding="{Binding DataContext.IsArrangingFloor, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                            <Setter Property="IsEnabled" Value="False"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                        <TextBlock Text="{Binding ServiceCaption}" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
-                                        <Button Content="Manage table" Margin="0,12,0,0" Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}"/>
-                                    </StackPanel>
+                                            </StackPanel.Style>
+                                            <Button Command="{Binding DataContext.OpenFloorOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Padding="8,8" Style="{StaticResource GhostActionButtonStyle}" AutomationProperties.Name="{Binding Heading, StringFormat=Open order for {0}}">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding TableNumber}" TextTrimming="CharacterEllipsis" ToolTip="{Binding TableNumber}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding StatusLabel}" HorizontalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <TextBlock Text="{Binding CustomerDisplayName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding CustomerDisplayName}" Margin="0,6,0,2">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding CustomerDisplayName}" Value="">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding ServiceCaption}" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
+                                            <Button Content="Manage table" Padding="6,8" Margin="0,6,0,0" Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource SecondaryActionButtonStyle}"/>
+                                        </StackPanel>
+                                        <Border Background="Transparent" Cursor="SizeAll" PreviewMouseLeftButtonDown="TableMouseDown"
+                                                PreviewMouseMove="TableMouseMove" PreviewMouseLeftButtonUp="TableMouseUp"
+                                                Visibility="{Binding DataContext.IsArrangingFloor, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibility}}"/>
+                                    </Grid>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -99,7 +139,16 @@
                     <HeaderedContentControl Header="No tables in this area" Content="Add a table or switch between Indoor and Outdoor to continue." Style="{StaticResource EmptyStateStyle}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}"/>
                 </StackPanel>
             </ScrollViewer>
-            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer Grid.Column="1" Width="280" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsArrangingFloor}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
                 <StackPanel>
                     <Border Padding="16" Style="{StaticResource SurfaceCardStyle}">
                         <StackPanel>

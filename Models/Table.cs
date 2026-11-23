@@ -10,6 +10,8 @@ namespace ServeX.Models
 
         public TableArea Area { get; set; } = TableArea.Indoor;
 
+        public int? FloorSlot { get; set; }
+
         public TableStatus Status { get; set; } = TableStatus.Available;
     }
 }
