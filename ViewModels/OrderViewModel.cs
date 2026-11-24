@@ -66,7 +66,7 @@ namespace ServeX.ViewModels
             TransferCommand = new AsyncRelayCommand(_ => TransferAsync(), _ => !IsBusy && CanTransfer && _orderId.HasValue);
             SendKitchenCommand = new AsyncRelayCommand(_ => SendKitchenAsync(), _ => !IsBusy && _orderId.HasValue);
             MarkServedCommand = new AsyncRelayCommand(_ => MarkServedAsync(), _ => !IsBusy && _orderId.HasValue);
-            CancelOrderCommand = new AsyncRelayCommand(_ => CancelOrderAsync(), _ => !IsBusy && _orderId.HasValue);
+            CancelOrderCommand = new AsyncRelayCommand(_ => CancelOrderAsync(), _ => !IsBusy && (_orderId.HasValue || HasUnsavedChanges));
             GenerateBillCommand = new AsyncRelayCommand(async _ => await GenerateBillAsync(), _ => CanGenerateBill);
         }
 
@@ -175,6 +175,8 @@ namespace ServeX.ViewModels
 
         private (int MenuItemId, int Quantity)[] CurrentItems() =>
             OrderItems.Select(item => (item.MenuItemId, item.Quantity)).OrderBy(item => item.MenuItemId).ToArray();
+
+        internal bool ConfirmReservationWhenSaving { get; set; }
 
         internal int? SavedOrderId => _orderId;
 
@@ -407,7 +409,18 @@ namespace ServeX.ViewModels
 
         private async Task CancelOrderAsync()
         {
-            if (_orderId is not int orderId || !_dialogs.Confirm("Cancel order?",
+            if (_orderId is not int orderId)
+            {
+                if (HasUnsavedChanges && _dialogs.Confirm("Cancel order?", "Discard the unsaved items for this table?"))
+                {
+                    OrderItems.Clear();
+                    NotifyTotalsChanged();
+                    SetStatus("Draft cancelled.", false);
+                }
+                return;
+            }
+
+            if (!_dialogs.Confirm("Cancel order?",
                 $"Cancel order #{orderId}? The order will remain in the records, and unsaved changes will be discarded."))
                 return;
 
@@ -416,7 +429,6 @@ namespace ServeX.ViewModels
                 await _orderService.CancelOrderAsync(orderId);
                 _orderId = null;
                 _revision = 0;
-            _revision = 0;
                 OrderItems.Clear();
                 _savedItems = CurrentItems();
                 TableStatus = (await _orderService.GetOrderLocationAsync(_tableId, _locationType))?.Status ?? TableStatus;
@@ -584,6 +596,12 @@ namespace ServeX.ViewModels
             {
                 SetStatus("Add at least one item before saving the order.", true);
                 return null;
+            }
+
+            if (ConfirmReservationWhenSaving && TableStatus == TableStatus.Reserved && !AllowReservedTable)
+            {
+                if (!_dialogs.Confirm("Use reserved table?", "Start an order for this reservation?")) return null;
+                AllowReservedTable = true;
             }
 
             var items = OrderItems.Select(item => new OrderSaveItem

@@ -12,6 +12,41 @@ namespace ServeX.Tests;
 public class WindowsCompositionTests
 {
     [Fact]
+    public async Task FloorSelectionEditsAndSavesTableOrderInPlace()
+    {
+        using var db = new TestDatabase();
+        var ids = await db.SeedCustomerAsync();
+        using var services = CompositionRoot.Build(db.Location);
+        var settings = await services.GetRequiredService<ApplicationSettingsService>().GetSettingsAsync();
+        using var main = services.GetRequiredService<PresentationFactory>().CreateMain(settings, new User { Username = "cashier" });
+        await main.LoadAsync();
+
+        await main.FloorAreaCommand.ExecuteAsync(TableArea.Outdoor);
+        var tile = Assert.Single(main.Tables.VisibleTables, candidate => candidate.Id == ids.TableId);
+        await main.Tables.OpenFloorOrderCommand.ExecuteAsync(tile);
+        var order = Assert.IsType<OrderViewModel>(main.Tables.SelectedOrder);
+        var menuItem = Assert.Single(order.MenuItems);
+        Assert.True(main.Tables.IsTablePanelOpen);
+        Assert.True(tile.IsSelected);
+
+        order.AddItemCommand.Execute(menuItem);
+        order.RemoveItemCommand.Execute(Assert.Single(order.OrderItems));
+        Assert.Empty(order.OrderItems);
+        order.AddItemCommand.Execute(menuItem);
+
+        await order.SaveOrderCommand.ExecuteAsync();
+
+        Assert.Same(main.Tables, main.CurrentWorkspace);
+        Assert.Same(order, main.Tables.SelectedOrder);
+        Assert.Equal(TableStatus.Occupied, tile.Status);
+        var saved = await services.GetRequiredService<OrderService>().GetActiveOrderForTableAsync(tile.Id);
+        Assert.Equal(menuItem.Id, Assert.Single(saved.Items).MenuItemId);
+        main.Tables.CloseTablePanelCommand.Execute(null);
+        Assert.Null(main.Tables.SelectedOrder);
+        Assert.False(main.Tables.IsTablePanelOpen);
+    }
+
+    [Fact]
     public async Task OrdersResumeSavedTakeawayAndBackReturnsToOrders()
     {
         using var db = new TestDatabase();

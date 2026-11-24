@@ -6,6 +6,7 @@ namespace ServeX.ViewModels
     {
         private bool _isSelected;
         private int _floorSlot;
+        private TableStatus _status;
 
         public const int CellWidth = 94;
         public const int CellHeight = 74;
@@ -33,7 +34,17 @@ namespace ServeX.ViewModels
 
         public TableArea Area { get; set; }
 
-        public TableStatus Status { get; set; }
+        public TableStatus Status
+        {
+            get => _status;
+            set
+            {
+                if (!SetProperty(ref _status, value)) return;
+                OnPropertyChanged(nameof(StatusLabel));
+                OnPropertyChanged(nameof(TileDescription));
+                OnPropertyChanged(nameof(ServiceCaption));
+            }
+        }
 
         public string CustomerName { get; set; }
 
