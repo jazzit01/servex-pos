@@ -51,29 +51,22 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Border Grid.ColumnSpan="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="0,0,0,1" Padding="10,10,18,10">
+        <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1" Padding="18,10">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Button x:Name="ToggleSidebarButton" Click="ToggleSidebar" Width="44" Height="44" Padding="0" Margin="0,0,14,0"
-                        VerticalAlignment="Center" ToolTip="Collapse sidebar" AutomationProperties.Name="Collapse sidebar"
-                        Style="{StaticResource SecondaryActionButtonStyle}">
-                    <Path Data="M 0,0 L 20,0 M 0,6 L 20,6 M 0,12 L 20,12"
-                          Stroke="{StaticResource SidebarTextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                </Button>
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                <StackPanel VerticalAlignment="Center" Margin="0,0,14,0">
                     <TextBlock Text="{Binding CurrentSectionTitle}" FontSize="22" FontWeight="SemiBold"/>
                     <TextBlock Text="{Binding CurrentSectionSubtitle}" Margin="0,4,0,0" Style="{StaticResource SectionSubtitleTextStyle}"/>
                 </StackPanel>
-                <Button Grid.Column="2" Content="{Binding BackButtonLabel}" Command="{Binding GoBackCommand}"
+                <Button Grid.Column="1" Content="{Binding BackButtonLabel}" Command="{Binding GoBackCommand}"
                         Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,14,0" VerticalAlignment="Center"
                         Visibility="{Binding ShowBackButton, Converter={StaticResource BoolToVisibility}}"/>
-                <Border Grid.Column="3" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource SidebarHoverBrush}"
+                <Border Grid.Column="2" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource SidebarHoverBrush}"
                         BorderThickness="1" CornerRadius="8" Padding="12,5" VerticalAlignment="Center">
                     <StackPanel HorizontalAlignment="Right" MinWidth="118">
                         <TextBlock x:Name="HeaderDate" TextAlignment="Right" FontSize="12"
@@ -85,18 +78,24 @@
                 </Border>
             </Grid>
         </Border>
-        <Border Grid.Row="1" Background="{StaticResource SidebarBrush}" Padding="10,16,10,12">
+        <Border Grid.RowSpan="2" Background="{StaticResource SidebarBrush}" Padding="10,10,10,12">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <StackPanel Margin="0,0,0,12">
-                    <StackPanel x:Name="SidebarBrand" Margin="8,8,0,0">
-                    <TextBlock Text="ServeX" FontSize="26" FontWeight="Bold" Foreground="{StaticResource SidebarTextBrush}"/>
+                <DockPanel Margin="0,0,0,12">
+                    <Button x:Name="ToggleSidebarButton" Click="ToggleSidebar" Width="44" Height="44" Padding="0"
+                            DockPanel.Dock="Left" VerticalAlignment="Center" ToolTip="Collapse sidebar" AutomationProperties.Name="Collapse sidebar"
+                            Style="{StaticResource SecondaryActionButtonStyle}" Background="Transparent">
+                        <Path Data="M 0,0 L 20,0 M 0,6 L 20,6 M 0,12 L 20,12"
+                              Stroke="{StaticResource SidebarTextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                    </Button>
+                    <StackPanel x:Name="SidebarBrand" Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="ServeX" FontSize="24" FontWeight="Bold" Foreground="{StaticResource SidebarTextBrush}"/>
                     </StackPanel>
-                </StackPanel>
+                </DockPanel>
                 <StackPanel Grid.Row="1" KeyboardNavigation.TabNavigation="Continue">
                     <Button Content="Floor" Tag="&#xE14C;" Command="{Binding NavigateCommand}"
                             CommandParameter="{x:Static navigation:WorkspaceDestination.Tables}" AutomationProperties.Name="Floor">
