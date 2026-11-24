@@ -99,6 +99,33 @@ public class InitializationTests
     }
 
     [Fact]
+    public async Task TableLabelUpgradeRetainsPositionsStatusesAndCustomNames()
+    {
+        using var db = new TestDatabase();
+        using (var context = db.Context())
+        {
+            await context.GetService<IMigrator>().MigrateAsync("20261123000000_TableFloorSlots");
+            await context.Database.ExecuteSqlRawAsync("""
+                INSERT INTO Tables (Id, TableNumber, Area, Status, FloorSlot) VALUES
+                    (1, 'IN-1', 'Indoor', 'Reserved', 8),
+                    (2, 'O-2', 'Outdoor', 'Available', 4),
+                    (3, 'Window', 'Indoor', 'Available', NULL),
+                    (4, 'I-3', 'Indoor', 'Available', NULL),
+                    (5, 't3', 'Indoor', 'Available', NULL),
+                    (6, 'OUT-2', 'Outdoor', 'Available', NULL);
+                """);
+        }
+
+        await db.Initialize();
+        using var check = db.Context();
+        var tables = await check.Tables.OrderBy(table => table.Id).ToListAsync();
+        Assert.Equal(new[] { "T1", "OT2", "Window", "I-3", "t3", "OUT-2" }, tables.Select(table => table.TableNumber));
+        Assert.Equal(8, tables[0].FloorSlot);
+        Assert.Equal(4, tables[1].FloorSlot);
+        Assert.Equal(TableStatus.Reserved, tables[0].Status);
+    }
+
+    [Fact]
     public async Task PasswordUpgradeConvertsAccountsFromThePreviousSchemaOnce()
     {
         using var db = new TestDatabase();

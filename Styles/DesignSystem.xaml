@@ -5,37 +5,37 @@
     <CornerRadius x:Key="RadiusMedium">6</CornerRadius>
     <CornerRadius x:Key="RadiusLarge">8</CornerRadius>
     <CornerRadius x:Key="RadiusXLarge">10</CornerRadius>
-    <SolidColorBrush x:Key="CanvasBrush" Color="#F6F8F4"/>
-    <SolidColorBrush x:Key="ShellBrush" Color="#F6F8F4"/>
-    <SolidColorBrush x:Key="PanelBrush" Color="#E8EFE4"/>
-    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#FAFBF8"/>
-    <SolidColorBrush x:Key="BorderBrushWarm" Color="#C5D1C3"/>
-    <SolidColorBrush x:Key="TextBrush" Color="#000000"/>
-    <SolidColorBrush x:Key="MutedTextBrush" Color="#000000"/>
-    <SolidColorBrush x:Key="PrimaryBrush" Color="#AEC5A8"/>
-    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#9DB797"/>
-    <SolidColorBrush x:Key="FocusBrush" Color="#4B6949"/>
-    <SolidColorBrush x:Key="PrimarySoftBrush" Color="#ECF3E9"/>
-    <SolidColorBrush x:Key="AccentBrush" Color="#5D7459"/>
-    <SolidColorBrush x:Key="AccentSoftBrush" Color="#EDF3EA"/>
+    <SolidColorBrush x:Key="CanvasBrush" Color="#FAF6EF"/>
+    <SolidColorBrush x:Key="ShellBrush" Color="#FAF6EF"/>
+    <SolidColorBrush x:Key="PanelBrush" Color="#F0E6DA"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFDFA"/>
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#F8F1E8"/>
+    <SolidColorBrush x:Key="BorderBrushWarm" Color="#D9CABD"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#29231F"/>
+    <SolidColorBrush x:Key="MutedTextBrush" Color="#625249"/>
+    <SolidColorBrush x:Key="PrimaryBrush" Color="#DBA288"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#CE9479"/>
+    <SolidColorBrush x:Key="FocusBrush" Color="#8E4630"/>
+    <SolidColorBrush x:Key="PrimarySoftBrush" Color="#F7E4D8"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#91482F"/>
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#F3DED1"/>
     <SolidColorBrush x:Key="SuccessBrush" Color="#176B46"/>
-    <SolidColorBrush x:Key="SuccessSoftBrush" Color="#EAF3E6"/>
+    <SolidColorBrush x:Key="SuccessSoftBrush" Color="#DDEEDC"/>
     <SolidColorBrush x:Key="DangerBrush" Color="#B42332"/>
-    <SolidColorBrush x:Key="DangerSoftBrush" Color="#FDECEE"/>
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="#F7DBD9"/>
     <SolidColorBrush x:Key="WarningBrush" Color="#875B08"/>
-    <SolidColorBrush x:Key="WarningSoftBrush" Color="#FFF4D6"/>
-    <SolidColorBrush x:Key="InfoBrush" Color="#56744F"/>
-    <SolidColorBrush x:Key="InfoSoftBrush" Color="#EFF4EC"/>
+    <SolidColorBrush x:Key="WarningSoftBrush" Color="#F8E8B9"/>
+    <SolidColorBrush x:Key="InfoBrush" Color="#245786"/>
+    <SolidColorBrush x:Key="InfoSoftBrush" Color="#DAEAF8"/>
     <!-- Semantic tokens; legacy keys above remain compatible with every existing view. -->
-    <SolidColorBrush x:Key="SidebarBrush" Color="#E4EDE1"/>
-    <SolidColorBrush x:Key="SidebarHoverBrush" Color="#C4D3C0"/>
-    <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#AEC5A8"/>
-    <SolidColorBrush x:Key="SidebarTextBrush" Color="#000000"/>
-    <SolidColorBrush x:Key="SidebarMutedBrush" Color="#000000"/>
-    <SolidColorBrush x:Key="SecondaryBrush" Color="#647B60"/>
-    <SolidColorBrush x:Key="NeutralBrush" Color="#000000"/>
-    <SolidColorBrush x:Key="BorderBrush" Color="#C5D1C3"/>
+    <SolidColorBrush x:Key="SidebarBrush" Color="#EBE0D4"/>
+    <SolidColorBrush x:Key="SidebarHoverBrush" Color="#E1D1C2"/>
+    <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#E7BDA8"/>
+    <SolidColorBrush x:Key="SidebarTextBrush" Color="#29231F"/>
+    <SolidColorBrush x:Key="SidebarMutedBrush" Color="#625249"/>
+    <SolidColorBrush x:Key="SecondaryBrush" Color="#76523F"/>
+    <SolidColorBrush x:Key="NeutralBrush" Color="#29231F"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="#D9CABD"/>
     <Thickness x:Key="PagePadding">20</Thickness>
     <Thickness x:Key="CardPadding">16</Thickness>
     <Thickness x:Key="ControlPadding">14,10</Thickness>
