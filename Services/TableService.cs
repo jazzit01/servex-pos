@@ -239,7 +239,7 @@ namespace ServeX.Services
                 return name;
 
             var digits = name.TrimStart('0');
-            var prefix = area == TableArea.Outdoor ? "O-" : "I-";
+            var prefix = area == TableArea.Outdoor ? "OT" : "T";
             return prefix + (digits.Length == 0 ? "0" : digits);
         }
 

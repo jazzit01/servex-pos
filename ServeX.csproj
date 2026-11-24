@@ -6,7 +6,7 @@
     <RootNamespace>ServeX</RootNamespace>
     <AssemblyName>ServeX</AssemblyName>
     <ApplicationIcon>Assets/ServeX.ico</ApplicationIcon>
-    <Version>0.3.9</Version>
+    <Version>0.4.0</Version>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>

@@ -17,7 +17,7 @@ namespace ServeX.Views
             var cell = new Rect(0, 0, TableFloorItemViewModel.CellWidth, TableFloorItemViewModel.CellHeight);
             FloorGridBrush = new DrawingBrush(new GeometryDrawing(
                 Brushes.Transparent,
-                new Pen(Brushes.SlateGray, 1) { DashStyle = DashStyles.Dash },
+                new Pen((Brush)FindResource("BorderBrushWarm"), 1) { DashStyle = DashStyles.Dash },
                 new RectangleGeometry(cell)))
             {
                 Viewport = cell,

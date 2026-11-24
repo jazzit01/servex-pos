@@ -32,6 +32,7 @@ namespace ServeX.ViewModels
         private readonly ObservableCollection<Table> _tables = new ObservableCollection<Table>();
         private IReadOnlyDictionary<int, string> _activeGuestNames = new Dictionary<int, string>();
         private bool _isArrangingFloor;
+        private bool _isTablePanelOpen;
         private bool _isBusy;
         private bool _isEditorOpen;
         private int? _editingTableId;
@@ -65,6 +66,11 @@ namespace ServeX.ViewModels
                 TableStatus.Reserved
             };
 
+            CloseTablePanelCommand = new RelayCommand(_ =>
+            {
+                CloseEditor();
+                IsTablePanelOpen = false;
+            }, _ => !IsBusy);
             ArrangeFloorCommand = new RelayCommand(_ => IsArrangingFloor = !IsArrangingFloor,
                 _ => !IsBusy && !IsEditorOpen && !IsEmpty);
 
@@ -86,6 +92,14 @@ namespace ServeX.ViewModels
 
         public RelayCommand ArrangeFloorCommand { get; }
 
+        public RelayCommand CloseTablePanelCommand { get; }
+
+        public bool IsTablePanelOpen
+        {
+            get => _isTablePanelOpen;
+            private set => SetProperty(ref _isTablePanelOpen, value);
+        }
+
         public bool IsArrangingFloor
         {
             get => _isArrangingFloor;
@@ -93,15 +107,13 @@ namespace ServeX.ViewModels
             {
                 if (SetProperty(ref _isArrangingFloor, value))
                 {
-                    OnPropertyChanged(nameof(ArrangeFloorLabel));
+                    IsTablePanelOpen = false;
                     OnPropertyChanged(nameof(FloorHeight));
                     OnPropertyChanged(nameof(FloorWidth));
                     _beginAddCommand.RaiseCanExecuteChanged();
                 }
             }
         }
-
-        public string ArrangeFloorLabel => IsArrangingFloor ? "Done arranging" : "Arrange tables";
 
         public int FloorWidth => TableFloorItemViewModel.CellWidth * (IsArrangingFloor
             ? TableFloorLayout.Columns
@@ -192,11 +204,10 @@ namespace ServeX.ViewModels
                 if (SetProperty(ref _selectedAreaFilter, value))
                 {
                     IsArrangingFloor = false;
+                    if (!IsEditorOpen) IsTablePanelOpen = false;
                     ApplyAreaFilter();
                     OnPropertyChanged(nameof(IsIndoorFilterSelected));
                     OnPropertyChanged(nameof(IsOutdoorFilterSelected));
-                    OnPropertyChanged(nameof(FloorLayoutTitle));
-                    OnPropertyChanged(nameof(FloorLayoutSubtitle));
                     OnPropertyChanged(nameof(SelectedAreaLabel));
                 }
             }
@@ -222,14 +233,6 @@ namespace ServeX.ViewModels
         public bool IsEditMode => _editingTableId.HasValue;
 
         public string EditorTitle => IsEditMode ? "Edit table" : "Add a table";
-
-        public string FloorLayoutTitle => SelectedAreaFilter == TableArea.Indoor
-            ? "Indoor Floor"
-            : "Outdoor Floor";
-
-        public string FloorLayoutSubtitle => SelectedAreaFilter == TableArea.Indoor
-            ? "Select a dining table to continue service, update details, or reopen the order."
-            : "Track patio tables clearly so the outdoor floor stays as readable as the main room.";
 
         public string SelectedAreaLabel => SelectedAreaFilter.ToString();
 
@@ -472,6 +475,7 @@ namespace ServeX.ViewModels
 
                 await RefreshAsync(table.TableNumber);
                 CloseEditor(false);
+                IsTablePanelOpen = false;
                 SetStatus(successMessage, false);
                 RaiseTablesChanged();
             }, "The table could not be saved. Make sure the table number is unique.");
@@ -496,6 +500,7 @@ namespace ServeX.ViewModels
                 }
 
                 await RefreshAsync();
+                IsTablePanelOpen = false;
                 SetStatus("Table deleted successfully.", false);
                 RaiseTablesChanged();
             }, "The table could not be deleted. Tables linked to order history are protected.");
@@ -543,6 +548,7 @@ namespace ServeX.ViewModels
                 _editingTableId = null;
                 EditorArea = SelectedAreaFilter;
                 EditorStatus = TableStatus.Available;
+                IsTablePanelOpen = true;
                 IsEditorOpen = true;
                 OnPropertyChanged(nameof(IsEditMode));
                 OnPropertyChanged(nameof(NewTableNameHint));
@@ -570,6 +576,7 @@ namespace ServeX.ViewModels
                 EditorTableNumber = table.TableNumber;
                 EditorArea = table.Area;
                 EditorStatus = NormalizeEditableStatus(table.Status);
+                IsTablePanelOpen = true;
                 IsEditorOpen = true;
                 OnPropertyChanged(nameof(IsEditMode));
                 OnPropertyChanged(nameof(NewTableNameHint));
@@ -593,7 +600,9 @@ namespace ServeX.ViewModels
                     return;
                 }
 
+                if (IsEditorOpen) CloseEditor();
                 SelectedTable = table;
+                IsTablePanelOpen = true;
             }
             catch (Exception exception)
             {
@@ -747,6 +756,7 @@ namespace ServeX.ViewModels
         private void NotifyCommandStates()
         {
             ArrangeFloorCommand.RaiseCanExecuteChanged();
+            CloseTablePanelCommand.RaiseCanExecuteChanged();
             _beginAddCommand.RaiseCanExecuteChanged();
             _editCommand.RaiseCanExecuteChanged();
             _deleteCommand.RaiseCanExecuteChanged();

@@ -7,8 +7,8 @@ namespace ServeX.ViewModels
         private bool _isSelected;
         private int _floorSlot;
 
-        public const int CellWidth = 146;
-        public const int CellHeight = 178;
+        public const int CellWidth = 84;
+        public const int CellHeight = 66;
 
         public int FloorSlot
         {
@@ -46,6 +46,8 @@ namespace ServeX.ViewModels
         }
 
         public string Heading => string.Format("Table {0}", TableNumber);
+
+        public string TileDescription => $"{TableNumber} · {StatusLabel}";
 
         public string StatusLabel => Status.ToString();
 

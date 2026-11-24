@@ -25,12 +25,12 @@ public class StartupAndCommandTests
         var service = db.Services.GetRequiredService<TableService>();
         var indoor = await service.AddTableAsync(new Table { TableNumber = " 006 ", Area = TableArea.Indoor });
         var outdoor = await service.AddTableAsync(new Table { TableNumber = "6", Area = TableArea.Outdoor });
-        var named = await service.AddTableAsync(new Table { TableNumber = "T6", Area = TableArea.Indoor });
-        Assert.Equal("I-6", indoor.TableNumber);
-        Assert.Equal("O-6", outdoor.TableNumber);
-        Assert.Equal("T6", named.TableNumber);
+        var named = await service.AddTableAsync(new Table { TableNumber = "Window", Area = TableArea.Indoor });
+        Assert.Equal("T6", indoor.TableNumber);
+        Assert.Equal("OT6", outdoor.TableNumber);
+        Assert.Equal("Window", named.TableNumber);
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.AddTableAsync(new Table { TableNumber = "i-6", Area = TableArea.Indoor }));
+            service.AddTableAsync(new Table { TableNumber = "t6", Area = TableArea.Indoor }));
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class StartupAndCommandTests
         var all = await tables.GetTablesAsync();
         Assert.Equal("O-1", Assert.Single(all, table => table.Area == TableArea.Indoor).TableNumber);
         Assert.Equal(5, all.Count(table => table.Area == TableArea.Outdoor));
-        Assert.Contains(all, table => table.TableNumber == "O-6");
+        Assert.Contains(all, table => table.TableNumber == "OT5");
     }
 
     [Fact]
