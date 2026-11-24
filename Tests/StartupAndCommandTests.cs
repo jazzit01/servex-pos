@@ -222,19 +222,21 @@ public class StartupAndCommandTests
     [InlineData(WorkspaceDestination.Tables)]
     [InlineData(WorkspaceDestination.Parcel)]
     [InlineData(WorkspaceDestination.Settings)]
-    public void NavigationHasTypedDestinationsAndDashboardBackBehavior(WorkspaceDestination destination)
+    [InlineData(WorkspaceDestination.Orders)]
+    [InlineData(WorkspaceDestination.TableSetup)]
+    public void NavigationHasTypedDestinationsAndFloorBackBehavior(WorkspaceDestination destination)
     {
         var navigation = new WorkspaceNavigation();
         var notifications = new List<string>();
         navigation.PropertyChanged += (_, e) => notifications.Add(e.PropertyName);
         navigation.Navigate(destination);
         Assert.Equal(destination, navigation.Current);
-        Assert.Equal(destination != WorkspaceDestination.Dashboard, navigation.CanGoBack);
+        Assert.Equal(destination != WorkspaceDestination.Tables, navigation.CanGoBack);
         var count = notifications.Count;
         Assert.False(navigation.Navigate(destination));
         Assert.Equal(count, notifications.Count);
         navigation.GoBack();
-        Assert.Equal(WorkspaceDestination.Dashboard, navigation.Current);
+        Assert.Equal(WorkspaceDestination.Tables, navigation.Current);
         Assert.False(navigation.CanGoBack);
         Assert.Throws<ArgumentOutOfRangeException>(() => navigation.Navigate((WorkspaceDestination)999));
     }

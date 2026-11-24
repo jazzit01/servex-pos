@@ -12,6 +12,9 @@ namespace ServeX.Services
     public sealed record HistoryRow(int Id, OrderType Type, OrderStatus Status, DateTime CreatedLocal, string Reference,
         IReadOnlyList<PaymentMethod> Methods, decimal Total, string Locale)
     {
+        public int ReferenceId { get; init; }
+        public bool IsUnfinished => Status is OrderStatus.Open or OrderStatus.Preparing or OrderStatus.Served;
+        public string ServiceLabel => Type == OrderType.Parcel ? "Takeaway" : Type == OrderType.Room ? "Room service" : "Dine-in";
         public string DisplayTotal => ReceiptProfile.FormatAmount(Total, Locale);
         public string PaymentDisplay => string.Join(" / ", Methods);
     }
@@ -25,6 +28,8 @@ namespace ServeX.Services
     {
         private readonly IDbContextFactory<ServeXDbContext> _contexts;
         public OrderHistoryService(IDbContextFactory<ServeXDbContext> contexts) { _contexts = contexts; }
+
+        public Task<List<HistoryRow>> GetOpenOrdersAsync() => GetOrdersAsync(default, default, unpaidOnly: true);
 
         public async Task<List<HistoryRow>> GetOrdersAsync(DateTime start, DateTime end, bool unpaidOnly = false)
         {
@@ -54,7 +59,7 @@ namespace ServeX.Services
                 },
                 order.Bill?.PaidAt != null ? BillingService.ReadPayments(order.Bill).Select(payment => payment.Method).Distinct().ToArray() :
                     Array.Empty<PaymentMethod>(), order.Bill?.Total ?? 0m,
-                order.Bill?.PaidAt != null ? order.Bill.RecordedLocale ?? "en-IN" : locale)).ToList();
+                order.Bill?.PaidAt != null ? order.Bill.RecordedLocale ?? "en-IN" : locale) { ReferenceId = order.ReferenceId }).ToList();
         }
 
         public async Task<IReadOnlyList<ReportRow>> GetReportAsync(DateTime start, DateTime end, string grouping)

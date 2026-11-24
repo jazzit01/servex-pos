@@ -1,4 +1,4 @@
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:viewModels="clr-namespace:ServeX.ViewModels" xmlns:views="clr-namespace:ServeX.Views" xmlns:navigation="clr-namespace:ServeX.Presentation.Navigation" x:Class="ServeX.Views.MainWindow" MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}" MaxWidth="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Width}" Title="{Binding Title}" Language="{Binding MoneyLanguage}" Width="1280" Height="760" MinWidth="1100" MinHeight="680" Icon="/ServeX;component/Assets/ServeX.ico" WindowStartupLocation="CenterScreen" Style="{StaticResource ShellWindowStyle}">
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:viewModels="clr-namespace:ServeX.ViewModels" xmlns:views="clr-namespace:ServeX.Views" xmlns:models="clr-namespace:ServeX.Models" xmlns:navigation="clr-namespace:ServeX.Presentation.Navigation" x:Class="ServeX.Views.MainWindow" MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}" MaxWidth="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Width}" Title="{Binding Title}" Language="{Binding MoneyLanguage}" Width="1280" Height="760" MinWidth="1100" MinHeight="680" Icon="/ServeX;component/Assets/ServeX.ico" WindowStartupLocation="CenterScreen" Style="{StaticResource ShellWindowStyle}">
     <Window.Resources>
         <DataTemplate DataType="{x:Type viewModels:DashboardViewModel}">
             <views:DashboardView/>
@@ -27,6 +27,20 @@
         <DataTemplate DataType="{x:Type viewModels:RoomsViewModel}">
             <views:RoomsView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:OpenOrdersViewModel}">
+            <views:OpenOrdersView/>
+        </DataTemplate>
+        <Style x:Key="WorkspaceTabStyle" TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -58,7 +72,7 @@
                 </StackPanel>
                 <Button Grid.Column="2" Content="{Binding BackButtonLabel}" Command="{Binding GoBackCommand}"
                         Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,14,0" VerticalAlignment="Center"
-                        Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVisibility}}"/>
+                        Visibility="{Binding ShowBackButton, Converter={StaticResource BoolToVisibility}}"/>
                 <Border Grid.Column="3" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource SidebarHoverBrush}"
                         BorderThickness="1" CornerRadius="8" Padding="12,5" VerticalAlignment="Center">
                     <StackPanel HorizontalAlignment="Right" MinWidth="118">
@@ -84,98 +98,57 @@
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Row="1" KeyboardNavigation.TabNavigation="Continue">
-                    <Button Content="Dashboard" Tag="" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Dashboard}" AutomationProperties.Name="Dashboard">
+                    <Button Content="Floor" Tag="&#xE14C;" Command="{Binding NavigateCommand}"
+                            CommandParameter="{x:Static navigation:WorkspaceDestination.Tables}" AutomationProperties.Name="Floor">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarNavigationButtonStyle}">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Dashboard}">
+                                    <DataTrigger Binding="{Binding IsFloorSection}" Value="True">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
+                                        <Setter Property="AutomationProperties.ItemStatus" Value="Current section"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
                     </Button>
-                    <Button Content="Menu" Visibility="{Binding CanManage, Converter={StaticResource BoolToVisibility}}" Tag="&#xE8FD;" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Menu}" AutomationProperties.Name="Menu">
+                    <Button Content="Orders" Tag="&#xE7BF;" Command="{Binding NavigateCommand}"
+                            CommandParameter="{x:Static navigation:WorkspaceDestination.Orders}" AutomationProperties.Name="Orders">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarNavigationButtonStyle}">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Menu}">
+                                    <DataTrigger Binding="{Binding IsOrdersSection}" Value="True">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
+                                        <Setter Property="AutomationProperties.ItemStatus" Value="Current section"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
                     </Button>
-                    <Button Content="Tables" Tag="&#xE8A9;" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Tables}" AutomationProperties.Name="Tables">
+                    <Button Content="Sales" Tag="&#xE9D2;" Command="{Binding NavigateCommand}"
+                            CommandParameter="{x:Static navigation:WorkspaceDestination.History}" AutomationProperties.Name="Sales">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarNavigationButtonStyle}">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Tables}">
+                                    <DataTrigger Binding="{Binding IsSalesSection}" Value="True">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
+                                        <Setter Property="AutomationProperties.ItemStatus" Value="Current section"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
                     </Button>
-                    <Button Content="Parcel" Tag="" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Parcel}" AutomationProperties.Name="Parcel">
+                    <Button Content="Manage" Tag="&#xE713;" Command="{Binding NavigateCommand}"
+                            CommandParameter="{x:Static navigation:WorkspaceDestination.Menu}" AutomationProperties.Name="Manage" Visibility="{Binding CanManage, Converter={StaticResource BoolToVisibility}}">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarNavigationButtonStyle}">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Parcel}">
+                                    <DataTrigger Binding="{Binding IsManageSection}" Value="True">
                                         <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                    <Button Content="Rooms" Tag="&#xE8B7;" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Rooms}" AutomationProperties.Name="Rooms">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource SidebarNavigationButtonStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Rooms}">
-                                        <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-                                        <Setter Property="FontWeight" Value="Bold"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                    <Button Content="History and sales" Tag="&#xE81C;" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.History}" AutomationProperties.Name="History and sales">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource SidebarNavigationButtonStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.History}">
-                                        <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-                                        <Setter Property="FontWeight" Value="Bold"/>
-                                        <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                    <Button Content="Settings" Visibility="{Binding CanManage, Converter={StaticResource BoolToVisibility}}" Tag="" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Settings}" AutomationProperties.Name="Settings">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource SidebarNavigationButtonStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SelectedDestination}" Value="{x:Static navigation:WorkspaceDestination.Settings}">
-                                        <Setter Property="Background" Value="{StaticResource SidebarSelectedBrush}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-                                        <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="AutomationProperties.ItemStatus" Value="Current page"/>
+                                        <Setter Property="AutomationProperties.ItemStatus" Value="Current section"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -197,10 +170,35 @@
         <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <ContentControl Grid.Row="0" Margin="20,12,20,0" Content="{Binding}" ContentTemplate="{StaticResource StatusMessageTemplate}"/>
-            <ContentControl Grid.Row="1" Content="{Binding CurrentWorkspace}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+            <Grid Grid.Row="1" Margin="20,8,20,0">
+                <WrapPanel Visibility="{Binding ShowFloorTabs, Converter={StaticResource BoolToVisibility}}">
+                    <Button Content="Indoor" Tag="{Binding IsIndoorTab}" Command="{Binding FloorAreaCommand}" CommandParameter="{x:Static models:TableArea.Indoor}"
+                            Style="{StaticResource WorkspaceTabStyle}"/>
+                    <Button Content="Outdoor" Tag="{Binding IsOutdoorTab}" Command="{Binding FloorAreaCommand}" CommandParameter="{x:Static models:TableArea.Outdoor}"
+                            Style="{StaticResource WorkspaceTabStyle}"/>
+                    <Button Content="Rooms" Tag="{Binding IsRoomsTab}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Rooms}"
+                            Style="{StaticResource WorkspaceTabStyle}"/>
+                </WrapPanel>
+                <WrapPanel Visibility="{Binding ShowSalesTabs, Converter={StaticResource BoolToVisibility}}">
+                    <Button Content="Transactions" Tag="{Binding IsTransactionsTab}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.History}"
+                            Style="{StaticResource WorkspaceTabStyle}"/>
+                    <Button Content="Overview" Tag="{Binding IsOverviewTab}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Dashboard}"
+                            Style="{StaticResource WorkspaceTabStyle}"/>
+                </WrapPanel>
+                <WrapPanel Visibility="{Binding ShowManageTabs, Converter={StaticResource BoolToVisibility}}">
+                    <Button Content="Menu" Tag="{Binding IsMenuTab}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Menu}"
+                            Style="{StaticResource WorkspaceTabStyle}"/>
+                    <Button Content="Table setup" Tag="{Binding IsTableSetupTab}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.TableSetup}"
+                            Style="{StaticResource WorkspaceTabStyle}"/>
+                    <Button Content="Settings" Tag="{Binding IsSettingsTab}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static navigation:WorkspaceDestination.Settings}"
+                            Style="{StaticResource WorkspaceTabStyle}"/>
+                </WrapPanel>
+            </Grid>
+            <ContentControl Grid.Row="2" Content="{Binding CurrentWorkspace}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
         </Grid>
     </Grid>
 </Window>

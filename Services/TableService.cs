@@ -89,6 +89,7 @@ namespace ServeX.Services
 
         public async Task<Table> AddTableAsync(Table table)
         {
+            _session.RequireManager();
             try
             {
                 using (var context = _contexts.CreateDbContext())
@@ -119,6 +120,7 @@ namespace ServeX.Services
 
         public async Task UpdateTableAsync(Table table)
         {
+            _session.RequireManager();
             try
             {
                 using (var context = _contexts.CreateDbContext())
@@ -157,6 +159,7 @@ namespace ServeX.Services
 
         public async Task<Dictionary<int, int>> MoveOnFloorAsync(int tableId, TableArea area, int destination)
         {
+            _session.RequireManager();
             using var context = _contexts.CreateDbContext();
             using var transaction = await context.Database.BeginTransactionAsync();
             var tables = await context.Tables.Where(table => table.Area == area).ToListAsync();

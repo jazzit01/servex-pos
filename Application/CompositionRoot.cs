@@ -21,6 +21,7 @@ namespace ServeX.Application
             services.AddSingleton<RememberedUsername>();
             services.AddTransient<DashboardViewModel>();
             services.AddTransient<HistoryViewModel>();
+            services.AddTransient<OpenOrdersViewModel>();
             services.AddTransient<RoomsViewModel>();
             services.AddTransient<MenuViewModel>();
             services.AddTransient<TablesViewModel>();

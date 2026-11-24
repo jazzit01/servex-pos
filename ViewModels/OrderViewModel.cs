@@ -176,6 +176,8 @@ namespace ServeX.ViewModels
         private (int MenuItemId, int Quantity)[] CurrentItems() =>
             OrderItems.Select(item => (item.MenuItemId, item.Quantity)).OrderBy(item => item.MenuItemId).ToArray();
 
+        internal int? SavedOrderId => _orderId;
+
         public bool HasUnsavedChanges => !_savedItems.SequenceEqual(CurrentItems());
 
         public bool CanGenerateBill => !IsBusy && OrderItems.Count > 0;

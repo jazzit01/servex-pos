@@ -32,7 +32,6 @@ namespace ServeX.ViewModels
             _log = log;
             _settings = settings;
             RefreshCommand = new AsyncRelayCommand(_ => RefreshAsync());
-            ResumeParcelCommand = new AsyncRelayCommand(_ => ResumeSelectedParcelAsync(), _ => CanResumeParcel);
             OpenOrderCommand = new AsyncRelayCommand(_ => OpenOrderAsync(), _ => Selected != null);
             PrintReportCommand = new AsyncRelayCommand(_ => PrintReportAsync(), _ => Report.Count > 0);
         }
@@ -45,14 +44,10 @@ namespace ServeX.ViewModels
         public string Method { get; set; } = "All";
         public string Grouping { get; set; } = "Summary";
         public string[] Types => new[] { "All" }.Concat(Enum.GetNames<OrderType>()).ToArray();
-        public string[] Statuses => new[] { "All" }.Concat(Enum.GetNames<OrderStatus>()).ToArray();
+        public string[] Statuses => new[] { "All", nameof(OrderStatus.Paid), nameof(OrderStatus.Billed), nameof(OrderStatus.Cancelled), nameof(OrderStatus.Merged) };
         public string[] Methods => new[] { "All" }.Concat(Enum.GetNames<PaymentMethod>()).ToArray();
         public string[] Groupings { get; } = new[] { "Summary", "Day", "Week", "Month", "Items", "Categories" };
         public AsyncRelayCommand RefreshCommand { get; }
-        public Func<int, Task<bool>> ResumeParcel { private get; set; } = _ => Task.FromResult(false);
-        public bool CanResumeParcel => Selected?.Type == OrderType.Parcel &&
-            Selected.Status is OrderStatus.Open or OrderStatus.Preparing or OrderStatus.Served;
-        public AsyncRelayCommand ResumeParcelCommand { get; }
         public AsyncRelayCommand OpenOrderCommand { get; }
         public AsyncRelayCommand PrintReportCommand { get; }
         public IReadOnlyList<HistoryRow> Orders => _orders;
@@ -65,8 +60,6 @@ namespace ServeX.ViewModels
             {
                 if (!SetProperty(ref _selected, value)) return;
                 OpenOrderCommand.RaiseCanExecuteChanged();
-                ResumeParcelCommand.RaiseCanExecuteChanged();
-                OnPropertyChanged(nameof(CanResumeParcel));
             }
         }
 
@@ -84,7 +77,7 @@ namespace ServeX.ViewModels
                 var orders = await _history.GetOrdersAsync(start, end);
                 var grouping = Grouping;
                 var report = await _history.GetReportAsync(start, end, grouping);
-                _orders = orders.Where(row => (Type == "All" || row.Type.ToString() == Type) &&
+                _orders = orders.Where(row => !row.IsUnfinished && (Type == "All" || row.Type.ToString() == Type) &&
                     (Status == "All" || row.Status.ToString() == Status) &&
                     (Method == "All" || row.Methods.Any(method => method.ToString() == Method)) &&
                     (search.Length == 0 || row.Id.ToString() == search || row.Reference.Contains(search, StringComparison.CurrentCultureIgnoreCase))).ToList();
@@ -102,14 +95,6 @@ namespace ServeX.ViewModels
                 _log.LogError("Could not load order history", exception);
                 Message = "Could not load order history. Try again.";
             }
-        }
-
-        private async Task ResumeSelectedParcelAsync()
-        {
-            var selected = Selected;
-            if (selected == null || !CanResumeParcel) return;
-            if (!await ResumeParcel(selected.Id))
-                Message = "Parcel was not reopened. Refresh history if the order status changed.";
         }
 
         private async Task OpenOrderAsync()

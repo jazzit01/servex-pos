@@ -61,9 +61,9 @@ for path in (ROOT / 'Views').glob('*.xaml'):
         errors.append(f'{path.name}: missing Phase 1 action {command}')
 
 shell = (ROOT / 'Views/MainWindow.xaml').read_text()
-for destination in ['Dashboard', 'Menu', 'Tables', 'Parcel', 'Settings']:
-    if shell.count('navigation:WorkspaceDestination.' + destination + '}') != 2:
-        errors.append(f'MainWindow: command/selected trigger mismatch for {destination}')
+for section, destination in [('Floor', 'Tables'), ('Orders', 'Orders'), ('Sales', 'History'), ('Manage', 'Menu')]:
+    if f'Content="{section}"' not in shell or f'WorkspaceDestination.{destination}' not in shell or f'Is{section}Section' not in shell:
+        errors.append(f'MainWindow: missing navigation for {section}')
 
 # Verify the Phase 2 baseline did not change Phase 1 business logic. Later checklist work can extend it.
 protected = ['Models', 'Migrations', 'Data', 'Services/BillingService.cs', 'Services/OrderService.cs',

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
@@ -28,6 +29,20 @@ namespace ServeX.ViewModels
 
         private bool _isBusy;
         private int? _orderId;
+        private (int MenuItemId, int Quantity, decimal Price)[] _savedItems = Array.Empty<(int, int, decimal)>();
+        private string _savedCustomer = string.Empty;
+
+        public bool HasUnsavedChanges => (CustomerName ?? string.Empty) != _savedCustomer ||
+            !_savedItems.SequenceEqual(CurrentItems());
+
+        private IEnumerable<(int MenuItemId, int Quantity, decimal Price)> CurrentItems() =>
+            OrderItems.Select(item => (item.MenuItemId, item.Quantity, item.UnitPrice));
+
+        private void RecordSavedDraft()
+        {
+            _savedItems = CurrentItems().ToArray();
+            _savedCustomer = CustomerName ?? string.Empty;
+        }
         private int _revision;
         private string _customerName = string.Empty;
         private string _selectedCategory = "All";
@@ -174,7 +189,7 @@ namespace ServeX.ViewModels
         public async Task<bool> ResumeSavedOrderAsync(int orderId)
         {
             if (IsBusy) return false;
-            if ((OrderItems.Count > 0 || !string.IsNullOrWhiteSpace(CustomerName)) &&
+            if (HasUnsavedChanges &&
                 !_dialogs.Confirm("Load saved parcel?", "Replace the current parcel draft with the saved order? Unsaved changes will be discarded."))
                 return false;
 
@@ -184,7 +199,7 @@ namespace ServeX.ViewModels
                 var order = await _orderService.GetOpenParcelAsync(orderId);
                 if (order == null)
                 {
-                    SetStatus("This parcel is no longer open. Refresh order history.", true);
+                    SetStatus("This parcel is no longer open. Refresh Orders.", true);
                     return;
                 }
 
@@ -196,6 +211,7 @@ namespace ServeX.ViewModels
                 foreach (var item in order.Items)
                     OrderItems.Add(CreateLineItem(item.MenuItemId, item.MenuItem?.Name ?? "Menu item",
                         item.MenuItem?.Category ?? string.Empty, item.Price, item.Quantity, item.TaxExempt));
+                RecordSavedDraft();
                 NotifyTotalsChanged();
                 SetStatus($"Resumed parcel order #{order.Id}.", false);
                 resumed = true;
@@ -507,6 +523,7 @@ namespace ServeX.ViewModels
                 }
                 NotifyTotalsChanged();
                 CustomerName = savedOrder.CustomerName ?? string.Empty;
+                RecordSavedDraft();
 
                 if (showSuccessMessage)
                 {
@@ -517,11 +534,14 @@ namespace ServeX.ViewModels
             return savedOrder;
         }
 
-        private void StartNewParcel()
+        internal bool StartNewParcel()
         {
-            if (OrderItems.Count > 0 && !_dialogs.Confirm("Start a new parcel", "Clear this draft and start a new parcel? Previously saved orders remain unchanged.")) return;
+            if (IsBusy || (HasUnsavedChanges && !_dialogs.Confirm("Start a new takeaway?", "Discard the unsaved changes to this order?"))) return false;
             ResetDraft(true);
+            return true;
         }
+
+        internal void DiscardDraft() => ResetDraft(false);
 
         private void ResetDraft(bool showMessage)
         {
@@ -529,6 +549,7 @@ namespace ServeX.ViewModels
             _revision = 0;
             CustomerName = string.Empty;
             OrderItems.Clear();
+            RecordSavedDraft();
             NotifyTotalsChanged();
 
             if (showMessage)

@@ -8,7 +8,7 @@ namespace ServeX.Presentation.Navigation
     public sealed class WorkspaceNavigation : ViewModelBase
     {
         private readonly Stack<(ViewModelBase Page, TaskCompletionSource Completion)> _details = new();
-        private WorkspaceDestination _current;
+        private WorkspaceDestination _current = WorkspaceDestination.Tables;
 
         public ViewModelBase Detail => _details.TryPeek(out var entry) ? entry.Page : null;
 
@@ -38,7 +38,7 @@ namespace ServeX.Presentation.Navigation
         }
 
         public WorkspaceDestination Current => _current;
-        public bool CanGoBack => Current != WorkspaceDestination.Dashboard;
+        public bool CanGoBack => Current != WorkspaceDestination.Tables;
         public bool Navigate(WorkspaceDestination destination)
         {
             if (!Enum.IsDefined(destination)) throw new ArgumentOutOfRangeException(nameof(destination));
@@ -46,7 +46,6 @@ namespace ServeX.Presentation.Navigation
             OnPropertyChanged(nameof(CanGoBack));
             return true;
         }
-        // Existing Back behavior returns to the dashboard.
-        public void GoBack() => Navigate(WorkspaceDestination.Dashboard);
+        public void GoBack() => Navigate(WorkspaceDestination.Tables);
     }
 }
