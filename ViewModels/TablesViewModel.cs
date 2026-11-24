@@ -459,6 +459,19 @@ namespace ServeX.ViewModels
 
         public int OccupiedCount => VisibleTables.Count(table => table.Status == TableStatus.Occupied);
 
+        public string AvailableTablesSummary => FormatTableStatusSummary("Available", TableStatus.Available);
+
+        public string ActiveTablesSummary => FormatTableStatusSummary("Active", TableStatus.Occupied);
+
+        private string FormatTableStatusSummary(string label, TableStatus status)
+        {
+            var numbers = VisibleTables.Where(table => table.Status == status)
+                .Select(table => table.TableNumber).ToArray();
+            return numbers.Length == 0
+                ? $"{label} (0)"
+                : $"{label} ({numbers.Length})  ·  {string.Join(", ", numbers)}";
+        }
+
         public int ReservedCount => VisibleTables.Count(table => table.Status == TableStatus.Reserved);
 
         public string StatusMessage
@@ -894,6 +907,8 @@ namespace ServeX.ViewModels
             OnPropertyChanged(nameof(VisibleTablesCount));
             OnPropertyChanged(nameof(AvailableCount));
             OnPropertyChanged(nameof(OccupiedCount));
+            OnPropertyChanged(nameof(AvailableTablesSummary));
+            OnPropertyChanged(nameof(ActiveTablesSummary));
             OnPropertyChanged(nameof(ReservedCount));
         }
 

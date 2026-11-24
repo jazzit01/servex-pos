@@ -83,128 +83,136 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <ScrollViewer x:Name="FloorScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,0,16,0">
-                <StackPanel>
-                    <TextBlock Text="Select a table to see its actions." Margin="4,0,0,10"
-                               Visibility="{Binding IsSelectingTableAction, Converter={StaticResource BoolToVisibility}}"/>
-                    <ItemsControl x:Name="FloorGrid" ItemsSource="{Binding VisibleTables}" Width="{Binding FloorWidth}" Height="{Binding FloorHeight}"
-                                  HorizontalAlignment="Left" AllowDrop="{Binding IsArrangingFloor}" DragOver="FloorDragOver" Drop="FloorDrop">
-                        <ItemsControl.Style>
-                            <Style TargetType="ItemsControl">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsArrangingFloor}" Value="True">
-                                        <Setter Property="Background" Value="{Binding FloorGridBrush, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ItemsControl.Style>
-                        <ItemsControl.Template>
-                            <ControlTemplate TargetType="ItemsControl">
-                                <Border Background="{TemplateBinding Background}">
-                                    <ItemsPresenter/>
-                                </Border>
-                            </ControlTemplate>
-                        </ItemsControl.Template>
-                        <ItemsControl.ItemContainerStyle>
-                            <Style TargetType="ContentPresenter">
-                                <Setter Property="Canvas.Left" Value="{Binding FloorLeft}"/>
-                                <Setter Property="Canvas.Top" Value="{Binding FloorTop}"/>
-                            </Style>
-                        </ItemsControl.ItemContainerStyle>
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Width="86" Height="66">
-                                    <Button Content="{Binding TableNumber}" Padding="4" MinHeight="0" FontSize="15"
-                                            ToolTip="{Binding TileDescription}" AutomationProperties.Name="{Binding TileDescription}"
-                                            Tag="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            Command="{Binding DataContext.OpenFloorOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
-                                                <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}"/>
-                                                <Setter Property="BorderBrush" Value="{StaticResource SuccessBrush}"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TableStatus.Occupied}">
-                                                        <Setter Property="Background" Value="{StaticResource DangerSoftBrush}"/>
-                                                        <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TableStatus.Reserved}">
-                                                        <Setter Property="Background" Value="{StaticResource WarningSoftBrush}"/>
-                                                        <Setter Property="BorderBrush" Value="{StaticResource WarningBrush}"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TableStatus.Cleaning}">
-                                                        <Setter Property="Background" Value="{StaticResource InfoSoftBrush}"/>
-                                                        <Setter Property="BorderBrush" Value="{StaticResource InfoBrush}"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding DataContext.IsArrangingFloor, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                                                        <Setter Property="IsTabStop" Value="False"/>
-                                                        <Setter Property="IsHitTestVisible" Value="False"/>
-                                                    </DataTrigger>
-                                                    <MultiDataTrigger>
-                                                        <MultiDataTrigger.Conditions>
-                                                            <Condition Binding="{Binding IsSelected}" Value="True"/>
-                                                            <Condition Binding="{Binding DataContext.IsTablePanelOpen, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True"/>
-                                                        </MultiDataTrigger.Conditions>
-                                                        <Setter Property="BorderThickness" Value="3"/>
-                                                        <Setter Property="AutomationProperties.ItemStatus" Value="Selected"/>
-                                                    </MultiDataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                        <Button.ContentTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"/>
-                                            </DataTemplate>
-                                        </Button.ContentTemplate>
-                                        <Button.ContextMenu>
-                                            <ContextMenu DataContext="{Binding PlacementTarget.Tag.DataContext, RelativeSource={RelativeSource Self}}">
-                                                <MenuItem Header="Manage table"
-                                                          Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                            </ContextMenu>
-                                        </Button.ContextMenu>
-                                    </Button>
-                                    <Border Background="Transparent" Cursor="SizeAll" PreviewMouseLeftButtonDown="TableMouseDown"
-                                            PreviewMouseMove="TableMouseMove" PreviewMouseLeftButtonUp="TableMouseUp"
-                                            Visibility="{Binding DataContext.IsArrangingFloor, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibility}}"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <Button Content="Done" Command="{Binding ArrangeFloorCommand}" Style="{StaticResource FloorActionStyle}"
-                            HorizontalAlignment="Left" Margin="4,8,0,0"
-                            Visibility="{Binding IsArrangingFloor, Converter={StaticResource BoolToVisibility}}"/>
-                    <TextBlock Text="No tables in this area." Foreground="{StaticResource MutedTextBrush}" Margin="4,12,0,0"
-                               Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}"/>
-                    <WrapPanel Margin="4,12,0,0" AutomationProperties.Name="Table status legend">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
-                            <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
-                                    Background="{StaticResource SuccessSoftBrush}" BorderBrush="{StaticResource SuccessBrush}"/>
-                            <TextBlock Text="Available" Margin="5,0,0,0" FontSize="12"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
-                            <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
-                                    Background="{StaticResource DangerSoftBrush}" BorderBrush="{StaticResource DangerBrush}"/>
-                            <TextBlock Text="Occupied" Margin="5,0,0,0" FontSize="12"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
-                            <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
-                                    Background="{StaticResource WarningSoftBrush}" BorderBrush="{StaticResource WarningBrush}"/>
-                            <TextBlock Text="Reserved" Margin="5,0,0,0" FontSize="12"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
-                            <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
-                                    Background="{StaticResource InfoSoftBrush}" BorderBrush="{StaticResource InfoBrush}"/>
-                            <TextBlock Text="Cleaning" Margin="5,0,0,0" FontSize="12"/>
-                        </StackPanel>
-                    </WrapPanel>
+            <DockPanel Margin="0,0,16,0">
+                <StackPanel DockPanel.Dock="Top" Margin="4,0,0,12">
+                    <TextBlock Text="{Binding AvailableTablesSummary}" ToolTip="{Binding AvailableTablesSummary}"
+                               TextTrimming="CharacterEllipsis" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding ActiveTablesSummary}" ToolTip="{Binding ActiveTablesSummary}"
+                               TextTrimming="CharacterEllipsis" FontWeight="SemiBold" Margin="0,3,0,0"/>
                 </StackPanel>
-            </ScrollViewer>
+                <ScrollViewer x:Name="FloorScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Select a table to see its actions." Margin="4,0,0,10"
+                                   Visibility="{Binding IsSelectingTableAction, Converter={StaticResource BoolToVisibility}}"/>
+                        <ItemsControl x:Name="FloorGrid" ItemsSource="{Binding VisibleTables}" Width="{Binding FloorWidth}" Height="{Binding FloorHeight}"
+                                      HorizontalAlignment="Left" AllowDrop="{Binding IsArrangingFloor}" DragOver="FloorDragOver" Drop="FloorDrop">
+                            <ItemsControl.Style>
+                                <Style TargetType="ItemsControl">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsArrangingFloor}" Value="True">
+                                            <Setter Property="Background" Value="{Binding FloorGridBrush, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ItemsControl.Style>
+                            <ItemsControl.Template>
+                                <ControlTemplate TargetType="ItemsControl">
+                                    <Border Background="{TemplateBinding Background}">
+                                        <ItemsPresenter/>
+                                    </Border>
+                                </ControlTemplate>
+                            </ItemsControl.Template>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="Canvas.Left" Value="{Binding FloorLeft}"/>
+                                    <Setter Property="Canvas.Top" Value="{Binding FloorTop}"/>
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Width="86" Height="66">
+                                        <Button Content="{Binding TableNumber}" Padding="4" MinHeight="0" FontSize="15"
+                                                ToolTip="{Binding TileDescription}" AutomationProperties.Name="{Binding TileDescription}"
+                                                Tag="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Command="{Binding DataContext.OpenFloorOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
+                                                    <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}"/>
+                                                    <Setter Property="BorderBrush" Value="{StaticResource SuccessBrush}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TableStatus.Occupied}">
+                                                            <Setter Property="Background" Value="{StaticResource DangerSoftBrush}"/>
+                                                            <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TableStatus.Reserved}">
+                                                            <Setter Property="Background" Value="{StaticResource WarningSoftBrush}"/>
+                                                            <Setter Property="BorderBrush" Value="{StaticResource WarningBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TableStatus.Cleaning}">
+                                                            <Setter Property="Background" Value="{StaticResource InfoSoftBrush}"/>
+                                                            <Setter Property="BorderBrush" Value="{StaticResource InfoBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding DataContext.IsArrangingFloor, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                            <Setter Property="IsTabStop" Value="False"/>
+                                                            <Setter Property="IsHitTestVisible" Value="False"/>
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsSelected}" Value="True"/>
+                                                                <Condition Binding="{Binding DataContext.IsTablePanelOpen, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="BorderThickness" Value="3"/>
+                                                            <Setter Property="AutomationProperties.ItemStatus" Value="Selected"/>
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.ContentTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"/>
+                                                </DataTemplate>
+                                            </Button.ContentTemplate>
+                                            <Button.ContextMenu>
+                                                <ContextMenu DataContext="{Binding PlacementTarget.Tag.DataContext, RelativeSource={RelativeSource Self}}">
+                                                    <MenuItem Header="Manage table"
+                                                              Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                </ContextMenu>
+                                            </Button.ContextMenu>
+                                        </Button>
+                                        <Border Background="Transparent" Cursor="SizeAll" PreviewMouseLeftButtonDown="TableMouseDown"
+                                                PreviewMouseMove="TableMouseMove" PreviewMouseLeftButtonUp="TableMouseUp"
+                                                Visibility="{Binding DataContext.IsArrangingFloor, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibility}}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="Done" Command="{Binding ArrangeFloorCommand}" Style="{StaticResource FloorActionStyle}"
+                                HorizontalAlignment="Left" Margin="4,8,0,0"
+                                Visibility="{Binding IsArrangingFloor, Converter={StaticResource BoolToVisibility}}"/>
+                        <TextBlock Text="No tables in this area." Foreground="{StaticResource MutedTextBrush}" Margin="4,12,0,0"
+                                   Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}"/>
+                        <WrapPanel Margin="4,12,0,0" AutomationProperties.Name="Table status legend">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
+                                <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
+                                        Background="{StaticResource SuccessSoftBrush}" BorderBrush="{StaticResource SuccessBrush}"/>
+                                <TextBlock Text="Available" Margin="5,0,0,0" FontSize="12"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
+                                <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
+                                        Background="{StaticResource DangerSoftBrush}" BorderBrush="{StaticResource DangerBrush}"/>
+                                <TextBlock Text="Occupied" Margin="5,0,0,0" FontSize="12"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
+                                <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
+                                        Background="{StaticResource WarningSoftBrush}" BorderBrush="{StaticResource WarningBrush}"/>
+                                <TextBlock Text="Reserved" Margin="5,0,0,0" FontSize="12"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
+                                <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
+                                        Background="{StaticResource InfoSoftBrush}" BorderBrush="{StaticResource InfoBrush}"/>
+                                <TextBlock Text="Cleaning" Margin="5,0,0,0" FontSize="12"/>
+                            </StackPanel>
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
             <ScrollViewer Grid.Column="1" Width="350" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                           Visibility="{Binding IsTablePanelOpen, Converter={StaticResource BoolToVisibility}}">
                 <StackPanel>
