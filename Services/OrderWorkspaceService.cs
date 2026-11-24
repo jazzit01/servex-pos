@@ -29,6 +29,14 @@ namespace ServeX.Services
         public Task ShowForTableAsync(Table table) =>
             table == null ? Task.CompletedTask : ShowAsync(table.Id, OrderType.Table);
 
+        public async Task<OrderViewModel> LoadTableOrderAsync(int tableId)
+        {
+            var order = _createViewModel(tableId, OrderType.Table);
+            order.ConfirmReservationWhenSaving = true;
+            await order.LoadAsync();
+            return order;
+        }
+
         public Task ResumeAsync(HistoryRow order) => ShowAsync(order.ReferenceId, order.Type, order.Id);
 
         private async Task ShowAsync(int id, OrderType type, int? expectedOrderId = null)

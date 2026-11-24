@@ -117,7 +117,7 @@ namespace ServeX.ViewModels
 
         private async Task SignOutAsync()
         {
-            if (_detail != null || Dashboard.IsBusy || Menu.IsBusy || Tables.IsBusy || Parcel.IsBusy || Settings.IsBusy)
+            if (_detail != null || Tables.IsInlineOrderBusy || Dashboard.IsBusy || Menu.IsBusy || Tables.IsBusy || Parcel.IsBusy || Settings.IsBusy)
             {
                 SetStatus("Finish the current action and return to the workspace before signing out.", true);
                 return;
@@ -206,6 +206,11 @@ namespace ServeX.ViewModels
 
         private void OnTableAreaChanged(object sender, System.ComponentModel.PropertyChangedEventArgs args)
         {
+            if (args.PropertyName == nameof(TablesViewModel.IsInlineOrderBusy))
+            {
+                RefreshNavigationCommands();
+                return;
+            }
             if (args.PropertyName != nameof(TablesViewModel.SelectedAreaFilter)) return;
             OnPropertyChanged(nameof(IsIndoorTab));
             OnPropertyChanged(nameof(IsOutdoorTab));
@@ -399,7 +404,7 @@ namespace ServeX.ViewModels
             OrderViewModel order => !order.IsBusy,
             BillingViewModel billing => !billing.IsBusy,
             ParcelViewModel parcel => !parcel.IsBusy,
-            _ => true
+            _ => !Tables.IsInlineOrderBusy
         };
 
         private void OnDetailPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs args)
@@ -502,6 +507,8 @@ namespace ServeX.ViewModels
             if (parameter is not WorkspaceDestination destination || !System.Enum.IsDefined(destination)) return;
             if (!CanManage && destination is WorkspaceDestination.Menu or WorkspaceDestination.Settings or WorkspaceDestination.TableSetup) return;
             if (!ConfirmLeavingDetail()) return;
+            if (SelectedDestination == WorkspaceDestination.Tables && destination != SelectedDestination &&
+                !Tables.TryCloseInlineOrder()) return;
             _navigation.CloseDetails();
             if (destination == SelectedDestination) return;
 

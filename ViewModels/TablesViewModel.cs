@@ -39,6 +39,8 @@ namespace ServeX.ViewModels
         private bool _isEditorOpen;
         private int? _editingTableId;
         private TableFloorItemViewModel _selectedTable;
+        private OrderViewModel _selectedOrder;
+        private int? _orderTableId;
         private string _editorTableNumber = string.Empty;
         private TableArea _editorArea = TableArea.Indoor;
         private TableStatus _editorStatus = TableStatus.Available;
@@ -70,16 +72,21 @@ namespace ServeX.ViewModels
 
             CloseTablePanelCommand = new RelayCommand(_ =>
             {
+                if (!TryCloseInlineOrder()) return;
                 CloseEditor();
                 IsTablePanelOpen = false;
             }, _ => !IsBusy);
             TableActionsCommand = new RelayCommand(_ =>
             {
+                if (!TryCloseInlineOrder()) return;
                 IsSelectingTableAction = !IsSelectingTableAction;
                 if (IsSelectingTableAction) IsTablePanelOpen = false;
             },
                 _ => !IsBusy && !IsArrangingFloor && !IsEditorOpen && !IsEmpty);
-            ArrangeFloorCommand = new RelayCommand(_ => IsArrangingFloor = !IsArrangingFloor,
+            ArrangeFloorCommand = new RelayCommand(_ =>
+            {
+                if (TryCloseInlineOrder()) IsArrangingFloor = !IsArrangingFloor;
+            },
                 _ => CanManageTables && !IsBusy && !IsEditorOpen && !IsEmpty);
 
             _beginAddCommand = new RelayCommand(_ => OpenAddPanel(), _ => CanManageTables && !IsBusy && !IsArrangingFloor);
@@ -89,9 +96,9 @@ namespace ServeX.ViewModels
             _cancelCommand = new RelayCommand(_ => CloseEditor(), _ => !IsBusy);
             _selectTableCommand = new RelayCommand(table => SelectTable(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
             ChangeFloorStatusCommand = new AsyncRelayCommand(_ => ChangeFloorStatusAsync(),
-                _ => !IsBusy && SelectedTable?.Status is TableStatus.Available or TableStatus.Reserved or TableStatus.Cleaning);
+                _ => SelectedOrder == null && !IsBusy && SelectedTable?.Status is TableStatus.Available or TableStatus.Reserved or TableStatus.Cleaning);
             _openSelectedOrderCommand = new AsyncRelayCommand(async _ => await OpenOrderScreenAsync(SelectedTable), _ => !IsBusy && SelectedTable != null && SelectedTable.Status != TableStatus.Cleaning);
-            _openFloorOrderCommand = new AsyncRelayCommand(table => ActivateTileAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
+            _openFloorOrderCommand = new AsyncRelayCommand(table => ActivateTileAsync(table as TableFloorItemViewModel), table => !IsBusy && SelectedOrder?.IsBusy != true && table is TableFloorItemViewModel);
             _editSelectedCommand = new RelayCommand(_ => OpenEditPanel(SelectedTable), _ => CanManageTables && !IsBusy && SelectedTable != null);
             _deleteSelectedCommand = new AsyncRelayCommand(async _ => await DeleteAsync(SelectedTable), _ => CanManageTables && !IsBusy && SelectedTable != null);
             _showIndoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Indoor, _ => !IsBusy);
@@ -125,12 +132,65 @@ namespace ServeX.ViewModels
 
         private Task ActivateTileAsync(TableFloorItemViewModel table)
         {
-            if (!IsSetupWorkspace && !IsSelectingTableAction && table.Status != TableStatus.Cleaning)
+            if (!IsSetupWorkspace && !IsSelectingTableAction)
                 return OpenOrderScreenAsync(table);
 
-            IsSelectingTableAction = false;
             SelectTable(table);
             return Task.CompletedTask;
+        }
+
+        public OrderViewModel SelectedOrder => _selectedOrder;
+        public bool HasInlineOrder => SelectedOrder != null;
+        public bool IsInlineOrderBusy => SelectedOrder?.IsBusy == true;
+
+        public bool TryCloseInlineOrder()
+        {
+            if (IsInlineOrderBusy) return false;
+            if (SelectedOrder?.HasUnsavedChanges == true &&
+                !_dialogs.Confirm("Discard unsaved items?", "Save this order before leaving to keep your changes."))
+                return false;
+
+            if (SelectedOrder != null)
+            {
+                SetSelectedOrder(null, null);
+                IsTablePanelOpen = false;
+            }
+            return true;
+        }
+
+        private void SetSelectedOrder(OrderViewModel order, int? tableId)
+        {
+            if (_selectedOrder != null) _selectedOrder.PropertyChanged -= OnInlineOrderChanged;
+            _selectedOrder = order;
+            _orderTableId = tableId;
+            if (order != null) order.PropertyChanged += OnInlineOrderChanged;
+            OnPropertyChanged(nameof(SelectedOrder));
+            OnPropertyChanged(nameof(HasInlineOrder));
+            OnPropertyChanged(nameof(IsInlineOrderBusy));
+            NotifyCommandStates();
+        }
+
+        private void OnInlineOrderChanged(object sender, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(OrderViewModel.IsBusy))
+            {
+                OnPropertyChanged(nameof(IsInlineOrderBusy));
+                NotifyCommandStates();
+            }
+            else if (args.PropertyName == nameof(OrderViewModel.TableStatus) &&
+                _orderTableId is int id && GetTableById(id) is Table rawTable)
+            {
+                rawTable.Status = SelectedOrder.TableStatus;
+                var tile = VisibleTables.FirstOrDefault(table => table.Id == id);
+                if (tile != null) tile.Status = rawTable.Status;
+                OnPropertyChanged(nameof(SelectedTableStatusLabel));
+                OnPropertyChanged(nameof(SelectedTableStatusDescription));
+                OnPropertyChanged(nameof(FloorStatusAction));
+                if (rawTable.Status == TableStatus.Cleaning)
+                    SetSelectedOrder(null, null);
+                NotifySummaryProperties();
+                RaiseTablesChanged();
+            }
         }
 
         public bool IsTablePanelOpen
@@ -242,7 +302,7 @@ namespace ServeX.ViewModels
             get => _selectedAreaFilter;
             set
             {
-                if (SetProperty(ref _selectedAreaFilter, value))
+                if (_selectedAreaFilter != value && TryCloseInlineOrder() && SetProperty(ref _selectedAreaFilter, value))
                 {
                     IsArrangingFloor = false;
                     IsSelectingTableAction = false;
@@ -564,23 +624,29 @@ namespace ServeX.ViewModels
 
         private async Task OpenOrderScreenAsync(TableFloorItemViewModel table)
         {
-            if (table == null)
-            {
-                return;
-            }
+            if (table == null || _orderTableId == table.Id || !TryCloseInlineOrder()) return;
+
+            SelectTable(table);
+            if (table.Status == TableStatus.Cleaning) return;
 
             await ExecuteBusyActionAsync(async () =>
             {
-                var rawTable = GetTableById(table.Id);
-                if (rawTable == null)
+                var order = await _orderWorkspaceService.LoadTableOrderAsync(table.Id);
+                if (order.HasBlockingError)
                 {
-                    throw new InvalidOperationException("The selected table could not be found.");
+                    SetStatus(order.StatusMessage, true);
+                    return;
                 }
 
-                await _orderWorkspaceService.ShowForTableAsync(rawTable);
-                await RefreshAsync(rawTable.TableNumber);
-                RaiseTablesChanged();
-            }, "The order screen could not be opened.");
+                if (order.TableStatus != table.Status)
+                {
+                    await RefreshAsync(table.TableNumber);
+                    if (order.TableStatus == TableStatus.Cleaning) return;
+                }
+
+                SetSelectedOrder(order, table.Id);
+                ClearStatus();
+            }, "The table order could not be loaded.");
         }
 
         private void OpenAddPanel()
@@ -644,6 +710,7 @@ namespace ServeX.ViewModels
                 }
 
                 if (IsEditorOpen) CloseEditor();
+                if (!TryCloseInlineOrder()) return;
                 IsSelectingTableAction = false;
                 SelectedTable = table;
                 IsTablePanelOpen = true;

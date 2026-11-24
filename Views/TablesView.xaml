@@ -1,4 +1,4 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:models="clr-namespace:ServeX.Models" x:Class="ServeX.Views.TablesView">
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:components="clr-namespace:ServeX.Presentation.Components" xmlns:models="clr-namespace:ServeX.Models" x:Class="ServeX.Views.TablesView">
     <UserControl.Resources>
         <Style x:Key="FloorActionStyle" TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
             <Setter Property="MinHeight" Value="32"/>
@@ -145,6 +145,14 @@
                                                         <Setter Property="IsTabStop" Value="False"/>
                                                         <Setter Property="IsHitTestVisible" Value="False"/>
                                                     </DataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding IsSelected}" Value="True"/>
+                                                            <Condition Binding="{Binding DataContext.IsTablePanelOpen, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="BorderThickness" Value="3"/>
+                                                        <Setter Property="AutomationProperties.ItemStatus" Value="Selected"/>
+                                                    </MultiDataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Button.Style>
@@ -197,16 +205,31 @@
                     </WrapPanel>
                 </StackPanel>
             </ScrollViewer>
-            <ScrollViewer Grid.Column="1" Width="280" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+            <ScrollViewer Grid.Column="1" Width="350" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                           Visibility="{Binding IsTablePanelOpen, Converter={StaticResource BoolToVisibility}}">
                 <StackPanel>
                     <Button Content="Close" Command="{Binding CloseTablePanelCommand}" Style="{StaticResource FloorActionStyle}"
                             HorizontalAlignment="Right" Margin="0,0,0,8"/>
+                    <components:InlineTableOrder DataContext="{Binding SelectedOrder}">
+                        <components:InlineTableOrder.Style>
+                            <Style TargetType="components:InlineTableOrder">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding DataContext.HasInlineOrder, RelativeSource={RelativeSource AncestorType=ScrollViewer}}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </components:InlineTableOrder.Style>
+                    </components:InlineTableOrder>
                     <Border Padding="16">
                         <Border.Style>
                             <Style TargetType="Border" BasedOn="{StaticResource SurfaceCardStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsEditorOpen}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding HasInlineOrder}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
                                 </Style.Triggers>
