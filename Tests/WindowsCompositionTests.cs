@@ -12,7 +12,7 @@ namespace ServeX.Tests;
 public class WindowsCompositionTests
 {
     [Fact]
-    public async Task HistoryResumesSavedParcelInTheEditableWorkspace()
+    public async Task OrdersResumeSavedTakeawayAndBackReturnsToOrders()
     {
         using var db = new TestDatabase();
         var ids = await db.SeedCustomerAsync();
@@ -24,12 +24,25 @@ public class WindowsCompositionTests
         await main.LoadAsync();
 
         await main.NavigateCommand.ExecuteAsync(WorkspaceDestination.History);
-        main.History.Selected = Assert.Single(main.History.Orders, row => row.Id == order.Id);
-        await main.History.ResumeParcelCommand.ExecuteAsync();
+        Assert.DoesNotContain(main.History.Orders, row => row.Id == order.Id);
+        await main.NavigateCommand.ExecuteAsync(WorkspaceDestination.Orders);
+        var row = Assert.Single(main.Orders.Orders, candidate => candidate.Id == order.Id);
+        var opened = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        main.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.CurrentWorkspace) && main.CurrentWorkspace == main.Parcel)
+                opened.TrySetResult();
+        };
+        var resume = main.Orders.ResumeCommand.ExecuteAsync(row);
+        await opened.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
         Assert.Same(main.Parcel, main.CurrentWorkspace);
         Assert.Equal("Guest", main.Parcel.CustomerName);
         Assert.Equal(2, Assert.Single(main.Parcel.OrderItems).Quantity);
+        Assert.False(main.Parcel.HasUnsavedChanges);
+        main.GoBackCommand.Execute(null);
+        await resume;
+        Assert.Same(main.Orders, main.CurrentWorkspace);
     }
 
     [Fact]
@@ -42,12 +55,14 @@ public class WindowsCompositionTests
         var settings = await services.GetRequiredService<ApplicationSettingsService>().GetSettingsAsync();
         using var main = factory.CreateMain(settings, new User { Username = "test-user" });
         await main.LoadAsync();
+        Assert.Same(main.Tables, main.CurrentWorkspace);
         var destinations = new (WorkspaceDestination, object)[]
         {
             (WorkspaceDestination.Dashboard, main.Dashboard), (WorkspaceDestination.Menu, main.Menu),
             (WorkspaceDestination.Tables, main.Tables), (WorkspaceDestination.Parcel, main.Parcel),
             (WorkspaceDestination.Settings, main.Settings), (WorkspaceDestination.Rooms, main.Rooms),
-            (WorkspaceDestination.History, main.History)
+            (WorkspaceDestination.History, main.History), (WorkspaceDestination.Orders, main.Orders),
+            (WorkspaceDestination.TableSetup, main.Tables)
         };
         foreach (var (destination, expected) in destinations)
         {
@@ -56,7 +71,7 @@ public class WindowsCompositionTests
             Assert.Equal(destination, main.SelectedDestination);
         }
         main.GoBackCommand.Execute(null);
-        Assert.Same(main.Dashboard, main.CurrentWorkspace);
+        Assert.Same(main.Tables, main.CurrentWorkspace);
         Assert.False(main.CanGoBack);
         Assert.NotNull(services.GetRequiredService<Func<int, OrderViewModel>>()(ids.TableId));
         Assert.NotNull(services.GetRequiredService<Func<int, BillingViewModel>>()(1));
@@ -128,6 +143,7 @@ public class WindowsCompositionTests
                     (new ServeX.Views.SettingsView(), main.Settings),
                     (new ServeX.Views.RoomsView(), main.Rooms),
                     (new ServeX.Views.HistoryView(), main.History),
+                    (new ServeX.Views.OpenOrdersView(), main.Orders),
                     (new ServeX.Views.OrderView(), order),
                     (new ServeX.Views.BillingView(), services.GetRequiredService<Func<int, BillingViewModel>>()(1)),
                     (new ServeX.Views.LoginView(), auth.CurrentViewModel),

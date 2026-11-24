@@ -7,8 +7,8 @@ namespace ServeX.ViewModels
         private bool _isSelected;
         private int _floorSlot;
 
-        public const int CellWidth = 84;
-        public const int CellHeight = 66;
+        public const int CellWidth = 94;
+        public const int CellHeight = 74;
 
         public int FloorSlot
         {

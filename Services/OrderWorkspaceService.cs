@@ -29,7 +29,9 @@ namespace ServeX.Services
         public Task ShowForTableAsync(Table table) =>
             table == null ? Task.CompletedTask : ShowAsync(table.Id, OrderType.Table);
 
-        private async Task ShowAsync(int id, OrderType type)
+        public Task ResumeAsync(HistoryRow order) => ShowAsync(order.ReferenceId, order.Type, order.Id);
+
+        private async Task ShowAsync(int id, OrderType type, int? expectedOrderId = null)
         {
             try
             {
@@ -50,6 +52,12 @@ namespace ServeX.Services
                         "Order Error",
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (expectedOrderId.HasValue && viewModel.SavedOrderId != expectedOrderId)
+                {
+                    _dialogs.ShowInformation("Order changed", "This order is no longer open at that location.");
                     return;
                 }
 

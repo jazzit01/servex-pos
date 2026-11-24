@@ -33,6 +33,8 @@ namespace ServeX.ViewModels
         private IReadOnlyDictionary<int, string> _activeGuestNames = new Dictionary<int, string>();
         private bool _isArrangingFloor;
         private bool _isTablePanelOpen;
+        private bool _isSelectingTableAction;
+        private bool _isSetupWorkspace;
         private bool _isBusy;
         private bool _isEditorOpen;
         private int? _editingTableId;
@@ -71,21 +73,27 @@ namespace ServeX.ViewModels
                 CloseEditor();
                 IsTablePanelOpen = false;
             }, _ => !IsBusy);
+            TableActionsCommand = new RelayCommand(_ =>
+            {
+                IsSelectingTableAction = !IsSelectingTableAction;
+                if (IsSelectingTableAction) IsTablePanelOpen = false;
+            },
+                _ => !IsBusy && !IsArrangingFloor && !IsEditorOpen && !IsEmpty);
             ArrangeFloorCommand = new RelayCommand(_ => IsArrangingFloor = !IsArrangingFloor,
-                _ => !IsBusy && !IsEditorOpen && !IsEmpty);
+                _ => CanManageTables && !IsBusy && !IsEditorOpen && !IsEmpty);
 
-            _beginAddCommand = new RelayCommand(_ => OpenAddPanel(), _ => !IsBusy && !IsArrangingFloor);
-            _editCommand = new RelayCommand(table => OpenEditPanel(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
-            _deleteCommand = new AsyncRelayCommand(async table => await DeleteAsync(table as TableFloorItemViewModel), table => CanDeleteTables && !IsBusy && table is TableFloorItemViewModel);
+            _beginAddCommand = new RelayCommand(_ => OpenAddPanel(), _ => CanManageTables && !IsBusy && !IsArrangingFloor);
+            _editCommand = new RelayCommand(table => OpenEditPanel(table as TableFloorItemViewModel), table => CanManageTables && !IsBusy && table is TableFloorItemViewModel);
+            _deleteCommand = new AsyncRelayCommand(async table => await DeleteAsync(table as TableFloorItemViewModel), table => CanManageTables && !IsBusy && table is TableFloorItemViewModel);
             _saveCommand = new AsyncRelayCommand(async _ => await SaveAsync(), _ => CanSave);
             _cancelCommand = new RelayCommand(_ => CloseEditor(), _ => !IsBusy);
             _selectTableCommand = new RelayCommand(table => SelectTable(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
             ChangeFloorStatusCommand = new AsyncRelayCommand(_ => ChangeFloorStatusAsync(),
                 _ => !IsBusy && SelectedTable?.Status is TableStatus.Available or TableStatus.Reserved or TableStatus.Cleaning);
-            _openSelectedOrderCommand = new AsyncRelayCommand(async _ => await OpenOrderScreenAsync(SelectedTable), _ => !IsBusy && SelectedTable != null);
-            _openFloorOrderCommand = new AsyncRelayCommand(async table => await OpenOrderScreenAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
-            _editSelectedCommand = new RelayCommand(_ => OpenEditPanel(SelectedTable), _ => !IsBusy && SelectedTable != null);
-            _deleteSelectedCommand = new AsyncRelayCommand(async _ => await DeleteAsync(SelectedTable), _ => CanDeleteTables && !IsBusy && SelectedTable != null);
+            _openSelectedOrderCommand = new AsyncRelayCommand(async _ => await OpenOrderScreenAsync(SelectedTable), _ => !IsBusy && SelectedTable != null && SelectedTable.Status != TableStatus.Cleaning);
+            _openFloorOrderCommand = new AsyncRelayCommand(table => ActivateTileAsync(table as TableFloorItemViewModel), table => !IsBusy && table is TableFloorItemViewModel);
+            _editSelectedCommand = new RelayCommand(_ => OpenEditPanel(SelectedTable), _ => CanManageTables && !IsBusy && SelectedTable != null);
+            _deleteSelectedCommand = new AsyncRelayCommand(async _ => await DeleteAsync(SelectedTable), _ => CanManageTables && !IsBusy && SelectedTable != null);
             _showIndoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Indoor, _ => !IsBusy);
             _showOutdoorTablesCommand = new RelayCommand(_ => SelectedAreaFilter = TableArea.Outdoor, _ => !IsBusy);
         }
@@ -93,6 +101,37 @@ namespace ServeX.ViewModels
         public RelayCommand ArrangeFloorCommand { get; }
 
         public RelayCommand CloseTablePanelCommand { get; }
+
+        public RelayCommand TableActionsCommand { get; }
+
+        public bool IsSetupWorkspace
+        {
+            get => _isSetupWorkspace;
+            set
+            {
+                if (!SetProperty(ref _isSetupWorkspace, value)) return;
+                IsSelectingTableAction = false;
+                IsArrangingFloor = false;
+                IsTablePanelOpen = false;
+                CloseEditor(false);
+            }
+        }
+
+        public bool IsSelectingTableAction
+        {
+            get => _isSelectingTableAction;
+            private set => SetProperty(ref _isSelectingTableAction, value);
+        }
+
+        private Task ActivateTileAsync(TableFloorItemViewModel table)
+        {
+            if (!IsSetupWorkspace && !IsSelectingTableAction && table.Status != TableStatus.Cleaning)
+                return OpenOrderScreenAsync(table);
+
+            IsSelectingTableAction = false;
+            SelectTable(table);
+            return Task.CompletedTask;
+        }
 
         public bool IsTablePanelOpen
         {
@@ -108,6 +147,8 @@ namespace ServeX.ViewModels
                 if (SetProperty(ref _isArrangingFloor, value))
                 {
                     IsTablePanelOpen = false;
+                    IsSelectingTableAction = false;
+                    TableActionsCommand.RaiseCanExecuteChanged();
                     OnPropertyChanged(nameof(FloorHeight));
                     OnPropertyChanged(nameof(FloorWidth));
                     _beginAddCommand.RaiseCanExecuteChanged();
@@ -139,7 +180,7 @@ namespace ServeX.ViewModels
             }, "The table position could not be saved. Try arranging it again.");
         }
 
-        public bool CanDeleteTables { get; set; } = true;
+        public bool CanManageTables { get; set; } = true;
 
         public event EventHandler TablesChanged;
 
@@ -204,6 +245,7 @@ namespace ServeX.ViewModels
                 if (SetProperty(ref _selectedAreaFilter, value))
                 {
                     IsArrangingFloor = false;
+                    IsSelectingTableAction = false;
                     if (!IsEditorOpen) IsTablePanelOpen = false;
                     ApplyAreaFilter();
                     OnPropertyChanged(nameof(IsIndoorFilterSelected));
@@ -226,6 +268,7 @@ namespace ServeX.ViewModels
                 {
                     OnPropertyChanged(nameof(EditorTitle));
                     ArrangeFloorCommand.RaiseCanExecuteChanged();
+                    TableActionsCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -380,7 +423,7 @@ namespace ServeX.ViewModels
 
         public bool IsEmpty => VisibleTables.Count == 0;
 
-        public bool CanSave => !IsBusy && IsFormValid();
+        public bool CanSave => CanManageTables && !IsBusy && IsFormValid();
 
         public string Error => string.Empty;
 
@@ -601,6 +644,7 @@ namespace ServeX.ViewModels
                 }
 
                 if (IsEditorOpen) CloseEditor();
+                IsSelectingTableAction = false;
                 SelectedTable = table;
                 IsTablePanelOpen = true;
             }
@@ -757,6 +801,7 @@ namespace ServeX.ViewModels
         {
             ArrangeFloorCommand.RaiseCanExecuteChanged();
             CloseTablePanelCommand.RaiseCanExecuteChanged();
+            TableActionsCommand.RaiseCanExecuteChanged();
             _beginAddCommand.RaiseCanExecuteChanged();
             _editCommand.RaiseCanExecuteChanged();
             _deleteCommand.RaiseCanExecuteChanged();
@@ -775,6 +820,7 @@ namespace ServeX.ViewModels
         private void NotifySummaryProperties()
         {
             OnPropertyChanged(nameof(IsEmpty));
+            TableActionsCommand.RaiseCanExecuteChanged();
             OnPropertyChanged(nameof(FloorHeight));
             OnPropertyChanged(nameof(FloorWidth));
             ArrangeFloorCommand.RaiseCanExecuteChanged();

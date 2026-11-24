@@ -1,0 +1,37 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ServeX.Views.OpenOrdersView">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <WrapPanel Margin="0,0,0,12">
+            <Button Content="New takeaway" Command="{Binding NewTakeawayCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,8,0"/>
+            <Button Content="Refresh" Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryActionButtonStyle}"/>
+        </WrapPanel>
+        <TextBlock Grid.Row="1" Text="{Binding Message}" TextWrapping="Wrap"/>
+        <DataGrid Grid.Row="2" ItemsSource="{Binding Orders}" IsReadOnly="True"
+                  Style="{StaticResource OperationalGridStyle}" AutomationProperties.Name="Open orders">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Order" Binding="{Binding Id}" Width="70"/>
+                <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="*"/>
+                <DataGridTextColumn Header="Service" Binding="{Binding ServiceLabel}" Width="110"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90"/>
+                <DataGridTextColumn Header="Opened" Binding="{Binding CreatedLocal, StringFormat={}{0:dd MMM HH:mm}}" Width="120"/>
+                <DataGridTextColumn Header="Total" Binding="{Binding DisplayTotal}" Width="100"/>
+                <DataGridTemplateColumn Width="100" Header="Action">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Resume" Padding="8,4" MinHeight="32" Margin="4"
+                                    Style="{StaticResource SecondaryActionButtonStyle}"
+                                    AutomationProperties.Name="{Binding Id, StringFormat=Resume order {0}}"
+                                    Command="{Binding DataContext.ResumeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

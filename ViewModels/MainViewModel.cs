@@ -33,7 +33,8 @@ namespace ServeX.ViewModels
 
         public MainViewModel(AppSetting settings, User currentUser, DashboardViewModel dashboard,
             MenuViewModel menu, TablesViewModel tables, ParcelViewModel parcel, SettingsViewModel settingsViewModel, HistoryViewModel history, RoomsViewModel rooms,
-            WorkspaceNavigation navigation, WorkspaceSummaryService summaryService, LogService logService, DialogService dialogs)
+            WorkspaceNavigation navigation, WorkspaceSummaryService summaryService, LogService logService, DialogService dialogs,
+            OpenOrdersViewModel orders, OrderWorkspaceService orderWorkspace)
         {
             _restaurantName = settings?.RestaurantName ?? "ServeX";
             MoneyLanguage = System.Windows.Markup.XmlLanguage.GetLanguage(ReceiptProfile.Culture(settings?.Locale).Name);
@@ -47,20 +48,14 @@ namespace ServeX.ViewModels
             Dashboard.CanManageMenu = CanManage;
             Menu = menu;
             Tables = tables;
-            Tables.CanDeleteTables = CanManage;
+            Tables.CanManageTables = CanManage;
+            Tables.PropertyChanged += OnTableAreaChanged;
             Parcel = parcel;
             Settings = settingsViewModel;
             History = history;
-            History.ResumeParcel = async orderId =>
-            {
-                if (!await Parcel.ResumeSavedOrderAsync(orderId)) return false;
-                if (SelectedDestination == WorkspaceDestination.History)
-                {
-                    ClearStatus();
-                    _navigation.Navigate(WorkspaceDestination.Parcel);
-                }
-                return true;
-            };
+            Orders = orders;
+            Orders.OpenTakeaway = OpenTakeawayAsync;
+            Orders.Resume = row => row.Type == OrderType.Parcel ? OpenTakeawayAsync(row.Id) : orderWorkspace.ResumeAsync(row);
             Rooms = rooms;
             Settings.CurrentUserId = currentUser?.Id ?? 0;
             SignOutCommand = new AsyncRelayCommand(_ => SignOutAsync());
@@ -70,6 +65,13 @@ namespace ServeX.ViewModels
             Menu.MenuItemsChanged += _workspaceChanged;
             Tables.TablesChanged += _workspaceChanged;
             _navigateCommand = new AsyncRelayCommand(NavigateToAsync, _ => CanLeaveDetail);
+            FloorAreaCommand = new AsyncRelayCommand(async area =>
+            {
+                if (SelectedDestination == WorkspaceDestination.Tables && Tables.IsBusy) return;
+                await NavigateToAsync(WorkspaceDestination.Tables);
+                if (SelectedDestination == WorkspaceDestination.Tables && _detail == null && area is TableArea tableArea)
+                    Tables.SelectedAreaFilter = tableArea;
+            }, _ => CanLeaveDetail);
             _goBackCommand = new RelayCommand(_ => GoBack(), _ => CanGoBack && CanLeaveDetail);
             _navigationChanged = (sender, args) =>
             {
@@ -79,11 +81,23 @@ namespace ServeX.ViewModels
                     _detail = _navigation.Detail;
                     if (_detail != null) _detail.PropertyChanged += OnDetailPropertyChanged;
                     OnPropertyChanged(nameof(BackButtonLabel));
+                    OnPropertyChanged(nameof(ShowFloorTabs));
+                    OnPropertyChanged(nameof(ShowSalesTabs));
+                    OnPropertyChanged(nameof(ShowManageTabs));
                     RefreshNavigationCommands();
                 }
                 else if (args.PropertyName == nameof(WorkspaceNavigation.Current))
                 {
+                    Tables.IsSetupWorkspace = SelectedDestination == WorkspaceDestination.TableSetup;
                     OnPropertyChanged(nameof(SelectedDestination));
+                    NotifyWorkspaceTabs();
+                    OnPropertyChanged(nameof(IsFloorSection));
+                    OnPropertyChanged(nameof(IsOrdersSection));
+                    OnPropertyChanged(nameof(IsSalesSection));
+                    OnPropertyChanged(nameof(IsManageSection));
+                    OnPropertyChanged(nameof(ShowFloorTabs));
+                    OnPropertyChanged(nameof(ShowSalesTabs));
+                    OnPropertyChanged(nameof(ShowManageTabs));
                 }
                 else return;
                 OnPropertyChanged(nameof(CurrentWorkspace));
@@ -91,6 +105,7 @@ namespace ServeX.ViewModels
                 OnPropertyChanged(nameof(CurrentSectionSubtitle));
                 OnPropertyChanged(nameof(CurrentSectionIconGlyph));
                 OnPropertyChanged(nameof(CanGoBack));
+                OnPropertyChanged(nameof(ShowBackButton));
                 _goBackCommand.RaiseCanExecuteChanged();
             };
             _navigation.PropertyChanged += _navigationChanged;
@@ -154,6 +169,8 @@ namespace ServeX.ViewModels
 
         public AsyncRelayCommand NavigateCommand => _navigateCommand;
 
+        public AsyncRelayCommand FloorAreaCommand { get; }
+
         public RelayCommand GoBackCommand => _goBackCommand;
 
         public DashboardViewModel Dashboard { get; }
@@ -168,6 +185,61 @@ namespace ServeX.ViewModels
 
         public HistoryViewModel History { get; }
 
+        public OpenOrdersViewModel Orders { get; }
+
+        public bool IsFloorSection => SelectedDestination is WorkspaceDestination.Tables or WorkspaceDestination.Rooms;
+        public bool IsOrdersSection => SelectedDestination is WorkspaceDestination.Orders or WorkspaceDestination.Parcel;
+        public bool IsSalesSection => SelectedDestination is WorkspaceDestination.History or WorkspaceDestination.Dashboard;
+        public bool IsManageSection => SelectedDestination is WorkspaceDestination.Menu or WorkspaceDestination.Settings or WorkspaceDestination.TableSetup;
+        public bool ShowFloorTabs => _detail == null && IsFloorSection;
+        public bool ShowSalesTabs => _detail == null && IsSalesSection;
+        public bool ShowManageTabs => _detail == null && IsManageSection;
+
+        public bool IsIndoorTab => SelectedDestination == WorkspaceDestination.Tables && Tables.IsIndoorFilterSelected;
+        public bool IsOutdoorTab => SelectedDestination == WorkspaceDestination.Tables && Tables.IsOutdoorFilterSelected;
+        public bool IsRoomsTab => SelectedDestination == WorkspaceDestination.Rooms;
+        public bool IsTransactionsTab => SelectedDestination == WorkspaceDestination.History;
+        public bool IsOverviewTab => SelectedDestination == WorkspaceDestination.Dashboard;
+        public bool IsMenuTab => SelectedDestination == WorkspaceDestination.Menu;
+        public bool IsTableSetupTab => SelectedDestination == WorkspaceDestination.TableSetup;
+        public bool IsSettingsTab => SelectedDestination == WorkspaceDestination.Settings;
+
+        private void OnTableAreaChanged(object sender, System.ComponentModel.PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName != nameof(TablesViewModel.SelectedAreaFilter)) return;
+            OnPropertyChanged(nameof(IsIndoorTab));
+            OnPropertyChanged(nameof(IsOutdoorTab));
+        }
+
+        private void NotifyWorkspaceTabs()
+        {
+            OnPropertyChanged(nameof(IsIndoorTab));
+            OnPropertyChanged(nameof(IsOutdoorTab));
+            OnPropertyChanged(nameof(IsRoomsTab));
+            OnPropertyChanged(nameof(IsTransactionsTab));
+            OnPropertyChanged(nameof(IsOverviewTab));
+            OnPropertyChanged(nameof(IsMenuTab));
+            OnPropertyChanged(nameof(IsTableSetupTab));
+            OnPropertyChanged(nameof(IsSettingsTab));
+        }
+
+        private async Task OpenTakeawayAsync(int? id)
+        {
+            if (id is int orderId)
+            {
+                if (!await Parcel.ResumeSavedOrderAsync(orderId))
+                {
+                    if (Parcel.IsStatusError) SetStatus(Parcel.StatusMessage, true);
+                    return;
+                }
+            }
+            else if (!Parcel.StartNewParcel()) return;
+
+            ClearStatus();
+            await _navigation.OpenDetailAsync(Parcel);
+            Parcel.DiscardDraft();
+        }
+
         public SettingsViewModel Settings { get; }
 
         public object CurrentWorkspace
@@ -180,7 +252,10 @@ namespace ServeX.ViewModels
                     case WorkspaceDestination.Menu:
                         return Menu;
                     case WorkspaceDestination.Tables:
+                    case WorkspaceDestination.TableSetup:
                         return Tables;
+                    case WorkspaceDestination.Orders:
+                        return Orders;
                     case WorkspaceDestination.Parcel:
                         return Parcel;
                     case WorkspaceDestination.Rooms:
@@ -258,10 +333,15 @@ namespace ServeX.ViewModels
             {
                 if (_detail is OrderViewModel order) return order.WindowTitle;
                 if (_detail is BillingViewModel billing) return billing.WindowTitle;
+                if (_detail is ParcelViewModel) return "Takeaway order";
                 switch (SelectedDestination)
                 {
                     case WorkspaceDestination.Menu:
                         return "Menu management";
+                    case WorkspaceDestination.TableSetup:
+                        return "Table setup";
+                    case WorkspaceDestination.Orders:
+                        return "Open orders";
                     case WorkspaceDestination.Tables:
                         return "Dining floor";
                     case WorkspaceDestination.Parcel:
@@ -269,7 +349,7 @@ namespace ServeX.ViewModels
                     case WorkspaceDestination.Rooms:
                         return "Rooms";
                     case WorkspaceDestination.History:
-                        return "Order history and sales";
+                        return "Sales";
                     case WorkspaceDestination.Settings:
                         return "Settings and backups";
                     default:
@@ -284,23 +364,7 @@ namespace ServeX.ViewModels
             {
                 if (_detail is OrderViewModel order) return $"{order.LocationKind} service · {order.TableStatus}";
                 if (_detail is BillingViewModel billing) return billing.TableNumber;
-                switch (SelectedDestination)
-                {
-                    case WorkspaceDestination.Menu:
-                        return "Maintain categories, pricing, availability, and item quality without leaving the service flow.";
-                    case WorkspaceDestination.Tables:
-                        return "Monitor indoor and outdoor tables, inspect live status, and move directly into orders.";
-                    case WorkspaceDestination.Parcel:
-                        return "Handle takeaway orders with the same speed, totals, and billing flow as the floor.";
-                    case WorkspaceDestination.Rooms:
-                        return "Manage room status and room service orders.";
-                    case WorkspaceDestination.History:
-                        return "Review past orders, reprint receipts, and check sales totals.";
-                    case WorkspaceDestination.Settings:
-                        return "Protect the database, confirm environment details, and keep day-to-day operations safe.";
-                    default:
-                        return "Sales, table status, and orders.";
-                }
+                return string.Empty;
             }
         }
 
@@ -326,12 +390,15 @@ namespace ServeX.ViewModels
 
         public bool CanGoBack => _detail != null || _navigation.CanGoBack;
 
-        public string BackButtonLabel => _detail != null ? "Back" : "Back to dashboard";
+        public string BackButtonLabel => _detail != null ? "Back" : "Back to floor";
+
+        public bool ShowBackButton => _detail != null;
 
         private bool CanLeaveDetail => _detail switch
         {
             OrderViewModel order => !order.IsBusy,
             BillingViewModel billing => !billing.IsBusy,
+            ParcelViewModel parcel => !parcel.IsBusy,
             _ => true
         };
 
@@ -346,11 +413,13 @@ namespace ServeX.ViewModels
         private void RefreshNavigationCommands()
         {
             _navigateCommand.RaiseCanExecuteChanged();
+            FloorAreaCommand.RaiseCanExecuteChanged();
             _goBackCommand.RaiseCanExecuteChanged();
         }
 
         private bool ConfirmLeavingDetail() =>
-            _detail is not OrderViewModel { HasUnsavedChanges: true } ||
+            (_detail is not OrderViewModel { HasUnsavedChanges: true } &&
+             _detail is not ParcelViewModel { HasUnsavedChanges: true }) ||
             _dialogs.Confirm("Leave this order?", "Unsaved changes to this order will be discarded.");
 
         private void GoBack()
@@ -400,9 +469,9 @@ namespace ServeX.ViewModels
 
         private async Task RefreshWorkspaceAsync()
         {
+            await Tables.LoadAsync();
             await Dashboard.LoadAsync();
             await Menu.LoadAsync();
-            await Tables.LoadAsync();
             await Parcel.LoadAsync();
             await Settings.LoadAsync();
             await LoadSummaryAsync();
@@ -431,7 +500,7 @@ namespace ServeX.ViewModels
         private async Task NavigateToAsync(object parameter)
         {
             if (parameter is not WorkspaceDestination destination || !System.Enum.IsDefined(destination)) return;
-            if (!CanManage && destination is WorkspaceDestination.Menu or WorkspaceDestination.Settings) return;
+            if (!CanManage && destination is WorkspaceDestination.Menu or WorkspaceDestination.Settings or WorkspaceDestination.TableSetup) return;
             if (!ConfirmLeavingDetail()) return;
             _navigation.CloseDetails();
             if (destination == SelectedDestination) return;
@@ -462,6 +531,8 @@ namespace ServeX.ViewModels
 
                 _navigation.Navigate(destination);
                 if (destination == WorkspaceDestination.History) await History.RefreshAsync();
+                if (destination == WorkspaceDestination.Orders) await Orders.LoadAsync();
+                if (destination == WorkspaceDestination.Dashboard) await Dashboard.LoadAsync();
                 if (destination == WorkspaceDestination.Rooms) await Rooms.LoadAsync();
             }
             catch (System.Exception exception)
@@ -481,9 +552,11 @@ namespace ServeX.ViewModels
             _navigation.PropertyChanged -= _navigationChanged;
             if (_detail != null) _detail.PropertyChanged -= OnDetailPropertyChanged;
             _navigation.CloseDetails();
-            History.ResumeParcel = _ => Task.FromResult(false);
+            Orders.OpenTakeaway = _ => Task.CompletedTask;
+            Orders.Resume = _ => Task.CompletedTask;
             Menu.MenuItemsChanged -= _workspaceChanged;
             Tables.TablesChanged -= _workspaceChanged;
+            Tables.PropertyChanged -= OnTableAreaChanged;
             Settings.RestaurantNameSaved -= UpdateRestaurantName;
             Dashboard.RefreshWorkspace = () => Task.CompletedTask;
         }

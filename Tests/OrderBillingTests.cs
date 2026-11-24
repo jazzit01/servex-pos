@@ -201,6 +201,35 @@ public class OrderBillingTests
     }
 
     [Fact]
+    public async Task OpenOrdersIncludeAllServiceTypesWithoutDateCutoff()
+    {
+        using var db = new TestDatabase();
+        var ids = await db.SeedCustomerAsync();
+        var rooms = db.Services.GetRequiredService<RoomService>();
+        await rooms.SaveAsync(null, "203", RoomStatus.Available);
+        var room = (await rooms.ListAsync()).Single(item => item.RoomNumber == "203");
+        var orders = db.Services.GetRequiredService<OrderService>();
+        var lines = new[] { new OrderSaveItem { MenuItemId = ids.MenuId, Quantity = 1 } };
+        var dineIn = await orders.SaveTableOrderAsync(ids.TableId, lines);
+        var takeaway = await orders.SaveParcelOrderAsync(null, "Guest", lines);
+        var roomOrder = await orders.SaveTableOrderAsync(room.Id, lines, locationType: OrderType.Room);
+        using (var context = db.Context())
+        {
+            var oldOrder = await context.Orders.FindAsync(takeaway.Id);
+            oldOrder.CreatedAt = DateTime.UtcNow.AddDays(-2);
+            await context.SaveChangesAsync();
+        }
+
+        var history = db.Services.GetRequiredService<OrderHistoryService>();
+        var open = (await history.GetOpenOrdersAsync()).ToDictionary(row => row.Id);
+        Assert.Equal(ids.TableId, open[dineIn.Id].ReferenceId);
+        Assert.Equal(OrderType.Parcel, open[takeaway.Id].Type);
+        Assert.Equal(room.Id, open[roomOrder.Id].ReferenceId);
+        await orders.CancelOrderAsync(takeaway.Id);
+        Assert.DoesNotContain(await history.GetOpenOrdersAsync(), row => row.Id == takeaway.Id);
+    }
+
+    [Fact]
     public async Task RoomServiceBillsToRoomAndReturnsItToAvailable()
     {
         using var db = new TestDatabase();

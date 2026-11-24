@@ -14,48 +14,60 @@
         </Grid.RowDefinitions>
         <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
         <WrapPanel Grid.Row="1">
-            <Button Content="Indoor" Command="{Binding ShowIndoorTablesCommand}" Margin="0,0,8,8">
+            <WrapPanel Visibility="{Binding IsSetupWorkspace, Converter={StaticResource BoolToVisibility}}">
+                <Button Content="Indoor" Command="{Binding ShowIndoorTablesCommand}" Margin="0,0,8,8">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource FloorActionStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsIndoorFilterSelected}" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Content="Outdoor" Command="{Binding ShowOutdoorTablesCommand}" Margin="0,0,8,8">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource FloorActionStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsOutdoorFilterSelected}" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </WrapPanel>
+            <Button Content="Add table" Command="{Binding BeginAddCommand}" Margin="0,0,8,8"
+                    Visibility="{Binding IsSetupWorkspace, Converter={StaticResource BoolToVisibility}}" Style="{StaticResource FloorActionStyle}"/>
+            <Button Command="{Binding TableActionsCommand}" Margin="0,0,8,8">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource FloorActionStyle}">
+                        <Setter Property="Content" Value="Table actions"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsIndoorFilterSelected}" Value="True">
-                                <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                            <DataTrigger Binding="{Binding IsSelectingTableAction}" Value="True">
+                                <Setter Property="Content" Value="Cancel selection"/>
                             </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-            <Button Content="Outdoor" Command="{Binding ShowOutdoorTablesCommand}" Margin="0,0,8,8">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource FloorActionStyle}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsOutdoorFilterSelected}" Value="True">
-                                <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-            <Button Width="32" Padding="0" Margin="0,0,8,8" Command="{Binding BeginAddCommand}"
-                    ToolTip="Add table" AutomationProperties.Name="Add table">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource FloorActionStyle}">
-                        <Style.Triggers>
                             <DataTrigger Binding="{Binding IsArrangingFloor}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSetupWorkspace}" Value="True">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Button.Style>
-                <Path Data="M2,7 H12 M7,2 V12" Stroke="{StaticResource TextBrush}" StrokeThickness="1.5"/>
             </Button>
             <Button Width="32" Padding="0" Margin="0,0,0,8" Command="{Binding ArrangeFloorCommand}"
                     ToolTip="Edit table layout" AutomationProperties.Name="Edit table layout">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource FloorActionStyle}">
                         <Style.Triggers>
+                            <DataTrigger Binding="{Binding CanManageTables}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding IsArrangingFloor}" Value="True">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                             </DataTrigger>
@@ -73,6 +85,8 @@
             </Grid.ColumnDefinitions>
             <ScrollViewer x:Name="FloorScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,0,16,0">
                 <StackPanel>
+                    <TextBlock Text="Select a table to see its actions." Margin="4,0,0,10"
+                               Visibility="{Binding IsSelectingTableAction, Converter={StaticResource BoolToVisibility}}"/>
                     <ItemsControl x:Name="FloorGrid" ItemsSource="{Binding VisibleTables}" Width="{Binding FloorWidth}" Height="{Binding FloorHeight}"
                                   HorizontalAlignment="Left" AllowDrop="{Binding IsArrangingFloor}" DragOver="FloorDragOver" Drop="FloorDrop">
                         <ItemsControl.Style>
@@ -104,7 +118,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Width="76" Height="58">
+                                <Grid Width="86" Height="66">
                                     <Button Content="{Binding TableNumber}" Padding="4" MinHeight="0" FontSize="15"
                                             ToolTip="{Binding TileDescription}" AutomationProperties.Name="{Binding TileDescription}"
                                             Tag="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -159,6 +173,28 @@
                             Visibility="{Binding IsArrangingFloor, Converter={StaticResource BoolToVisibility}}"/>
                     <TextBlock Text="No tables in this area." Foreground="{StaticResource MutedTextBrush}" Margin="4,12,0,0"
                                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}"/>
+                    <WrapPanel Margin="4,12,0,0" AutomationProperties.Name="Table status legend">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
+                            <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
+                                    Background="{StaticResource SuccessSoftBrush}" BorderBrush="{StaticResource SuccessBrush}"/>
+                            <TextBlock Text="Available" Margin="5,0,0,0" FontSize="12"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
+                            <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
+                                    Background="{StaticResource DangerSoftBrush}" BorderBrush="{StaticResource DangerBrush}"/>
+                            <TextBlock Text="Occupied" Margin="5,0,0,0" FontSize="12"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
+                            <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
+                                    Background="{StaticResource WarningSoftBrush}" BorderBrush="{StaticResource WarningBrush}"/>
+                            <TextBlock Text="Reserved" Margin="5,0,0,0" FontSize="12"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
+                            <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
+                                    Background="{StaticResource InfoSoftBrush}" BorderBrush="{StaticResource InfoBrush}"/>
+                            <TextBlock Text="Cleaning" Margin="5,0,0,0" FontSize="12"/>
+                        </StackPanel>
+                    </WrapPanel>
                 </StackPanel>
             </ScrollViewer>
             <ScrollViewer Grid.Column="1" Width="280" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
@@ -191,9 +227,9 @@
                                 </TextBlock.Style>
                             </TextBlock>
                             <TextBlock Text="{Binding SelectedServiceCaption}" Margin="0,4,0,16" Foreground="{StaticResource MutedTextBrush}"/>
-                            <Button Content="Open selected order" Command="{Binding OpenSelectedOrderCommand}" Style="{StaticResource FloorActionStyle}"/>
+                            <Button Content="Open order" Command="{Binding OpenSelectedOrderCommand}" Style="{StaticResource FloorActionStyle}"/>
                             <Button Content="{Binding FloorStatusAction}" Command="{Binding ChangeFloorStatusCommand}" Style="{StaticResource FloorActionStyle}" Margin="0,8,0,0"/>
-                            <WrapPanel Margin="0,8,0,0">
+                            <WrapPanel Margin="0,8,0,0" Visibility="{Binding CanManageTables, Converter={StaticResource BoolToVisibility}}">
                                 <Button Content="Edit" Command="{Binding EditSelectedCommand}" Style="{StaticResource FloorActionStyle}" Margin="0,0,8,0"/>
                                 <Button Content="Delete table" Command="{Binding DeleteSelectedCommand}" Style="{StaticResource FloorActionStyle}" Foreground="{StaticResource DangerBrush}"/>
                             </WrapPanel>
