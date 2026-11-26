@@ -24,3 +24,8 @@ jobs:
         with:
           name: windows-test-results
           path: TestResults
+      - run: dotnet publish ServeX.csproj -c Release -r win-x64 --self-contained true -p:TestWindows=true -o publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ServeX-windows-exe
+          path: publish
