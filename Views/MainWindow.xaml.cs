@@ -40,7 +40,7 @@ namespace ServeX.Views
         {
             var now = DateTime.Now;
             var culture = CultureInfo.CurrentCulture;
-            var date = now.ToString("ddd, dd MMM yyyy", culture);
+            var date = now.ToString("MMM-yy", culture);
             if (HeaderDate.Text != date) HeaderDate.Text = date;
             HeaderClock.Text = now.ToString("HH':'mm':'ss", culture);
         }

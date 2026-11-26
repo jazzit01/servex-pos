@@ -31,6 +31,7 @@ namespace ServeX.ViewModels
         public Func<Task> OpenTakeaway { private get; set; } = () => Task.CompletedTask;
 
         private bool _isBusy;
+        private bool _isAutoRefreshing;
         private string _todayDisplay = string.Empty;
         private string _lastUpdatedDisplay = string.Empty;
         private string _todaySalesDisplay = string.Empty;
@@ -47,11 +48,14 @@ namespace ServeX.ViewModels
         private string _statusMessage = string.Empty;
         private bool _isStatusError;
 
+        private readonly DayCloseViewModel _dayClose;
+
         public DashboardViewModel(
             DashboardService dashboardService,
             OrderWorkspaceService orderWorkspaceService,
-            WorkspaceNavigation navigation, LogService logService)
+            WorkspaceNavigation navigation, LogService logService, DayCloseViewModel dayClose)
         {
+            _dayClose = dayClose ?? throw new ArgumentNullException(nameof(dayClose));
             _logService = logService;
             _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
             _orderWorkspaceService = orderWorkspaceService ?? throw new ArgumentNullException(nameof(orderWorkspaceService));
@@ -69,6 +73,7 @@ namespace ServeX.ViewModels
             NewParcelCommand = new AsyncRelayCommand(async _ => await StartTakeawayAsync(), _ => !IsBusy);
             OpenOrdersCommand = new AsyncRelayCommand(_ => OpenAsync(WorkspaceDestination.Orders), _ => !IsBusy);
             SalesHistoryCommand = new AsyncRelayCommand(_ => OpenAsync(WorkspaceDestination.History), _ => !IsBusy);
+            DayCloseCommand = new AsyncRelayCommand(_ => OpenDayCloseAsync(), _ => !IsBusy);
             ResumeOrderCommand = new AsyncRelayCommand(async order => await ResumeOpenOrderAsync(order as DashboardOpenOrder),
                 order => !IsBusy && order is DashboardOpenOrder);
         }
@@ -94,6 +99,8 @@ namespace ServeX.ViewModels
         public AsyncRelayCommand OpenOrdersCommand { get; }
 
         public AsyncRelayCommand SalesHistoryCommand { get; }
+
+        public AsyncRelayCommand DayCloseCommand { get; }
 
         public AsyncRelayCommand ResumeOrderCommand { get; }
 
@@ -276,6 +283,32 @@ namespace ServeX.ViewModels
             }, "The dashboard could not be loaded.");
         }
 
+        /// <summary>
+        /// Quietly reloads the numbers on a timer. It never touches the busy flag or the status banner, so
+        /// buttons do not flicker, and it skips a tick while the user is mid-action or a reload is running.
+        /// </summary>
+        public async Task AutoRefreshAsync()
+        {
+            if (IsBusy || _isAutoRefreshing)
+            {
+                return;
+            }
+
+            _isAutoRefreshing = true;
+            try
+            {
+                await LoadSnapshotAsync();
+            }
+            catch (Exception exception)
+            {
+                _logService.LogError("The dashboard could not be refreshed automatically.", exception);
+            }
+            finally
+            {
+                _isAutoRefreshing = false;
+            }
+        }
+
         private Task OpenAsync(WorkspaceDestination destination)
         {
             if (OpenDestination != null)
@@ -303,6 +336,18 @@ namespace ServeX.ViewModels
                 await LoadSnapshotAsync();
                 ClearStatus();
             }, "A new table order could not be started.");
+        }
+
+        private async Task OpenDayCloseAsync()
+        {
+            await ExecuteBusyActionAsync(async () =>
+            {
+                await _dayClose.LoadAsync(DateTime.Today);
+                await _navigation.OpenDetailAsync(_dayClose);
+                await RefreshWorkspace();
+                await LoadSnapshotAsync();
+                ClearStatus();
+            }, "The end-of-day report could not be opened.");
         }
 
         private async Task StartTakeawayAsync()
@@ -370,6 +415,7 @@ namespace ServeX.ViewModels
             NewParcelCommand.RaiseCanExecuteChanged();
             OpenOrdersCommand.RaiseCanExecuteChanged();
             SalesHistoryCommand.RaiseCanExecuteChanged();
+            DayCloseCommand.RaiseCanExecuteChanged();
             ResumeOrderCommand.RaiseCanExecuteChanged();
         }
 
@@ -397,7 +443,7 @@ namespace ServeX.ViewModels
             var nowLocal = ServeX.Services.BusinessTime.ToLocalTime(DateTime.UtcNow);
 
             TodayDisplay = nowLocal.ToString("dddd, d MMMM yyyy");
-            LastUpdatedDisplay = "Updated " + nowLocal.ToString("HH:mm");
+            LastUpdatedDisplay = "Updated " + nowLocal.ToString("HH:mm:ss") + " · refreshes every minute";
             TodaySalesDisplay = snapshot.TodaySales.Count == 1
                 ? snapshot.TodaySales[0].DisplayAmount
                 : string.Join(System.Environment.NewLine, snapshot.TodaySales.Select(total => $"{total.Currency} {total.DisplayAmount}"));

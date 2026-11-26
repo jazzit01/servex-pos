@@ -1,73 +1,4 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ServeX.Views.DashboardView">
-    <UserControl.Resources>
-        <!-- Status badge: tone strings come from DashboardStatus.Tone so colour is never the only signal (the label is always shown). -->
-        <Style x:Key="StatusBadgeBorderStyle" TargetType="Border" BasedOn="{StaticResource BadgeStyle}">
-            <Setter Property="HorizontalAlignment" Value="Left"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Background" Value="{StaticResource PanelBrush}"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding StatusTone}" Value="Success">
-                    <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding StatusTone}" Value="Info">
-                    <Setter Property="Background" Value="{StaticResource InfoSoftBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding StatusTone}" Value="Warning">
-                    <Setter Property="Background" Value="{StaticResource WarningSoftBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding StatusTone}" Value="Accent">
-                    <Setter Property="Background" Value="{StaticResource AccentSoftBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding StatusTone}" Value="Danger">
-                    <Setter Property="Background" Value="{StaticResource DangerSoftBrush}"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-        <Style x:Key="StatusBadgeTextStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="TextWrapping" Value="NoWrap"/>
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding StatusTone}" Value="Success">
-                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding StatusTone}" Value="Info">
-                    <Setter Property="Foreground" Value="{StaticResource InfoBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding StatusTone}" Value="Warning">
-                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding StatusTone}" Value="Accent">
-                    <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding StatusTone}" Value="Danger">
-                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-        <Style x:Key="TilePrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryActionButtonStyle}">
-            <Setter Property="MinHeight" Value="56"/>
-            <Setter Property="MinWidth" Value="180"/>
-            <Setter Property="Padding" Value="18,12"/>
-            <Setter Property="Margin" Value="0,0,10,10"/>
-            <Setter Property="FontSize" Value="15"/>
-        </Style>
-        <Style x:Key="TileSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryActionButtonStyle}">
-            <Setter Property="MinHeight" Value="56"/>
-            <Setter Property="MinWidth" Value="160"/>
-            <Setter Property="Padding" Value="18,12"/>
-            <Setter Property="Margin" Value="0,0,10,10"/>
-            <Setter Property="FontSize" Value="15"/>
-        </Style>
-        <Style x:Key="GlyphTextStyle" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="Margin" Value="0,0,10,0"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="TextWrapping" Value="NoWrap"/>
-        </Style>
-    </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="20">
             <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OperationFeedbackTemplate}"/>
@@ -140,6 +71,12 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE8FD;" Style="{StaticResource GlyphTextStyle}"/>
                                 <TextBlock Text="Open orders" VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding DayCloseCommand}" Style="{StaticResource TileSecondaryButtonStyle}" AutomationProperties.Name="End-of-day report">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE9F9;" Style="{StaticResource GlyphTextStyle}"/>
+                                <TextBlock Text="End-of-day report" VerticalAlignment="Center" TextWrapping="NoWrap"/>
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding SalesHistoryCommand}" Style="{StaticResource TileSecondaryButtonStyle}" AutomationProperties.Name="Sales history">

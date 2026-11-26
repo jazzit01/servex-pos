@@ -461,6 +461,8 @@ namespace ServeX.ViewModels
 
         public int ReservedCount => VisibleTables.Count(table => table.Status == TableStatus.Reserved);
 
+        public int CleaningCount => VisibleTables.Count(table => table.Status == TableStatus.Cleaning);
+
         public string StatusMessage
         {
             get => _statusMessage;
@@ -895,6 +897,7 @@ namespace ServeX.ViewModels
             OnPropertyChanged(nameof(AvailableCount));
             OnPropertyChanged(nameof(OccupiedCount));
             OnPropertyChanged(nameof(ReservedCount));
+            OnPropertyChanged(nameof(CleaningCount));
         }
 
         private void UpdateSelectionStates()

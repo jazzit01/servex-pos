@@ -4,30 +4,64 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <WrapPanel Margin="0,0,0,12">
-            <Button Content="New takeaway" Command="{Binding NewTakeawayCommand}" Style="{StaticResource PrimaryActionButtonStyle}" Margin="0,0,8,0"/>
-            <Button Content="Refresh" Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryActionButtonStyle}"/>
-        </WrapPanel>
-        <TextBlock Grid.Row="1" Text="{Binding Message}" TextWrapping="Wrap"/>
-        <DataGrid Grid.Row="2" ItemsSource="{Binding Orders}" IsReadOnly="True"
+        <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Open orders" Style="{StaticResource PrimaryHeadingTextStyle}" FontSize="22"/>
+                <TextBlock Text="Everything still waiting for payment" Style="{StaticResource SectionSubtitleTextStyle}" Margin="0,2,0,0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,10,0" AutomationProperties.Name="Refresh orders">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE72C;" Style="{StaticResource GlyphTextStyle}" FontSize="16" Margin="0,0,8,0"/>
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding NewTakeawayCommand}" Style="{StaticResource PrimaryActionButtonStyle}" AutomationProperties.Name="New takeaway">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE710;" Style="{StaticResource GlyphTextStyle}" FontSize="16" Margin="0,0,8,0"/>
+                        <TextBlock Text="New takeaway" VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+        <UniformGrid Grid.Row="1" Columns="3">
+            <HeaderedContentControl Margin="0,0,12,12" Background="{StaticResource PrimarySoftBrush}" BorderBrush="{StaticResource PrimaryBrush}" Header="Open orders" Tag="{Binding ServiceSplitDisplay}" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding OpenCountDisplay}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
+            <HeaderedContentControl Margin="0,0,12,12" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" Header="Value waiting" Tag="Not yet collected" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding TotalValueDisplay}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
+            <HeaderedContentControl Margin="0,0,0,12" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" Header="Longest open" Tag="Oldest unpaid order" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding LongestOpenDisplay}" Style="{StaticResource FinancialTextStyle}" FontSize="26"/></HeaderedContentControl.Content></HeaderedContentControl>
+        </UniformGrid>
+        <TextBlock Grid.Row="2" Text="{Binding Message}" TextWrapping="Wrap" Margin="0,0,0,8" Style="{StaticResource SectionSubtitleTextStyle}"/>
+        <DataGrid Grid.Row="3" ItemsSource="{Binding Rows}" IsReadOnly="True"
                   Style="{StaticResource OperationalGridStyle}" AutomationProperties.Name="Open orders">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Order" Binding="{Binding Id}" Width="70"/>
+                <DataGridTextColumn Header="Order" Binding="{Binding OrderNumber}" Width="80"/>
                 <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="*"/>
-                <DataGridTextColumn Header="Service" Binding="{Binding ServiceLabel}" Width="110"/>
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90"/>
-                <DataGridTextColumn Header="Opened" Binding="{Binding CreatedLocal, StringFormat={}{0:dd MMM HH:mm}}" Width="120"/>
-                <DataGridTextColumn Header="Total" Binding="{Binding DisplayTotal}" Width="100"/>
-                <DataGridTemplateColumn Width="100" Header="Action">
+                <DataGridTextColumn Header="Service" Binding="{Binding ServiceLabel}" Width="120"/>
+                <DataGridTemplateColumn Header="Status" Width="115">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource StatusBadgeBorderStyle}">
+                                <TextBlock Text="{Binding StatusLabel}" Style="{StaticResource StatusBadgeTextStyle}"/>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Open for" Binding="{Binding AgeDisplay}" Width="105"/>
+                <DataGridTextColumn Header="Total" Binding="{Binding DisplayTotal}" Width="110" ElementStyle="{StaticResource FinancialTextStyle}"/>
+                <DataGridTemplateColumn Width="110" Header="Action">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="Resume" Padding="8,4" MinHeight="32" Margin="4"
                                     Style="{StaticResource SecondaryActionButtonStyle}"
-                                    AutomationProperties.Name="{Binding Id, StringFormat=Resume order {0}}"
+                                    AutomationProperties.Name="{Binding OrderNumber, StringFormat=Resume order {0}}"
                                     Command="{Binding DataContext.ResumeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                    CommandParameter="{Binding}"/>
+                                    CommandParameter="{Binding Row}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

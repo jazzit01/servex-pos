@@ -342,6 +342,7 @@ namespace ServeX.ViewModels
                 if (_detail is OrderViewModel order) return order.WindowTitle;
                 if (_detail is BillingViewModel billing) return billing.WindowTitle;
                 if (_detail is ParcelViewModel) return "Takeaway order";
+                if (_detail is DayCloseViewModel) return "End-of-day report";
                 switch (SelectedDestination)
                 {
                     case WorkspaceDestination.Menu:
@@ -372,6 +373,7 @@ namespace ServeX.ViewModels
             {
                 if (_detail is OrderViewModel order) return $"{order.LocationKind} service · {order.TableStatus}";
                 if (_detail is BillingViewModel billing) return billing.TableNumber;
+                if (_detail is DayCloseViewModel dayClose) return dayClose.TitleDisplay;
                 return string.Empty;
             }
         }

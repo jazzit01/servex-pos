@@ -116,7 +116,7 @@ namespace ServeX.Services
             }
         }
 
-        private static System.Collections.Generic.IList<DashboardTopItem> BuildTopItems(
+        internal static System.Collections.Generic.IList<DashboardTopItem> BuildTopItems(
             System.Collections.Generic.IEnumerable<Bill> paidToday)
         {
             return paidToday
@@ -135,7 +135,7 @@ namespace ServeX.Services
                 .ToList();
         }
 
-        private static System.Collections.Generic.IList<DashboardPaymentRow> BuildPayments(
+        internal static System.Collections.Generic.IList<DashboardPaymentRow> BuildPayments(
             System.Collections.Generic.IEnumerable<Bill> paidToday, string fallbackLocale)
         {
             var allocations = paidToday

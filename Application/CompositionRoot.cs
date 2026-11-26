@@ -19,6 +19,7 @@ namespace ServeX.Application
             services.AddSingleton<PresentationFactory>();
             services.AddSingleton<WorkspaceNavigation>();
             services.AddSingleton<RememberedUsername>();
+            services.AddTransient<DayCloseViewModel>();
             services.AddTransient<DashboardViewModel>();
             services.AddTransient<HistoryViewModel>();
             services.AddTransient<OpenOrdersViewModel>();
