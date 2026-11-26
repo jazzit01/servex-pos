@@ -119,7 +119,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid Width="86" Height="66">
-                                    <Button Content="{Binding TableNumber}" Padding="4" MinHeight="0" FontSize="15"
+                                    <Button Content="{Binding}" Padding="4" MinHeight="0" FontSize="15"
                                             ToolTip="{Binding TileDescription}" AutomationProperties.Name="{Binding TileDescription}"
                                             Tag="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             Command="{Binding DataContext.OpenFloorOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -158,7 +158,10 @@
                                         </Button.Style>
                                         <Button.ContentTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"/>
+                                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding TableNumber}" FontWeight="Bold" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding StatusLabel}" FontSize="10" HorizontalAlignment="Center" Opacity="0.8" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
                                             </DataTemplate>
                                         </Button.ContentTemplate>
                                         <Button.ContextMenu>
@@ -186,21 +189,25 @@
                             <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
                                     Background="{StaticResource SuccessSoftBrush}" BorderBrush="{StaticResource SuccessBrush}"/>
                             <TextBlock Text="Available" Margin="5,0,0,0" FontSize="12"/>
+                            <TextBlock Text="{Binding AvailableCount}" Margin="4,0,0,0" FontSize="12" FontWeight="Bold"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
                             <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
                                     Background="{StaticResource DangerSoftBrush}" BorderBrush="{StaticResource DangerBrush}"/>
                             <TextBlock Text="Occupied" Margin="5,0,0,0" FontSize="12"/>
+                            <TextBlock Text="{Binding OccupiedCount}" Margin="4,0,0,0" FontSize="12" FontWeight="Bold"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
                             <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
                                     Background="{StaticResource WarningSoftBrush}" BorderBrush="{StaticResource WarningBrush}"/>
                             <TextBlock Text="Reserved" Margin="5,0,0,0" FontSize="12"/>
+                            <TextBlock Text="{Binding ReservedCount}" Margin="4,0,0,0" FontSize="12" FontWeight="Bold"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
                             <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1"
                                     Background="{StaticResource InfoSoftBrush}" BorderBrush="{StaticResource InfoBrush}"/>
                             <TextBlock Text="Cleaning" Margin="5,0,0,0" FontSize="12"/>
+                            <TextBlock Text="{Binding CleaningCount}" Margin="4,0,0,0" FontSize="12" FontWeight="Bold"/>
                         </StackPanel>
                     </WrapPanel>
                 </StackPanel>

@@ -1,0 +1,135 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ServeX.Views.DayCloseView">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="20">
+            <!-- Header: title, date picker, refresh and print -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="End-of-day report" Style="{StaticResource PrimaryHeadingTextStyle}" FontSize="22"/>
+                    <TextBlock Text="{Binding TitleDisplay}" Style="{StaticResource SectionSubtitleTextStyle}" Margin="0,2,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <DatePicker SelectedDate="{Binding Day, Mode=TwoWay}" MinWidth="150" Margin="0,0,10,0" VerticalAlignment="Center" AutomationProperties.Name="Report date"/>
+                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource SecondaryActionButtonStyle}" Margin="0,0,10,0" AutomationProperties.Name="Refresh report">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE72C;" Style="{StaticResource GlyphTextStyle}" FontSize="16" Margin="0,0,8,0"/>
+                            <TextBlock Text="Refresh" VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding PrintCommand}" Style="{StaticResource PrimaryActionButtonStyle}" AutomationProperties.Name="Print report">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE749;" Style="{StaticResource GlyphTextStyle}" FontSize="16" Margin="0,0,8,0"/>
+                            <TextBlock Text="Print" VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Messages (load or print problems) -->
+            <Border Margin="0,0,0,16" Padding="14,10" CornerRadius="8" Background="{StaticResource InfoSoftBrush}" BorderBrush="{StaticResource InfoBrush}" BorderThickness="1"
+                    Visibility="{Binding HasMessage, Converter={StaticResource BoolToVisibility}}" AutomationProperties.LiveSetting="Polite">
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Unpaid orders must be settled before closing -->
+            <Border Margin="0,0,0,16" Padding="14,10" CornerRadius="8" Background="{StaticResource WarningSoftBrush}" BorderBrush="{StaticResource WarningBrush}" BorderThickness="1"
+                    Visibility="{Binding HasUnpaid, Converter={StaticResource BoolToVisibility}}" AutomationProperties.LiveSetting="Polite">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE7BA;" Style="{StaticResource GlyphTextStyle}" Foreground="{StaticResource WarningBrush}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding UnpaidMessage}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                </Grid>
+            </Border>
+
+            <!-- Empty state -->
+            <Border Padding="24" Margin="0,0,0,16" Style="{StaticResource SurfaceCardStyle}" Visibility="{Binding HasNoSales, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock Text="No bills were paid on this day." Style="{StaticResource SectionSubtitleTextStyle}" HorizontalAlignment="Center"/>
+            </Border>
+
+            <!-- One block per currency -->
+            <ItemsControl ItemsSource="{Binding Sections}" Margin="0,0,0,4">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="{Binding Currency}" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,8"/>
+                            <UniformGrid Columns="4">
+                                <HeaderedContentControl Margin="0,0,12,12" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" Header="Gross sales" Tag="Before discounts and tax" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding SubtotalDisplay}" Style="{StaticResource FinancialTextStyle}" FontSize="24"/></HeaderedContentControl.Content></HeaderedContentControl>
+                                <HeaderedContentControl Margin="0,0,12,12" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" Header="Discounts" Tag="Given today" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding DiscountDisplay}" Style="{StaticResource FinancialTextStyle}" FontSize="24"/></HeaderedContentControl.Content></HeaderedContentControl>
+                                <HeaderedContentControl Margin="0,0,12,12" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" Header="Tax collected" Tag="Included in net total" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding TaxDisplay}" Style="{StaticResource FinancialTextStyle}" FontSize="24"/></HeaderedContentControl.Content></HeaderedContentControl>
+                                <HeaderedContentControl Margin="0,0,0,12" Background="{StaticResource PrimarySoftBrush}" BorderBrush="{StaticResource PrimaryBrush}" Header="Net total" Tag="{Binding BillsDisplay}" Style="{StaticResource MetricCardStyle}"><HeaderedContentControl.Content><TextBlock Text="{Binding TotalDisplay}" Style="{StaticResource FinancialTextStyle}" FontSize="24"/></HeaderedContentControl.Content></HeaderedContentControl>
+                            </UniformGrid>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Payments and best sellers -->
+            <Grid Margin="0,4,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Padding="16" Style="{StaticResource SurfaceCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Payments by method" Style="{StaticResource SectionTitleTextStyle}"/>
+                        <TextBlock Text="Nothing collected." Style="{StaticResource SectionSubtitleTextStyle}" Margin="0,8,0,0" Visibility="{Binding HasNoSales, Converter={StaticResource BoolToVisibility}}"/>
+                        <ItemsControl ItemsSource="{Binding Payments}" Margin="0,10,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding CountDisplay}" Style="{StaticResource SectionSubtitleTextStyle}"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding DisplayAmount}" Style="{StaticResource FinancialTextStyle}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Padding="16" Style="{StaticResource SurfaceCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Best sellers" Style="{StaticResource SectionTitleTextStyle}"/>
+                        <ItemsControl ItemsSource="{Binding TopItems}" Margin="0,10,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="28"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Rank}" Style="{StaticResource SectionSubtitleTextStyle}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding UnitsDisplay}" Style="{StaticResource FinancialTextStyle}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Day notes -->
+            <Border Padding="16" Style="{StaticResource SurfaceCardStyle}">
+                <StackPanel>
+                    <TextBlock Text="Day notes" Style="{StaticResource SectionTitleTextStyle}"/>
+                    <TextBlock Text="{Binding TimingDisplay}" Margin="0,8,0,0"/>
+                    <TextBlock Text="{Binding CancelledDisplay}" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

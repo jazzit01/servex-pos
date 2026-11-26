@@ -60,6 +60,9 @@ namespace ServeX.ViewModels
             Settings.CurrentUserId = currentUser?.Id ?? 0;
             SignOutCommand = new AsyncRelayCommand(_ => SignOutAsync());
             Dashboard.RefreshWorkspace = RefreshFromDashboardActionAsync;
+            Dashboard.OpenDestination = destination => NavigateToAsync(destination);
+            Dashboard.ResumeOrder = row => Orders.Resume(row);
+            Dashboard.OpenTakeaway = () => OpenTakeawayAsync(null);
             Settings.RestaurantNameSaved += UpdateRestaurantName;
             _workspaceChanged = async (sender, args) => await RefreshAfterChangeAsync();
             Menu.MenuItemsChanged += _workspaceChanged;
@@ -339,6 +342,7 @@ namespace ServeX.ViewModels
                 if (_detail is OrderViewModel order) return order.WindowTitle;
                 if (_detail is BillingViewModel billing) return billing.WindowTitle;
                 if (_detail is ParcelViewModel) return "Takeaway order";
+                if (_detail is DayCloseViewModel) return "End-of-day report";
                 switch (SelectedDestination)
                 {
                     case WorkspaceDestination.Menu:
@@ -369,6 +373,7 @@ namespace ServeX.ViewModels
             {
                 if (_detail is OrderViewModel order) return $"{order.LocationKind} service · {order.TableStatus}";
                 if (_detail is BillingViewModel billing) return billing.TableNumber;
+                if (_detail is DayCloseViewModel dayClose) return dayClose.TitleDisplay;
                 return string.Empty;
             }
         }
@@ -566,6 +571,9 @@ namespace ServeX.ViewModels
             Tables.PropertyChanged -= OnTableAreaChanged;
             Settings.RestaurantNameSaved -= UpdateRestaurantName;
             Dashboard.RefreshWorkspace = () => Task.CompletedTask;
+            Dashboard.OpenDestination = null;
+            Dashboard.ResumeOrder = _ => Task.CompletedTask;
+            Dashboard.OpenTakeaway = () => Task.CompletedTask;
         }
 
         private void SetStatus(string message, bool isError)

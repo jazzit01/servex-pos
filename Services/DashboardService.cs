@@ -28,21 +28,24 @@ namespace ServeX.Services
             {
                 var locale = await context.Settings.AsNoTracking().OrderBy(setting => setting.Id)
                     .Select(setting => setting.Locale).FirstOrDefaultAsync();
-                var todayBillTotals = await context.Bills
+                var paidToday = await context.Bills
                     .AsNoTracking()
                     .Where(bill => bill.PaidAt.HasValue && bill.PaidAt.Value >= startUtc && bill.PaidAt.Value < endUtc)
-                    .Select(bill => new { bill.Total, bill.RecordedLocale })
+                    .Include(bill => bill.Order).ThenInclude(order => order.Items).ThenInclude(line => line.MenuItem)
                     .ToListAsync();
 
-                var todaySales = todayBillTotals.GroupBy(bill => ReceiptProfile.CurrencyCode(bill.RecordedLocale))
+                var todaySales = paidToday.GroupBy(bill => ReceiptProfile.CurrencyCode(bill.RecordedLocale))
                     .OrderBy(group => group.Key)
-                    .Select(group => new DashboardSalesTotal(group.First().RecordedLocale, group.Sum(bill => bill.Total)))
+                    .Select(group => new DashboardSalesTotal(group.First().RecordedLocale, group.Sum(bill => bill.Total), group.Count()))
                     .ToList();
                 if (todaySales.Count == 0) todaySales.Add(new DashboardSalesTotal(locale, 0m));
 
                 var snapshot = new DashboardSnapshot
                 {
                     TodaySales = todaySales,
+                    TopItems = BuildTopItems(paidToday),
+                    Payments = BuildPayments(paidToday, locale),
+                    TotalTables = await context.Tables.CountAsync(),
                     OccupiedTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Occupied),
                     AvailableTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Available),
                     ReservedTables = await context.Tables.CountAsync(table => table.Status == TableStatus.Reserved),
@@ -110,6 +113,78 @@ namespace ServeX.Services
                     .Where(table => table.Status == TableStatus.Available)
                     .OrderBy(table => table.TableNumber)
                     .FirstOrDefaultAsync();
+            }
+        }
+
+        internal static System.Collections.Generic.IList<DashboardTopItem> BuildTopItems(
+            System.Collections.Generic.IEnumerable<Bill> paidToday)
+        {
+            return paidToday
+                .Where(bill => bill.Order != null && bill.Order.Status != OrderStatus.Cancelled)
+                .SelectMany(bill => bill.Order.Items)
+                .GroupBy(line => line.MenuItemId)
+                .Select(group => new
+                {
+                    Name = group.Select(line => line.MenuItem?.Name).FirstOrDefault(name => !string.IsNullOrWhiteSpace(name)) ?? "Item",
+                    Units = group.Sum(line => line.Quantity)
+                })
+                .OrderByDescending(item => item.Units)
+                .ThenBy(item => item.Name)
+                .Take(5)
+                .Select((item, index) => new DashboardTopItem(index + 1, item.Name, item.Units))
+                .ToList();
+        }
+
+        internal static System.Collections.Generic.IList<DashboardPaymentRow> BuildPayments(
+            System.Collections.Generic.IEnumerable<Bill> paidToday, string fallbackLocale)
+        {
+            var allocations = paidToday
+                .SelectMany(bill =>
+                {
+                    var billLocale = bill.RecordedLocale ?? fallbackLocale;
+                    return ReadPaymentsSafely(bill).Select(payment => new
+                    {
+                        Locale = billLocale,
+                        Currency = ReceiptProfile.CurrencyCode(billLocale),
+                        payment.Method,
+                        payment.Amount
+                    });
+                })
+                .ToList();
+
+            var currencyCount = allocations.Select(item => item.Currency).Distinct().Count();
+            var totalsByCurrency = allocations
+                .GroupBy(item => item.Currency)
+                .ToDictionary(group => group.Key, group => group.Sum(item => item.Amount));
+
+            return allocations
+                .GroupBy(item => new { item.Currency, item.Method })
+                .Select(group =>
+                {
+                    var amount = group.Sum(item => item.Amount);
+                    var currencyTotal = totalsByCurrency[group.Key.Currency];
+                    var methodName = group.Key.Method == PaymentMethod.Upi ? "UPI" : group.Key.Method.ToString();
+                    return new DashboardPaymentRow(
+                        currencyCount > 1 ? methodName + " (" + group.Key.Currency + ")" : methodName,
+                        group.Count(),
+                        amount,
+                        group.First().Locale,
+                        currencyTotal > 0m ? (double)(amount / currencyTotal * 100m) : 0d);
+                })
+                .OrderByDescending(row => row.Amount)
+                .ToList();
+        }
+
+        private static System.Collections.Generic.IReadOnlyList<PaymentAllocation> ReadPaymentsSafely(Bill bill)
+        {
+            try
+            {
+                return BillingService.ReadPayments(bill);
+            }
+            catch (System.Exception)
+            {
+                // A bill with an unreadable breakdown still counts: fall back to its recorded method and total.
+                return new[] { new PaymentAllocation(bill.Total, bill.PaymentMethod ?? PaymentMethod.Cash, bill.PaymentReference) };
             }
         }
 

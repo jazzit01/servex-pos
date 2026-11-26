@@ -28,6 +28,7 @@ namespace ServeX.Application
             services.AddSingleton<BillingService>();
             services.AddSingleton<DashboardService>();
             services.AddSingleton<OrderHistoryService>();
+            services.AddSingleton<DayCloseService>();
             services.AddSingleton<KitchenService>();
             services.AddSingleton<WorkspaceSummaryService>();
             return services;

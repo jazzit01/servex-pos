@@ -13,6 +13,10 @@ namespace ServeX.Services
 
         public OrderStatus Status { get; set; }
 
+        public string StatusLabel => DashboardStatus.Label(Status);
+
+        public string StatusTone => DashboardStatus.Tone(Status);
+
         public decimal Total { get; set; }
 
         public string Locale { get; set; }
